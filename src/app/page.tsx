@@ -1,22 +1,25 @@
 // src/app/page.tsx
 'use client';
-import { CTA } from '@/components/ui';
 
 export default function Home() {
   return (
-    <main className="relative z-20 min-h-screen grid place-items-center px-6 pt-20">
-      <div className="max-w-3xl w-full text-center">
-        <h1 className="text-4xl md:text-6xl font-black mb-10 leading-tight" style={{ fontFamily: "'Space Grotesk', system-ui, sans-serif" }}>
-          festival-grade <span className="text-[var(--sodium)] drop-shadow-[0_0_12px_rgba(183,255,46,0.35)]">DJ sets</span>, curated
-        </h1>
-        <div className="flex flex-col md:flex-row gap-5 md:gap-6 items-center justify-center">
-          <a href="/list"><CTA label="the list" variant="primary" big /></a>
-          <a href="/suggest"><CTA label="suggest me a set" variant="signal" big /></a>
+    <main className="container mx-auto max-w-6xl px-6 pt-10">
+      <section className="mt-10">
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-6 max-w-4xl mx-auto mt-12">
+          <a href="/suggest" className="group rounded-2xl border border-neutral-200 bg-gradient-to-b from-blue-600 to-blue-700 p-8 text-center text-white hover:shadow-lg hover:-translate-y-0.5 transition">
+            <div className="text-lg font-medium tracking-wide" style={{fontFamily:"'Space Grotesk',system-ui,sans-serif"}}>Suggest a set</div>
+            <p className="mt-2 text-sm text-white/85">Get 3 picks based on your filters</p>
+          </a>
+          <a href="/list" className="group rounded-2xl border border-neutral-200 bg-white p-8 text-center hover:shadow-lg hover:-translate-y-0.5 transition">
+            <div className="text-lg font-medium tracking-wide" style={{fontFamily:"'Space Grotesk',system-ui,sans-serif"}}>Show the list</div>
+            <p className="mt-2 text-sm text-neutral-500">Browse all sets with filters</p>
+          </a>
+          <a href="/heatmaps" className="group rounded-2xl border border-neutral-200 bg-white p-8 text-center hover:shadow-lg hover:-translate-y-0.5 transition">
+            <div className="text-lg font-medium tracking-wide" style={{fontFamily:"'Space Grotesk',system-ui,sans-serif"}}>Map the heat</div>
+            <p className="mt-2 text-sm text-neutral-500">See ratings and energy by genre</p>
+          </a>
         </div>
-        <div className="mt-6 md:mt-8 flex items-center justify-center">
-          <a href="/heatmaps"><CTA label="heatmaps" variant="ghost" /></a>
-        </div>
-      </div>
+      </section>
     </main>
   );
 }

@@ -1,9 +1,39 @@
+// src/components/ui.tsx
 'use client';
-import type { ReactNode, MouseEvent } from "react";
-export function CTA({label,onClick,variant="primary",big,ariaLabel}:{label:string;onClick?:()=>void;variant?:'primary'|'signal'|'ghost';big?:boolean;ariaLabel?:string;}){const base="rounded-xl border transition px-5 py-2"; const map={primary:"bg-white/10 border-white/15 hover:bg-white/15",signal:"bg-[var(--sodium)]/20 border-[var(--sodium)]/40 hover:bg-[var(--sodium)]/30",ghost:"bg-white/5 border-white/10 hover:bg-white/10"} as const; return <button aria-label={ariaLabel} onClick={onClick} className={`${base} ${map[variant]} ${big?"text-lg px-6 py-3":""}`}>{label}</button>;}
-export function PageTitle({title,onBack}:{title:string;onBack?:()=>void}){return(<div className="flex items-center gap-3">{onBack&&<button onClick={onBack} className="btn-secondary">back</button>}<h2 className="text-xl font-semibold">{title}</h2></div>);}
-export function IconButton({title,onClick,ariaLabel,children}:{title:string;onClick?:()=>void;ariaLabel?:string;children:ReactNode;}){return(<button title={title} aria-label={ariaLabel||title} onClick={onClick} className="w-8 h-8 grid place-items-center rounded-md bg-white/5 border border-white/10 hover:bg-white/10">{children}</button>);}
-export function FilterChip({active,onClick,children}:{active:boolean;onClick:()=>void;children:ReactNode}){return(<button onClick={onClick} className={`px-3 py-1.5 rounded-xl border text-sm transition ${active?"bg-white/10 border-white/20 shadow-[0_0_18px_rgba(183,255,46,0.2)]":"bg-white/5 border-white/15 hover:bg-white/10"}`}>{children}</button>);}
-export function Toggle({active,onClick,children}:{active:boolean;onClick:()=>void;children:ReactNode}){return(<button onClick={onClick} className={`px-3 py-1.5 rounded-xl border text-sm transition ${active?"bg-white/10 border-white/20":"bg-white/5 border-white/15 hover:bg-white/10"}`}>{children}</button>);}
-export function TierBadge({tier}:{tier?:string|null}){const t=(tier||"").toUpperCase(); if(!t) return <span className="text-xs opacity-50">unknown</span>; const cls=t==="S"?"bg-[var(--sodium)]/20 border-[var(--sodium)]/50":t==="A"?"bg-emerald-400/10 border-emerald-400/30":t==="B"?"bg-sky-400/10 border-sky-400/30":"bg-white/5 border-white/15"; return <span className={`px-2 py-0.5 text-xs rounded border ${cls}`}>{t}</span>;}
-export function CopyBtn({onClick}:{onClick?:(e:MouseEvent)=>void}){return(<button className="btn-secondary" onClick={onClick} aria-label="copy link">copy</button>);}
+import type { ReactNode } from "react";
+
+export function CTA({label,onClick,variant="primary",big,ariaLabel}:{label:string;onClick?:()=>void;variant?:'primary'|'ghost';big?:boolean;ariaLabel?:string;}) {
+  const base="inline-flex items-center justify-center rounded-full transition px-5";
+  const map={primary:"bg-[var(--accent)] text-white hover:bg-blue-600 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-300",ghost:"bg-white border border-neutral-200 text-neutral-800 hover:shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-300"} as const;
+  return <button aria-label={ariaLabel} onClick={onClick} className={`${base} ${map[variant]} ${big?"h-11 text-[15px]":"h-9 text-sm"}`}>{label}</button>;
+}
+
+export function PageTitle({title}:{title:string}) {
+  return <h2 className="text-center text-4xl sm:text-5xl font-semibold tracking-wide" style={{fontFamily:"'Space Grotesk',system-ui,sans-serif"}}>{title}</h2>;
+}
+
+export function IconButton({title,onClick,ariaLabel,children}:{title:string;onClick?:()=>void;ariaLabel?:string;children:ReactNode;}) {
+  return (
+    <button title={title} aria-label={ariaLabel||title} onClick={onClick}
+      className="w-8 h-8 grid place-items-center rounded-full border border-neutral-300 bg-white hover:bg-neutral-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-300">
+      {children}
+    </button>
+  );
+}
+
+export function Pill({active,children,onClick}:{active:boolean;children:ReactNode;onClick:()=>void}) {
+  return <button onClick={onClick} className={`h-6 px-3 rounded-full border text-sm ${active?"bg-neutral-900 text-white border-neutral-900":"bg-white border-neutral-300 hover:bg-neutral-50"}`}>{children}</button>;
+}
+
+export function Tag({children}:{children:ReactNode}) {
+  return <span className="inline-flex items-center h-6 px-2 rounded-full border border-neutral-300 text-[12px] bg-white">{children}</span>;
+}
+
+export function Switch({checked,onChange}:{checked:boolean;onChange:()=>void}) {
+  return (
+    <button role="switch" aria-checked={checked} onClick={onChange}
+      className={`relative inline-flex items-center w-11 h-6 rounded-full border transition ${checked?"bg-[var(--accent)] border-[var(--accent)]":"bg-neutral-200 border-neutral-300"}`}>
+      <i className={`absolute top-[3px] left-[3px] h-[18px] w-[18px] rounded-full bg-white transition-transform ${checked?"translate-x-[22px]":""}`}/>
+    </button>
+  );
+}
