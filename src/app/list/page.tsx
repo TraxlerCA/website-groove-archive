@@ -26,7 +26,7 @@ export default function ListPage(){
       if (!g) continue;
       map.set(g, (map.get(g) || 0) + 1);
     }
-    return [...map.entries()].sort((a,b)=>b[1]-a[1]).slice(0,6).map(([g])=>g);
+    return [...map.entries()].sort((a, b) => a[0].localeCompare(b[0])).map(([g]) => g);
   }, [rows]);
 
   const filtered = useMemo(() => {

@@ -21,18 +21,37 @@ function ControlCard({ label, children }: { label: string; children: React.React
 
 export default function SuggestPage() {
   const { rows } = useRows();
-  const [levelSOnly, setLevelSOnly] = useState<boolean>(() => localStorage.getItem('s_level') === '1');
-  const [genre, setGenre] = useState<string>(() => localStorage.getItem('s_genre') || 'any');
-  const [medium, setMedium] = useState<'any' | 'youtube' | 'soundcloud'>(() => (localStorage.getItem('s_medium') as any) || 'any');
-  const [suggestions, setSuggestions] = useState<Row[]>([]);
-  const [attempted, setAttempted] = useState(false);
-  const { play } = usePlayer();
 
+  // default values during SSR, then hydrate from localStorage on mount
+  const [levelSOnly, setLevelSOnly] = useState<boolean>(false);
+  const [genre, setGenre] = useState<string>('any');
+  const [medium, setMedium] = useState<'any' | 'youtube' | 'soundcloud'>('any');
+
+  useEffect(() => {
+    try {
+      if (typeof window === 'undefined') return;
+      const s = localStorage.getItem('s_level');
+      const g = localStorage.getItem('s_genre');
+      const m = localStorage.getItem('s_medium') as 'any' | 'youtube' | 'soundcloud' | null;
+      if (s != null) setLevelSOnly(s === '1');
+      if (g) setGenre(g);
+      if (m === 'any' || m === 'youtube' || m === 'soundcloud') setMedium(m);
+    } catch {}
+  }, []);
+
+  // persist changes client-side
   useEffect(() => { try { localStorage.setItem('s_level', levelSOnly ? '1' : '0'); } catch {} }, [levelSOnly]);
   useEffect(() => { try { localStorage.setItem('s_genre', genre); } catch {} }, [genre]);
   useEffect(() => { try { localStorage.setItem('s_medium', medium); } catch {} }, [medium]);
 
-  const genres = useMemo(() => Array.from(new Set(rows.map(r => (r.classification || '').trim()))).filter(Boolean).sort(), [rows]);
+  const [suggestions, setSuggestions] = useState<Row[]>([]);
+  const [attempted, setAttempted] = useState(false);
+  const { play } = usePlayer();
+
+  const genres = useMemo(
+    () => Array.from(new Set(rows.map(r => (r.classification || '').trim()))).filter(Boolean).sort(),
+    [rows]
+  );
 
   const filtered = useMemo(() => rows.filter(r => {
     if (levelSOnly && (r.tier || '').toUpperCase() !== 'S') return false;
