@@ -97,7 +97,7 @@ export default function ListPage(){
 
       {/* table */}
       <div className="mt-6 rounded-2xl border border-white/10 overflow-hidden backdrop-blur-[2px] bg-white/5">
-        <div className="sticky top-[72px] z-10 bg-[var(--coal)]">
+        <div className="bg-[var(--coal)]">
           <div className="grid grid-cols-[1.4fr_0.3fr_0.9fr_0.6fr] gap-2 px-4 py-3 text-xs uppercase tracking-widest opacity-70">
             <div>set</div><div>tier</div><div>genre</div><div className="text-right pr-2">links</div>
           </div>
