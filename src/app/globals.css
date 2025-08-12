@@ -1,20 +1,17 @@
 @import "tailwindcss";
 
-/* keep the file light. tailwind v4 handles resets. */
-
+/* light base */
 html, body { height: 100%; }
 body {
   min-height: 100svh;
-  /* use the app theme variables injected by IndustrialGlowTheme */
-  background: var(--coal);
-  color: var(--fog);
-  /* let Tailwind's font-sans utility control the font */
   -webkit-font-smoothing: antialiased;
   text-rendering: optimizeLegibility;
+  font-size: 15px;
+  line-height: 1.75;
 }
 
-/* sensible media defaults */
+/* media defaults */
 img, video { max-width: 100%; height: auto; display: block; }
 
-/* focus visibility */
-:focus-visible { outline: 2px solid rgba(255,255,255,.35); outline-offset: 2px; }
+/* focus */
+:focus-visible { outline: 2px solid rgba(37,99,235,.35); outline-offset: 2px; }

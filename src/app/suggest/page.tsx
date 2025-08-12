@@ -1,167 +1,189 @@
 // src/app/suggest/page.tsx
 'use client';
 
-import { useEffect, useMemo, useState } from 'react';
-import { motion } from 'framer-motion';
-import { PageTitle, CTA, Toggle, TierBadge, CopyBtn } from '@/components/ui';
-import Thumb from '@/components/Thumb';
-import type { Row } from '@/lib/types';
-import { copyToClipboard, lc } from '@/lib/utils';
-import { usePlayer } from '@/context/PlayerProvider';
+import { useEffect, useMemo, useRef, useState } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
+import { PageTitle, Pill, Switch } from '@/components/ui';
+import { YouTubeIcon, SCIcon } from '@/components/icons';
 import { useRows } from '@/lib/useRows';
+import { usePlayer } from '@/context/PlayerProvider';
 
-function ControlCard({ label, children }: { label: string; children: React.ReactNode }) {
+type Provider='youtube'|'soundcloud';
+type PickItem={row:any;provider:Provider};
+
+const subhdr="text-[13px] font-medium tracking-widest text-neutral-600 uppercase";
+
+/* youtube utilities */
+const ytId=(u?:string|null)=>{if(!u) return null;try{const url=new URL(u);if(url.hostname.includes('youtu.be'))return url.pathname.slice(1);if(url.searchParams.get('v'))return url.searchParams.get('v');const p=url.pathname.split('/');const i=p.indexOf('embed');if(i>=0&&p[i+1])return p[i+1];return null;}catch{return null;}};
+
+/* 16:9 thumbnail component with fallbacks to avoid letterboxing */
+function YTThumb({url}:{url?:string|null}) {
+  const id=ytId(url);
+  const order=id?[
+    `https://i.ytimg.com/vi/${id}/maxresdefault.jpg`, // 1280x720 if available
+    `https://i.ytimg.com/vi/${id}/hq720.jpg`,         // 1280x720 16:9
+    `https://i.ytimg.com/vi/${id}/mqdefault.jpg`,     // 320x180 16:9
+    `https://i.ytimg.com/vi/${id}/hqdefault.jpg`,     // 480x360 (fallback)
+  ]:[];
+  const [idx,setIdx]=useState(0);
+  const tried = useRef(0);
+  if(!id) return null;
   return (
-    <div className="rounded-2xl border border-white/10 bg-white/5 p-4">
-      <div className="text-xs uppercase tracking-widest opacity-70 mb-2">{label}</div>
-      {children}
-    </div>
+    // eslint-disable-next-line @next/next/no-img-element
+    <img src={order[idx]} alt="" className="absolute inset-0 w-full h-full object-cover block"
+      onError={()=>{if(tried.current<order.length-1){tried.current++;setIdx(i=>i+1);}}}/>
   );
 }
 
-export default function SuggestPage() {
-  const { rows } = useRows();
+export default function SuggestPage(){
+  const { rows }=useRows();
+  const { play }=usePlayer();
 
-  // default values during SSR, then hydrate from localStorage on mount
-  const [levelSOnly, setLevelSOnly] = useState<boolean>(false);
-  const [genre, setGenre] = useState<string>('any');
-  const [medium, setMedium] = useState<'any' | 'youtube' | 'soundcloud'>('any');
+  // defaults: Any + S-tier off every visit; format persists
+  const [genre,setGenre]=useState<'any'|string>('any');
+  const [sOnly,setSOnly]=useState(false);
+  const [format,setFormat]=useState<'none'|Provider>('none');
 
-  useEffect(() => {
-    try {
-      if (typeof window === 'undefined') return;
-      const s = localStorage.getItem('s_level');
-      const g = localStorage.getItem('s_genre');
-      const m = localStorage.getItem('s_medium') as 'any' | 'youtube' | 'soundcloud' | null;
-      if (s != null) setLevelSOnly(s === '1');
-      if (g) setGenre(g);
-      if (m === 'any' || m === 'youtube' || m === 'soundcloud') setMedium(m);
-    } catch {}
-  }, []);
+  useEffect(()=>{try{
+    setGenre((localStorage.getItem('ga_genre') as any)||'any');
+    const f=(localStorage.getItem('ga_format')||'none').toLowerCase();
+    setFormat(f==='youtube'?'youtube':f==='soundcloud'?'soundcloud':'none');
+  }catch{}},[]);
+  useEffect(()=>{try{localStorage.setItem('ga_genre',genre);}catch{}},[genre]);
+  useEffect(()=>{try{localStorage.setItem('ga_format',format);}catch{}},[format]);
 
-  // persist changes client-side
-  useEffect(() => { try { localStorage.setItem('s_level', levelSOnly ? '1' : '0'); } catch {} }, [levelSOnly]);
-  useEffect(() => { try { localStorage.setItem('s_genre', genre); } catch {} }, [genre]);
-  useEffect(() => { try { localStorage.setItem('s_medium', medium); } catch {} }, [medium]);
+  const genres=useMemo(()=>{const set=new Set(rows.map(r=>(r.classification||'').trim()).filter(Boolean));return [{label:'Any',value:'any' as const},...Array.from(set).sort().map(g=>({label:g,value:g}))];},[rows]);
 
-  const [suggestions, setSuggestions] = useState<Row[]>([]);
-  const [attempted, setAttempted] = useState(false);
-  const { play } = usePlayer();
+  const pool=useMemo(()=>rows.filter(r=>{
+    if(sOnly&&(r.tier||'').toUpperCase()!=='S')return false;
+    if(genre!=='any'&&r.classification!==genre)return false;
+    if(format==='youtube')return !!r.youtube;
+    if(format==='soundcloud')return !!r.soundcloud;
+    return !!(r.youtube||r.soundcloud);
+  }),[rows,sOnly,genre,format]);
 
-  const genres = useMemo(
-    () => Array.from(new Set(rows.map(r => (r.classification || '').trim()))).filter(Boolean).sort(),
-    [rows]
-  );
+  const [pick,setPick]=useState<PickItem|null>(null);
+  const [isLaunching,setIsLaunching]=useState(false);
+  const [hasLaunched,setHasLaunched]=useState(false);
 
-  const filtered = useMemo(() => rows.filter(r => {
-    if (levelSOnly && (r.tier || '').toUpperCase() !== 'S') return false;
-    if (genre !== 'any' && r.classification !== genre) return false;
-    if (medium === 'youtube' && !r.youtube) return false;
-    if (medium === 'soundcloud' && !r.soundcloud) return false;
-    return true;
-  }), [rows, levelSOnly, genre, medium]);
-
-  const suggest = () => {
-    setAttempted(true);
-    const servedKey = 'served_recent_v1';
-    let served: string[] = [];
-    try { served = JSON.parse(localStorage.getItem(servedKey) || '[]'); } catch {}
-    const list = filtered
-      .map(r => ({
-        r,
-        w: (r.tier?.toUpperCase() === 'S' ? 3 : 1)
-          + (genre !== 'any' && r.classification === genre ? 2 : 0)
-          + (medium === 'any' ? 0 : (medium === 'youtube' && r.youtube ? 2 : 0) + (medium === 'soundcloud' && r.soundcloud ? 2 : 0)),
-      }))
-      .filter(({ r }) => !served.includes(r.set));
-
-    const picks: Row[] = [];
-    for (let i = 0; i < 3 && list.length; i++) {
-      const total = list.reduce((s, it) => s + it.w, 0);
-      let t = Math.random() * total, idx = 0;
-      while (t > 0 && idx < list.length) { t -= list[idx].w; idx++; }
-      const chosen = list[Math.max(0, idx - 1)].r;
-      picks.push(chosen);
-      const at = list.findIndex(x => x.r.set === chosen.set);
-      if (at >= 0) list.splice(at, 1);
-    }
-    setSuggestions(picks);
-    try { localStorage.setItem(servedKey, JSON.stringify([...served, ...picks.map(p => p.set)].slice(-50))); } catch {}
+  const chooseProviderForRow=(r:any):Provider=>{
+    if(format==='youtube'&&r.youtube)return'youtube';
+    if(format==='soundcloud'&&r.soundcloud)return'soundcloud';
+    if(r.youtube&&r.soundcloud)return Math.random()<0.5?'youtube':'soundcloud';
+    return r.youtube?'youtube':'soundcloud';
   };
 
-  const reshuffle = () => suggest();
-  const openRow = (row: Row) => play(row, medium === 'any' ? undefined : medium);
+  const launch=()=>{
+    setIsLaunching(true);
+    const chosenRow=[...pool].sort(()=>Math.random()-.5)[0]||null;
+    const chosen=chosenRow?{row:chosenRow,provider:chooseProviderForRow(chosenRow)}:null;
+    setTimeout(()=>{setPick(chosen);setIsLaunching(false);setHasLaunched(true);},1000);
+  };
+
+  const Circle=({selected}:{selected:boolean})=><span className={`inline-block h-3.5 w-3.5 rounded-full border ${selected?'bg-blue-600 border-blue-600':'border-neutral-400 bg-white'}`}/>;
+  const CircleOption=({label,value,icon}:{label:string;value:Provider;icon:JSX.Element})=>(
+    <button type="button" aria-pressed={format===value} onClick={()=>setFormat(f=>f===value?'none':value)}
+      className={`h-8 px-3 rounded-full border text-sm inline-flex items-center gap-2 ${format===value?'bg-neutral-900 text-white border-neutral-900':'bg-white border-neutral-300 hover:bg-neutral-50'}`}>
+      <Circle selected={format===value}/>{icon}<span>{label}</span>
+    </button>
+  );
+
+  const titleOf=(r:any)=>r?.set||r?.title||r?.name||'Untitled set';
+  const labelOf=(r:any)=> (r?.classification||'').trim();
 
   return (
-    <section className="relative z-20 min-h-screen px-6 md:px-10 pt-28 pb-14">
-      <PageTitle title="suggest me a set" />
-      <div className="grid md:grid-cols-3 gap-4 md:gap-6">
-        <ControlCard label="level">
-          <div className="flex gap-2">
-            <Toggle active={levelSOnly} onClick={() => setLevelSOnly(true)}>S only</Toggle>
-            <Toggle active={!levelSOnly} onClick={() => setLevelSOnly(false)}>any</Toggle>
-          </div>
-        </ControlCard>
-        <ControlCard label="genre">
-          <select value={genre} onChange={e => setGenre(e.target.value)} className="w-full bg-[var(--ash)]/70 border border-white/15 rounded-xl px-3 py-2 focus:outline-none focus:ring-2 focus:ring-[var(--ice)]/40">
-            <option value="any">any</option>
-            {genres.map(g => (<option key={g} value={g} className="bg-[var(--coal)]">{g}</option>))}
-          </select>
-        </ControlCard>
-        <ControlCard label="medium">
-          <div className="flex gap-2 flex-wrap">
-            {(['any', 'youtube', 'soundcloud'] as const).map(m => (
-              <Toggle key={m} active={medium === m} onClick={() => setMedium(m)}>{m}</Toggle>
-            ))}
-          </div>
-        </ControlCard>
-      </div>
+    <section className="container mx-auto max-w-6xl px-6 mt-10 space-y-8">
+      <PageTitle title="SUGGESTOR"/>
 
-      <div className="mt-6 flex items-center justify-center">
-        <CTA label="suggest!" onClick={suggest} variant="primary" />
-      </div>
+      {/* compact controls */}
+      <div className="rounded-3xl border border-neutral-200 bg-neutral-50/60 backdrop-blur p-5 max-w-4xl mx-auto">
+        <div className="grid sm:grid-cols-2">
+          <div className="relative p-4 sm:pr-6 flex flex-col gap-6">
+            <div>
+              <div className={subhdr} style={{fontFamily:"'Space Grotesk',system-ui,sans-serif"}}>Genre</div>
+              <div className="mt-2 flex flex-wrap justify-center sm:justify-start gap-2">
+                {genres.map(g=><Pill key={g.value} active={genre===g.value} onClick={()=>setGenre(g.value)}>{g.label}</Pill>)}
+              </div>
+            </div>
+            <div>
+              <div className={subhdr} style={{fontFamily:"'Space Grotesk',system-ui,sans-serif"}}>Format</div>
+              <div className="mt-2 flex gap-2">
+                <CircleOption label="YouTube" value="youtube" icon={<YouTubeIcon/>}/>
+                <CircleOption label="SoundCloud" value="soundcloud" icon={<SCIcon/>}/>
+              </div>
+            </div>
+            <div className="hidden sm:block absolute right-0 top-2 bottom-2 w-px bg-neutral-200"/>
+          </div>
 
-      {attempted && (
-        <div className="mt-6 flex items-center justify-between">
-          <h3 className="text-sm uppercase tracking-widest opacity-70">suggestions</h3>
-          <CTA label="reshuffle" onClick={reshuffle} variant="ghost" />
+          <div className="p-4 sm:pl-6 flex flex-col gap-6">
+            <div>
+              <div className={subhdr} style={{fontFamily:"'Space Grotesk',system-ui,sans-serif"}}>Tier</div>
+              <div className="mt-2 flex items-center gap-3">
+                <Switch checked={sOnly} onChange={()=>setSOnly(v=>!v)}/><span className="text-sm">S-tier only</span>
+              </div>
+            </div>
+            <div>
+              <div className={subhdr} style={{fontFamily:"'Space Grotesk',system-ui,sans-serif"}}>Launch</div>
+              <motion.button onClick={launch}
+                whileHover={{y:-1,scale:1.02,boxShadow:"0 10px 20px rgba(37,99,235,.25)"}}
+                whileTap={{y:0,scale:0.98,boxShadow:"0 4px 8px rgba(37,99,235,.18)"}}
+                className="mt-2 inline-flex h-11 px-6 rounded-full bg-[var(--accent)] text-white leading-none items-center justify-center select-none">
+                {hasLaunched?'Go again!':'Go'}
+              </motion.button>
+            </div>
+          </div>
         </div>
-      )}
+      </div>
 
-      {attempted && (suggestions.length > 0 ? (
-        <div className="mt-3 grid md:grid-cols-3 gap-4">
-          {suggestions.map(s => (
-            <motion.div key={s.set} whileHover={{ y: -3 }} className="cursor-pointer rounded-2xl border border-white/10 bg-white/5 overflow-hidden group" onClick={() => openRow(s)}>
-              <Thumb row={s} />
-              <div className="p-5">
-                <div className="flex items-start justify-between gap-3">
-                  <div>
-                    <div className="text-base font-semibold">{s.set}</div>
-                    <div className="text-xs opacity-70 capitalize">{lc(s.classification)}</div>
-                  </div>
-                  <TierBadge tier={s.tier} />
-                </div>
-                <div className="mt-4 flex gap-2 flex-wrap">
-                  {s.youtube && (
-                    <>
-                      <a className="btn-secondary" href={s.youtube} target="_blank" rel="noreferrer" onClick={e => e.stopPropagation()}>youtube</a>
-                      <CopyBtn onClick={e => { e.stopPropagation(); copyToClipboard(s.youtube!); }} />
-                    </>
-                  )}
-                  {s.soundcloud && (
-                    <>
-                      <a className="btn-secondary" href={s.soundcloud} target="_blank" rel="noreferrer" onClick={e => e.stopPropagation()}>soundcloud</a>
-                      <CopyBtn onClick={e => { e.stopPropagation(); copyToClipboard(s.soundcloud!); }} />
-                    </>
-                  )}
+      {/* pulse overlay */}
+      <AnimatePresence>
+        {isLaunching&&(
+          <motion.div className="fixed inset-0 z-40 pointer-events-none"
+            initial={{opacity:0}} animate={{opacity:1}} exit={{opacity:0}}
+            style={{background:"radial-gradient(1200px 1200px at 50% 50%, rgba(0,0,0,0.18), transparent 60%)"}}>
+            <div className="absolute inset-0 grid place-items-center">
+              {[0,1,2].map(i=>(
+                <motion.div key={i} initial={{scale:.6,opacity:.55}}
+                  animate={{scale:[.6,1.2,1.9],opacity:[.55,.85,0]}}
+                  transition={{duration:1,ease:"easeInOut",delay:i*.08}}
+                  className="rounded-full border border-black/30" style={{width:240+i*140,height:240+i*140}}/>
+              ))}
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* suggestion */}
+      {!isLaunching&&pick&&(
+        <div className="max-w-4xl mx-auto">
+          <motion.article whileHover={{y:-2}}
+            className="rounded-2xl border border-neutral-200 overflow-hidden bg-white"
+            onClick={()=>play(pick.row,pick.provider)} role="button" aria-label="play suggestion">
+            <div className="relative w-full aspect-video bg-neutral-200">
+              {pick.provider==='youtube'
+                ? <YTThumb url={pick.row.youtube}/>
+                : <div className="absolute inset-0 bg-gradient-to-br from-orange-200 to-orange-400 grid place-items-center"><SCIcon/></div>}
+              <div className="absolute inset-0 grid place-items-center">
+                <div className="rounded-full bg-white/90 border border-neutral-300 w-14 h-14 grid place-items-center">
+                  {pick.provider==='youtube'?<YouTubeIcon/>:<SCIcon/>}
                 </div>
               </div>
-            </motion.div>
-          ))}
+            </div>
+          </motion.article>
+
+          {/* big title and label (no dot) */}
+          <div className="px-1 pt-4 text-center">
+            <h3 className="text-2xl font-semibold break-words" style={{fontFamily:"'Space Grotesk',system-ui,sans-serif"}}>
+              {titleOf(pick.row)}
+            </h3>
+            {labelOf(pick.row) && (
+              <div className="mt-1 text-2xl font-semibold" style={{fontFamily:"'Space Grotesk',system-ui,sans-serif"}}>
+                {labelOf(pick.row)}
+              </div>
+            )}
+          </div>
         </div>
-      ) : (
-        <div className="opacity-70 mt-4">no matches. adjust filters and press suggest!</div>
-      ))}
+      )}
     </section>
   );
 }
