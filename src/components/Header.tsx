@@ -8,6 +8,7 @@ export function Fonts() {
       <link rel="preconnect" href="https://fonts.googleapis.com"/>
       <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin=""/>
       <link rel="preconnect" href="https://i.ytimg.com"/>{/* speed up thumbs */}
+      <link rel="preconnect" href="https://i1.sndcdn.com"/>{/* speed up SC thumbs */}
       <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;600;700;900&display=swap" rel="stylesheet"/>
     </>
   );

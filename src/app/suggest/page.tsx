@@ -35,6 +35,33 @@ function YTThumb({url}:{url?:string|null}) {
   );
 }
 
+/* SoundCloud artwork using your existing API route */
+function SCArtwork({url, preserveRatio=false}:{url:string; preserveRatio?:boolean}) {
+  const [art,setArt]=useState<string|null>(null);
+  const [failed,setFailed]=useState(false);
+  useEffect(()=>{let ok=true;(async()=>{
+    try{
+      const res=await fetch(`/api/soundcloud-artwork?url=${encodeURIComponent(url)}`,{cache:"no-store"});
+      const json=await res.json();
+      if(ok) setArt(json?.artwork||null);
+    }catch{ if(ok) setArt(null); }
+  })(); return ()=>{ok=false};},[url]);
+  if(!art||failed){
+    return <div className="absolute inset-0 bg-gradient-to-br from-orange-200 to-orange-400"/>;
+  }
+  // eslint-disable-next-line @next/next/no-img-element
+  return <img
+    src={art}
+    alt=""
+    className={
+      preserveRatio
+        ? "block w-full h-auto" // keep native ratio
+        : "absolute inset-0 w-full h-full object-cover"
+    }
+    onError={()=>setFailed(true)}
+  />;
+}
+
 export default function SuggestPage(){
   const { rows }=useRows();
   const { play }=usePlayer();
@@ -42,12 +69,12 @@ export default function SuggestPage(){
   // defaults: Any + S-tier off every visit; format persists
   const [genre,setGenre]=useState<'any'|string>('any');
   const [sOnly,setSOnly]=useState(false);
-  const [format,setFormat]=useState<'none'|Provider>('none');
+  const [format,setFormat]=useState<'none'|Provider>('soundcloud');
 
   useEffect(()=>{try{
     setGenre((localStorage.getItem('ga_genre') as any)||'any');
-    const f=(localStorage.getItem('ga_format')||'none').toLowerCase();
-    setFormat(f==='youtube'?'youtube':f==='soundcloud'?'soundcloud':'none');
+    const f=(localStorage.getItem('ga_format')||'soundcloud').toLowerCase();
+    setFormat(f==='youtube'?'youtube':f==='soundcloud'?'soundcloud':'soundcloud');
   }catch{}},[]);
   useEffect(()=>{try{localStorage.setItem('ga_genre',genre);}catch{}},[genre]);
   useEffect(()=>{try{localStorage.setItem('ga_format',format);}catch{}},[format]);
@@ -108,8 +135,8 @@ export default function SuggestPage(){
             <div>
               <div className={subhdr} style={{fontFamily:"'Space Grotesk',system-ui,sans-serif"}}>Format</div>
               <div className="mt-2 flex gap-2">
-                <CircleOption label="YouTube" value="youtube" icon={<YouTubeIcon/>}/>
                 <CircleOption label="SoundCloud" value="soundcloud" icon={<SCIcon/>}/>
+                <CircleOption label="YouTube" value="youtube" icon={<YouTubeIcon/>}/>
               </div>
             </div>
             <div className="hidden sm:block absolute right-0 top-2 bottom-2 w-px bg-neutral-200"/>
@@ -159,10 +186,19 @@ export default function SuggestPage(){
           <motion.article whileHover={{y:-2}}
             className="rounded-2xl border border-neutral-200 overflow-hidden bg-white"
             onClick={()=>play(pick.row,pick.provider)} role="button" aria-label="play suggestion">
-            <div className="relative w-full aspect-video bg-neutral-200">
-              {pick.provider==='youtube'
+            <div
+              className={
+                "relative bg-neutral-200 rounded-2xl overflow-hidden mx-auto " +
+                (pick.provider === 'youtube' ? "aspect-video w-2/3" : "w-2/3")
+              }
+              style={pick.provider === 'soundcloud'
+                ? { aspectRatio: 'auto' } // let the image dictate height
+                : undefined
+              }
+            >
+              {pick.provider === 'youtube'
                 ? <YTThumb url={pick.row.youtube}/>
-                : <div className="absolute inset-0 bg-gradient-to-br from-orange-200 to-orange-400 grid place-items-center"><SCIcon/></div>}
+                : <SCArtwork url={pick.row.soundcloud} preserveRatio />}
               <div className="absolute inset-0 grid place-items-center">
                 <div className="rounded-full bg-white/90 border border-neutral-300 w-14 h-14 grid place-items-center">
                   {pick.provider==='youtube'?<YouTubeIcon/>:<SCIcon/>}

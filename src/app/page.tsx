@@ -102,17 +102,22 @@ export default function Home() {
 
       <section>
         <div className="grid grid-cols-2 sm:grid-cols-5 gap-3">
-          {collage.map((r, i) => {
-            const urls = ytThumbs(r.youtube);
-            const hasYT = urls.length > 0;
-            const provider = hasYT ? 'youtube' : 'soundcloud';
-            return (
-              <button key={i} aria-label={`Play ${r.set}`} onClick={() => play(r as any, provider as any)}
-                className="relative aspect-square rounded-xl overflow-hidden border border-neutral-200/70 bg-white shadow-sm hover:shadow-md hover:border-blue-400/40 transition transform-gpu active:scale-[.99]">
-                {hasYT ? <CoverBackground urls={urls} /> : <div className="absolute inset-0 bg-gradient-to-br from-orange-200 to-orange-400" />}
+          {collage
+            // render-step filter: only SoundCloud for Random serve
+            .filter((r) => !!r.soundcloud && r.soundcloud.includes("soundcloud.com"))
+            .map((r, i) => (
+              <button
+                key={i}
+                aria-label={`Play ${r.set}`}
+                onClick={() => play(r as any, "soundcloud" as any)}
+                className={
+                  "relative rounded-xl overflow-hidden border border-neutral-200/70 bg-white shadow-sm hover:shadow-md hover:border-blue-400/40 transition transform-gpu active:scale-[.99] " +
+                  (r.soundcloud ? "aspect-square" : "aspect-video")
+                }
+              >
+                <SCArtwork url={r.soundcloud!} />
               </button>
-            );
-          })}
+            ))}
           {Array.from({ length: Math.max(0, 5 - collage.length) }).map((_, i) => (
             <div key={`ph-${i}`} className="aspect-square rounded-xl border border-neutral-200/60 bg-[radial-gradient(circle_at_30%_30%,#e5e7eb,#fafafa)]" />
           ))}
@@ -132,4 +137,30 @@ function CoverBackground({ urls }: { urls: string[] }) {
       <img src={src} alt="" className="hidden" onError={() => { if (idx < urls.length - 1) setIdx(idx + 1); }} />
     </div>
   );
+}
+
+function SCArtwork({ url }: { url: string }) {
+  const [art, setArt] = React.useState<string | null>(null);
+  const [failed, setFailed] = React.useState(false);
+  React.useEffect(() => {
+    let ok = true;
+    (async () => {
+      try {
+        const res = await fetch(`/api/soundcloud-artwork?url=${encodeURIComponent(url)}`, { cache: "no-store" });
+        const json = await res.json();
+        if (ok) setArt(json?.artwork || null);
+      } catch {
+        if (ok) setArt(null);
+      }
+    })();
+    return () => { ok = false; };
+  }, [url]);
+
+  if (!art || failed) {
+    // fallback gradient when there is no artwork
+    return <div className="absolute inset-0 bg-gradient-to-br from-orange-200 to-orange-400" />;
+  }
+  // default SoundCloud artwork is square; keep tile square via aspect-square on parent
+  // eslint-disable-next-line @next/next/no-img-element
+  return <img src={art} alt="" className="absolute inset-0 w-full h-full object-cover" onError={() => setFailed(true)} />;
 }
