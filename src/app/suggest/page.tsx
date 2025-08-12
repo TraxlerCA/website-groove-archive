@@ -183,23 +183,33 @@ export default function SuggestPage(){
       {/* suggestion */}
       {!isLaunching&&pick&&(
         <div className="max-w-4xl mx-auto">
-          <motion.article whileHover={{y:-2}}
-            className="rounded-2xl border border-neutral-200 overflow-hidden bg-white"
-            onClick={()=>play(pick.row,pick.provider)} role="button" aria-label="play suggestion">
+          <motion.article
+            whileHover={{ y: -2 }}
+            className={
+              pick.provider === 'youtube'
+                ? 'rounded-2xl border border-neutral-200 overflow-hidden bg-white'
+                : 'overflow-visible'
+            }
+            onClick={() => play(pick.row, pick.provider)}
+            role="button"
+            aria-label="play suggestion"
+          >
             <div
               className={
-                "relative bg-neutral-200 rounded-2xl overflow-hidden mx-auto " +
-                (pick.provider === 'youtube' ? "aspect-video w-2/3" : "w-2/3")
+                "relative mx-auto " +
+                (pick.provider === 'youtube'
+                  ? "aspect-video w-1/2 rounded-2xl overflow-hidden"
+                  : "w-1/2")
               }
               style={pick.provider === 'soundcloud'
-                ? { aspectRatio: 'auto' } // let the image dictate height
+                ? { aspectRatio: 'auto' }
                 : undefined
               }
             >
               {pick.provider === 'youtube'
                 ? <YTThumb url={pick.row.youtube}/>
                 : <SCArtwork url={pick.row.soundcloud} preserveRatio />}
-              <div className="absolute inset-0 grid place-items-center">
+              <div className="absolute inset-0 grid place-items-center pointer-events-none">
                 <div className="rounded-full bg-white/90 border border-neutral-300 w-14 h-14 grid place-items-center">
                   {pick.provider==='youtube'?<YouTubeIcon/>:<SCIcon/>}
                 </div>

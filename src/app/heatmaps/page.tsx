@@ -31,7 +31,7 @@ const LABEL_GAP = 10;       // space between tick end and time label
 
 const CARD_BORDER = 'border border-white shadow-[0_1px_2px_rgba(0,0,0,0.06)] rounded-md';
 
-const norm = (v?: string) => (v ?? '').replace(/\u00a0/g, ' ').replace(/\s+/g, ' ').trim();
+const norm = (v?: string | null) => (v ?? '').replace(/\u00a0/g, ' ').replace(/\s+/g, ' ').trim();
 const toMin = (t: string) => {
   const s = norm(t);
   const [h, m] = s.split(':').map(n => parseInt(n, 10));

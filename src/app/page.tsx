@@ -2,6 +2,7 @@
 'use client';
 
 import React from 'react';
+import { motion } from 'framer-motion';
 import { usePlayer } from '@/context/PlayerProvider';
 
 type Row = {
@@ -34,25 +35,14 @@ function ytThumbs(u?: string | null) {
   ];
 }
 
-function useCollage(max = 5) {
-  const [items, setItems] = React.useState<Row[]>([]);
-  React.useEffect(() => {
-    let ok = true;
-    (async () => {
-      try {
-        const res = await fetch('/api/sheets?tabs=list', { cache: 'no-store' });
-        const json = await res.json();
-        const rows = (json?.data?.list || []) as Row[];
-        const pool = rows.filter(r => r.youtube || r.soundcloud);
-        const picked = [...pool].sort(() => Math.random() - 0.5).slice(0, max);
-        if (ok) setItems(picked);
-      } catch {
-        if (ok) setItems([]);
-      }
-    })();
-    return () => { ok = false; };
-  }, [max]);
-  return items;
+// on-demand loader for Random serve (no preload on first paint)
+async function fetchSoundcloudPicks(max = 5): Promise<Row[]> {
+  const res = await fetch('/api/sheets?tabs=list', { cache: 'no-store' });
+  const json = await res.json();
+  const rows = (json?.data?.list || []) as Row[];
+  const pool = rows.filter(r => r.soundcloud && r.soundcloud.includes('soundcloud.com'));
+  // random 5
+  return [...pool].sort(() => Math.random() - 0.5).slice(0, max);
 }
 
 const PlusIcon = () => (
@@ -72,18 +62,33 @@ const HeatIcon = () => (
 );
 
 export default function Home() {
-  const collage = useCollage(5);
   const { play } = usePlayer();
+  const [serveItems, setServeItems] = React.useState<Row[]>([]);
+  const [serveNonce, setServeNonce] = React.useState(0); // force re-animate
+  const [loadingServe, setLoadingServe] = React.useState(false);
+
+  async function loadServe() {
+    try {
+      setLoadingServe(true);
+      const picks = await fetchSoundcloudPicks(5);
+      setServeItems(picks);
+      setServeNonce(n => n + 1);
+    } finally {
+      setLoadingServe(false);
+    }
+  }
 
   const CSV = encodeURIComponent('https://docs.google.com/spreadsheets/d/e/2PACX-1vRexqa-1vfj-JdFSSFUjWycho-00d5rLdS76eBgvCbruyvtcVIIom-VM52SvfuhLg-CeHLRp2I6k5B2/pub?gid=116583245&single=true&output=csv');
 
   return (
-    <main className="container mx-auto max-w-5xl px-6 pt-10">
-      <div className="h-6 sm:h-8" />
+    <main className="container mx-auto max-w-5xl px-6 pt-14">
+      {/* generous breathing room under the wordmark */}
+      <div className="h-10 sm:h-14" />
 
-      <nav className="grid grid-cols-12 gap-6" role="navigation" aria-label="primary">
+      <nav className="grid grid-cols-12 gap-7" role="navigation" aria-label="primary">
+        {/* neutralize blue; match card styling used by the others */}
         <a href="/suggest" aria-label="Suggest a set. Get served a tailored set"
-           className="group relative col-span-12 sm:col-span-4 block rounded-2xl border border-blue-600/60 bg-gradient-to-b from-blue-600 to-blue-700 text-white backdrop-blur px-8 py-10 shadow-[0_10px_30px_rgb(37_99_235_/_0.18)] transform-gpu hover:-translate-y-0.5 hover:shadow-[0_18px_40px_rgb(37_99_235_/_0.25)] active:translate-y-0 active:scale-[.99] transition focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-blue-200">
+           className="group relative col-span-12 sm:col-span-4 block rounded-2xl border border-neutral-200/70 bg-white/70 backdrop-blur shadow-[0_10px_30px_rgb(0_0_0_/_0.06)] px-8 py-10 transform-gpu hover:-translate-y-0.5 hover:shadow-[0_18px_40px_rgb(0_0_0_/_0.10)] hover:border-blue-400/40 active:translate-y-0 active:scale-[.99] transition focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-blue-200">
           <div className="flex items-start gap-3"><PlusIcon /><div><div className="text-lg font-semibold">Suggest a set</div><div className="text-xs font-medium tracking-widest mt-1 opacity-90">Get served a tailored set</div></div></div>
         </a>
 
@@ -98,33 +103,110 @@ export default function Home() {
         </a>
       </nav>
 
-      <h3 className="mt-8 mb-4 text-2xl sm:text-3xl font-semibold tracking-wide">Random serve</h3>
+      {/* call-to-action: centered pulse button */}
+      <div className="mt-10 flex justify-center">
+        <button
+          onClick={loadServe}
+          className="relative inline-flex items-center gap-3 rounded-full border border-neutral-300 bg-white px-5 py-3 text-sm font-semibold shadow-sm hover:shadow-md active:scale-[.99] transition"
+        >
+          <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden className="opacity-70">
+            <path d="M12 5v14M5 12h14" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
+          </svg>
+          Random serve
+          {/* subtle pulse every 3s */}
+          <span className="absolute inset-0 rounded-full pointer-events-none ring-2 ring-blue-400/30 animate-[pulse3_3s_ease-in-out_infinite]"/>
+        </button>
+      </div>
+      <style>{`
+        @keyframes pulse3 {
+          0% { transform: scale(1); opacity: .4; }
+          30% { transform: scale(1.06); opacity: .9; }
+          60% { transform: scale(1); opacity: .4; }
+          100% { transform: scale(1); opacity: .4; }
+        }
+      `}</style>
 
-      <section>
-        <div className="grid grid-cols-2 sm:grid-cols-5 gap-3">
-          {collage
-            // render-step filter: only SoundCloud for Random serve
-            .filter((r) => !!r.soundcloud && r.soundcloud.includes("soundcloud.com"))
-            .map((r, i) => (
-              <button
-                key={i}
-                aria-label={`Play ${r.set}`}
-                onClick={() => play(r as any, "soundcloud" as any)}
-                className={
-                  "relative rounded-xl overflow-hidden border border-neutral-200/70 bg-white shadow-sm hover:shadow-md hover:border-blue-400/40 transition transform-gpu active:scale-[.99] " +
-                  (r.soundcloud ? "aspect-square" : "aspect-video")
-                }
-              >
-                <SCArtwork url={r.soundcloud!} />
-              </button>
-            ))}
-          {Array.from({ length: Math.max(0, 5 - collage.length) }).map((_, i) => (
-            <div key={`ph-${i}`} className="aspect-square rounded-xl border border-neutral-200/60 bg-[radial-gradient(circle_at_30%_30%,#e5e7eb,#fafafa)]" />
-          ))}
-        </div>
+      {/* extra room above the pentagon tiles; render only after click */}
+      <section className="mt-6 min-h-[320px]">
+        {serveItems.length === 0 ? (
+          <div className="mt-6 text-center text-sm text-neutral-500">
+            {loadingServe ? 'Summoning grooves…' : 'Tap the Random serve button to load tiles'}
+          </div>
+        ) : (() => {
+          // pick 5 soundcloud rows
+          const items = serveItems.slice(0, 5);
+
+          // base regular pentagon vertices (% of container, centered at 50/50)
+          const BASE = [
+            { left: 50.0,  top: 10.0 },   // top
+            { left: 88.04, top: 37.64 },  // upper right
+            { left: 73.51, top: 82.36 },  // lower right
+            { left: 26.49, top: 82.36 },  // lower left
+            { left: 11.96, top: 37.64 },  // upper left
+          ];
+          // shrink pentagon around center without changing tile size
+          const center = { x: 50, y: 50 };
+          const SHRINK = 0.82; // 82% radius → smaller pentagon
+          const PENTA = BASE.map(p => ({
+            left: center.x + (p.left - center.x) * SHRINK,
+            top:  center.y + (p.top  - center.y) * SHRINK,
+          }));
+          const sizePct = 28; // tile size as % of container width (unchanged)
+
+          return (
+            <div key={serveNonce} className="relative mx-auto aspect-square w-full max-w-3xl">
+              {/* outline removed as requested */}
+
+              {items.map((r, i) => {
+                const pos = PENTA[i];
+                if (!pos) return null;
+                return (
+                  <motion.button
+                    key={i}
+                    aria-label={`Play ${r.set}`}
+                    onClick={() => play(r as any, 'soundcloud' as any)}
+                    className="absolute -translate-x-1/2 -translate-y-1/2 rounded-xl overflow-hidden border border-neutral-200/70 bg-white shadow-sm hover:shadow-md hover:border-blue-400/40 transition transform-gpu active:scale-[.99]"
+                    style={{
+                      left: `${pos.left}%`,
+                      top: `${pos.top}%`,
+                      width: `${sizePct}%`,
+                      height: `${sizePct}%`,
+                    }}
+                    initial={{ opacity: 0, scale: 0.94, y: 6 }}
+                    animate={{ opacity: 1, scale: 1, y: 0 }}
+                    transition={{ duration: 0.45, ease: 'easeOut', delay: 0.08 * i }}
+                  >
+                    <SCArtwork url={r.soundcloud!} />
+                  </motion.button>
+                );
+              })}
+
+              {/* placeholders if fewer than 5 items */}
+              {Array.from({ length: Math.max(0, 5 - items.length) }).map((_, j) => {
+                const pos = PENTA[items.length + j];
+                if (!pos) return null;
+                return (
+                  <motion.div
+                    key={`ph-${j}`}
+                    className="absolute -translate-x-1/2 -translate-y-1/2 rounded-xl border border-neutral-200/60 bg-[radial-gradient(circle_at_30%_30%,#e5e7eb,#fafafa)]"
+                    style={{
+                      left: `${pos.left}%`,
+                      top: `${pos.top}%`,
+                      width: `${sizePct}%`,
+                      height: `${sizePct}%`,
+                    }}
+                    initial={{ opacity: 0, scale: 0.94, y: 6 }}
+                    animate={{ opacity: 1, scale: 1, y: 0 }}
+                    transition={{ duration: 0.45, ease: 'easeOut', delay: 0.08 * (items.length + j) }}
+                  />
+                );
+              })}
+            </div>
+          );
+        })()}
       </section>
 
-      <div className="h-10" />
+      <div className="h-14" />
     </main>
   );
 }
@@ -139,28 +221,33 @@ function CoverBackground({ urls }: { urls: string[] }) {
   );
 }
 
-function SCArtwork({ url }: { url: string }) {
-  const [art, setArt] = React.useState<string | null>(null);
-  const [failed, setFailed] = React.useState(false);
-  React.useEffect(() => {
-    let ok = true;
-    (async () => {
-      try {
-        const res = await fetch(`/api/soundcloud-artwork?url=${encodeURIComponent(url)}`, { cache: "no-store" });
-        const json = await res.json();
-        if (ok) setArt(json?.artwork || null);
-      } catch {
-        if (ok) setArt(null);
-      }
-    })();
-    return () => { ok = false; };
-  }, [url]);
-
-  if (!art || failed) {
-    // fallback gradient when there is no artwork
-    return <div className="absolute inset-0 bg-gradient-to-br from-orange-200 to-orange-400" />;
+function SCArtwork({url, preserveRatio=false}:{url:string; preserveRatio?:boolean}) {
+  const [art,setArt]=React.useState<string|null>(null);
+  const [failed,setFailed]=React.useState(false);
+  React.useEffect(()=>{let ok=true;(async()=>{
+    try{
+      const res=await fetch(`/api/soundcloud-artwork?url=${encodeURIComponent(url)}`,{cache:"no-store"});
+      const json=await res.json();
+      if(ok) setArt(json?.artwork||null);
+    }catch{ if(ok) setArt(null); }
+  })(); return ()=>{ok=false};},[url]);
+  if(!art||failed){
+    // when preserving natural ratio, we need an in-flow placeholder
+    if (preserveRatio) {
+      return <div className="w-full aspect-square rounded-2xl overflow-hidden bg-gradient-to-br from-orange-200 to-orange-400" />;
+    }
+    // non-preserve case uses a positioned cover
+    return <div className="absolute inset-0 bg-gradient-to-br from-orange-200 to-orange-400"/>;
   }
-  // default SoundCloud artwork is square; keep tile square via aspect-square on parent
   // eslint-disable-next-line @next/next/no-img-element
-  return <img src={art} alt="" className="absolute inset-0 w-full h-full object-cover" onError={() => setFailed(true)} />;
+  return <img
+    src={art}
+    alt=""
+    className={
+      preserveRatio
+        ? "block w-full h-auto"
+        : "absolute inset-0 w-full h-full object-cover"
+    }
+    onError={()=>setFailed(true)}
+  />;
 }
