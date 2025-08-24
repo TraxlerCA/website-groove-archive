@@ -56,7 +56,7 @@ async function fetchTab(url: string) {
 }
 
 // map "list" to your current Row shape so UI does not change
-function map_list(headers: string[], body: string[][]) {
+function map_list(headers: string[], body: string[][]): ListRow[] {
   const iSet  = idx(headers, ["set","dj set","mix","title","titel","naam"]);
   const iGen  = idx(headers, ["classification","genre","label","stijl","genre label"]);
   const iSc   = idx(headers, ["soundcloud","sc","soundcloud url","soundcloud_link"]);
@@ -72,11 +72,11 @@ function map_list(headers: string[], body: string[][]) {
       youtube: pick(cells, iYt) || null,
       tier: pick(cells, iTier) || null,
     };
-  }).filter(Boolean);
+  }).filter((r): r is ListRow => Boolean(r));
 }
 
 // map "genres" dim table to { label, explanation }
-function map_genres(headers: string[], body: string[][]) {
+function map_genres(headers: string[], body: string[][]): GenreRow[] {
   const iLbl = idx(headers, ["label","genre","classification","naam","code"]);
   const iExp = idx(headers, ["explanation","description","beschrijving","omschrijving","uitleg","notes"]);
   return body.map(cells => ({
@@ -91,12 +91,40 @@ function map_raw(headers: string[], body: string[][]) {
   return body.map(cells => Object.fromEntries(keys.map((k, i) => [k, norm(cells[i] || "")])));
 }
 
-// cache
-type CacheVal = { ts: number; payload: any };
+// row interfaces used by the typed cache and mappers
+type ListRow = {
+  set: string;
+  classification: string | null;
+  soundcloud: string | null;
+  youtube: string | null;
+  tier: string | null;
+};
+
+type GenreRow = {
+  label: string;
+  explanation: string;
+};
+
+// typed cache
+type SheetsData = { list?: ListRow[]; genres?: GenreRow[] } & Record<string, unknown>;
+type SheetsPayload = { ok: true; updatedAt: string; data: SheetsData };
+type CacheVal = { ts: number; payload: SheetsPayload };
+
 const TTL = 5 * 60 * 1000;
-const g = globalThis as any; g.__sheetCache ||= new Map<string, CacheVal>();
-const getCache = (k: string) => { const v = g.__sheetCache.get(k) as CacheVal | undefined; return v && Date.now() - v.ts < TTL ? v.payload : null; };
-const setCache = (k: string, payload: any) => g.__sheetCache.set(k, { ts: Date.now(), payload });
+
+declare global {
+  // eslint-disable-next-line no-var
+  var __sheetCache: Map<string, CacheVal> | undefined;
+}
+globalThis.__sheetCache = globalThis.__sheetCache ?? new Map<string, CacheVal>();
+
+const getCache = (k: string) => {
+  const v = globalThis.__sheetCache!.get(k);
+  return v && Date.now() - v.ts < TTL ? v.payload : null;
+};
+const setCache = (k: string, payload: SheetsPayload) =>
+  globalThis.__sheetCache!.set(k, { ts: Date.now(), payload });
+
 
 // GET /api/sheets?tabs=list,genres
 export async function GET(req: Request) {
@@ -111,17 +139,22 @@ export async function GET(req: Request) {
 
     const entries = await Promise.all(wanted.map(async t => {
       const { headers, rows } = await fetchTab(t.url);
-      let data: any[];
+      let data: ListRow[] | GenreRow[] | Record<string, string>[];
       if (t.map === "list") data = map_list(headers, rows);
       else if (t.map === "genres") data = map_genres(headers, rows);
       else data = map_raw(headers, rows);
       return [t.key, data] as const;
     }));
 
-    const payload = { ok: true, updatedAt: new Date().toISOString(), data: Object.fromEntries(entries) };
+    const payload: SheetsPayload = {
+      ok: true,
+      updatedAt: new Date().toISOString(),
+      data: Object.fromEntries(entries) as SheetsData,
+    };
+    
     setCache(cacheKey, payload);
     return NextResponse.json(payload, { headers: { "Cache-Control": "no-store" } });
-  } catch (e: any) {
-    return NextResponse.json({ ok: false, error: String(e?.message || e) }, { status: 500 });
+  } catch (e: unknown) {
+    return NextResponse.json({ ok: false, error: e instanceof Error ? e.message : String(e) }, { status: 500 });
   }
 }

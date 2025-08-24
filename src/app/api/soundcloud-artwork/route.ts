@@ -3,18 +3,23 @@ import { NextResponse } from "next/server";
 
 type CacheVal = { ts: number; val: string | null };
 const TTL = 10 * 60 * 1000;
-const g = globalThis as any;
-g.__scArtCache ||= new Map<string, CacheVal>();
+
+declare global {
+  // eslint-disable-next-line no-var
+  var __scArtCache: Map<string, CacheVal> | undefined;
+}
+globalThis.__scArtCache = globalThis.__scArtCache ?? new Map<string, CacheVal>();
 
 function getCached(key: string) {
-  const hit = g.__scArtCache.get(key) as CacheVal | undefined;
+  const hit = globalThis.__scArtCache!.get(key);
   if (!hit) return null;
   if (Date.now() - hit.ts > TTL) return null;
   return hit.val;
 }
 function setCached(key: string, val: string | null) {
-  g.__scArtCache.set(key, { ts: Date.now(), val });
+  globalThis.__scArtCache!.set(key, { ts: Date.now(), val });
 }
+
 
 export async function GET(req: Request) {
   try {
@@ -42,7 +47,7 @@ export async function GET(req: Request) {
     const artwork = data?.thumbnail_url || null;
     setCached(key, artwork);
     return NextResponse.json({ artwork }, { headers: { "Cache-Control": "no-store" } });
-  } catch (e: any) {
+  } catch (_e: unknown) {
     return NextResponse.json({ artwork: null }, { status: 200 });
   }
 }

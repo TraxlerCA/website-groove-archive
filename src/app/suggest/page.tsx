@@ -2,14 +2,16 @@
 'use client';
 
 import { useEffect, useMemo, useRef, useState } from 'react';
+import type { ReactElement } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { PageTitle, Pill, Switch } from '@/components/ui';
 import { YouTubeIcon, SCIcon } from '@/components/icons';
 import { useRows } from '@/lib/useRows';
 import { usePlayer } from '@/context/PlayerProvider';
+import type { Row } from '@/lib/useRows';
 
 type Provider='youtube'|'soundcloud';
-type PickItem={row:any;provider:Provider};
+type PickItem={row: Row; provider: Provider};
 
 const subhdr="text-[13px] font-medium tracking-widest text-neutral-600 uppercase";
 
@@ -36,16 +38,17 @@ function YTThumb({url}:{url?:string|null}) {
 }
 
 /* SoundCloud artwork using your existing API route */
-function SCArtwork({url, preserveRatio=false}:{url:string; preserveRatio?:boolean}) {
+function SCArtwork({url, preserveRatio=false}:{url:string | null; preserveRatio?:boolean}) {
   const [art,setArt]=useState<string|null>(null);
   const [failed,setFailed]=useState(false);
   useEffect(()=>{let ok=true;(async()=>{
     try{
+      if(!url){ if(ok) setArt(null); return; }
       const res=await fetch(`/api/soundcloud-artwork?url=${encodeURIComponent(url)}`,{cache:"no-store"});
       const json=await res.json();
       if(ok) setArt(json?.artwork||null);
     }catch{ if(ok) setArt(null); }
-  })(); return ()=>{ok=false};},[url]);
+  })(); return ()=>{ok=false};},[url]);  
   if(!art||failed){
     return <div className="absolute inset-0 bg-gradient-to-br from-orange-200 to-orange-400"/>;
   }
@@ -72,7 +75,7 @@ export default function SuggestPage(){
   const [format,setFormat]=useState<'none'|Provider>('soundcloud');
 
   useEffect(()=>{try{
-    setGenre((localStorage.getItem('ga_genre') as any)||'any');
+    setGenre((localStorage.getItem('ga_genre') ?? 'any') as 'any' | string);
     const f=(localStorage.getItem('ga_format')||'soundcloud').toLowerCase();
     setFormat(f==='youtube'?'youtube':f==='soundcloud'?'soundcloud':'soundcloud');
   }catch{}},[]);
@@ -93,7 +96,7 @@ export default function SuggestPage(){
   const [isLaunching,setIsLaunching]=useState(false);
   const [hasLaunched,setHasLaunched]=useState(false);
 
-  const chooseProviderForRow=(r:any):Provider=>{
+  const chooseProviderForRow=(r: Row):Provider=>{
     if(format==='youtube'&&r.youtube)return'youtube';
     if(format==='soundcloud'&&r.soundcloud)return'soundcloud';
     if(r.youtube&&r.soundcloud)return Math.random()<0.5?'youtube':'soundcloud';
@@ -108,15 +111,15 @@ export default function SuggestPage(){
   };
 
   const Circle=({selected}:{selected:boolean})=><span className={`inline-block h-3.5 w-3.5 rounded-full border ${selected?'bg-blue-600 border-blue-600':'border-neutral-400 bg-white'}`}/>;
-  const CircleOption=({label,value,icon}:{label:string;value:Provider;icon:JSX.Element})=>(
+  const CircleOption=({label,value,icon}:{label:string;value:Provider;icon:ReactElement})=>(
     <button type="button" aria-pressed={format===value} onClick={()=>setFormat(f=>f===value?'none':value)}
       className={`h-8 px-3 rounded-full border text-sm inline-flex items-center gap-2 ${format===value?'bg-neutral-900 text-white border-neutral-900':'bg-white border-neutral-300 hover:bg-neutral-50'}`}>
       <Circle selected={format===value}/>{icon}<span>{label}</span>
     </button>
   );
 
-  const titleOf=(r:any)=>r?.set||r?.title||r?.name||'Untitled set';
-  const labelOf=(r:any)=> (r?.classification||'').trim();
+  const titleOf=(r: Row)=>r?.set||'Untitled set';
+  const labelOf=(r: Row)=> (r?.classification||'').trim();  
 
   return (
     <section className="container mx-auto max-w-6xl px-6 mt-10 space-y-8">

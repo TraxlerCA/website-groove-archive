@@ -164,7 +164,7 @@ export default function Home() {
                   <motion.button
                     key={i}
                     aria-label={`Play ${r.set}`}
-                    onClick={() => play(r as any, 'soundcloud' as any)}
+                    onClick={() => play(r, 'soundcloud')}
                     className="absolute -translate-x-1/2 -translate-y-1/2 rounded-xl overflow-hidden border border-neutral-200/70 bg-white shadow-sm hover:shadow-md hover:border-blue-400/40 transition transform-gpu active:scale-[.99]"
                     style={{
                       left: `${pos.left}%`,

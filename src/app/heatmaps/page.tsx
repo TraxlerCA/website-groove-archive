@@ -72,7 +72,7 @@ export default function HeatmapsPage() {
             festival: norm(r.festival),
             date: norm(r.date),
             stage: norm(r.stage),
-            stage_order: Number((r.stage_order as any) ?? 9999),
+            stage_order: Number(r.stage_order ?? 9999),
             artist: norm(r.artist),
             start: norm(r.start),
             end: norm(r.end),
@@ -100,9 +100,9 @@ export default function HeatmapsPage() {
     try {
       const dataUrl = await htmlToImage.toPng(el, {
         pixelRatio: 2, backgroundColor: '#ffffff', cacheBust: true, skipFonts: true
-      } as any);
+      });
       const a = document.createElement('a'); a.href = dataUrl; a.download = `${title.replace(/\s+/g, '_')}.png`; a.click();
-    } catch (e: any) { setErr(e?.message || 'Export failed'); console.error(e); }
+    } catch (e: unknown) { setErr(e instanceof Error ? e.message : 'Export failed'); console.error(e); }
   }
 
   return (

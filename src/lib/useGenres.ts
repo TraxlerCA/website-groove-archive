@@ -19,8 +19,8 @@ export function useGenres() {
         const json: Api = await r.json();
         if (!json.ok) throw new Error(json.error || "failed to load");
         if (alive) setGenres(json.data?.genres || []);
-      } catch (e: any) {
-        if (alive) setError(String(e?.message || e));
+      } catch (e: unknown) {
+        if (alive) setError(e instanceof Error ? e.message : String(e));
       } finally {
         if (alive) setLoading(false);
       }
