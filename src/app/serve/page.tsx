@@ -1,4 +1,4 @@
-// src/app/suggest/page.tsx
+// src/app/serve/page.tsx
 'use client';
 
 import { useEffect, useMemo, useRef, useState } from 'react';
@@ -65,7 +65,7 @@ function SCArtwork({url, preserveRatio=false}:{url:string | null; preserveRatio?
   />;
 }
 
-export default function SuggestPage(){
+export default function ServePage(){
   const { rows }=useRows();
   const { play }=usePlayer();
 
@@ -123,7 +123,7 @@ export default function SuggestPage(){
 
   return (
     <section className="container mx-auto max-w-6xl px-6 mt-10 space-y-8">
-      <PageTitle title="SUGGESTOR"/>
+      <PageTitle title="SERVER"/>
 
       {/* compact controls */}
       <div className="rounded-3xl border border-neutral-200 bg-neutral-50/60 backdrop-blur p-5 max-w-4xl mx-auto">
@@ -236,3 +236,4 @@ export default function SuggestPage(){
     </section>
   );
 }
+

@@ -87,9 +87,9 @@ export default function Home() {
 
       <nav className="grid grid-cols-12 gap-7" role="navigation" aria-label="primary">
         {/* neutralize blue; match card styling used by the others */}
-        <a href="/suggest" aria-label="Suggest a set. Get served a tailored set"
+        <a href="/serve" aria-label="Serve up a set. Get served a tailored set"
            className="group relative col-span-12 sm:col-span-4 block rounded-2xl border border-neutral-200/70 bg-white/70 backdrop-blur shadow-[0_10px_30px_rgb(0_0_0_/_0.06)] px-8 py-10 transform-gpu hover:-translate-y-0.5 hover:shadow-[0_18px_40px_rgb(0_0_0_/_0.10)] hover:border-blue-400/40 active:translate-y-0 active:scale-[.99] transition focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-blue-200">
-          <div className="flex items-start gap-3"><PlusIcon /><div><div className="text-lg font-semibold">Suggest a set</div><div className="text-xs font-medium tracking-widest mt-1 opacity-90">Get served a tailored set</div></div></div>
+          <div className="flex items-start gap-3"><PlusIcon /><div><div className="text-lg font-semibold">Serve up a set</div><div className="text-xs font-medium tracking-widest mt-1 opacity-90">Get served a tailored set</div></div></div>
         </a>
 
         <a href="/list" aria-label="Show the list. Go through all hand-curated grooves"
