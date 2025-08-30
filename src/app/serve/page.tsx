@@ -4,7 +4,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import type { ReactElement } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { PageTitle, Pill, Switch } from '@/components/ui';
+import { PageTitle } from '@/components/ui';
 import { YouTubeIcon, SCIcon } from '@/components/icons';
 import { useRows } from '@/lib/useRows';
 import { usePlayer } from '@/context/PlayerProvider';
@@ -69,9 +69,8 @@ export default function ServePage(){
   const { rows }=useRows();
   const { play }=usePlayer();
 
-  // defaults: Any + S-tier off every visit; format persists
+  // defaults: Any; format persists
   const [genre,setGenre]=useState<'any'|string>('any');
-  const [sOnly,setSOnly]=useState(false);
   const [format,setFormat]=useState<'none'|Provider>('soundcloud');
 
   useEffect(()=>{try{
@@ -85,12 +84,11 @@ export default function ServePage(){
   const genres=useMemo(()=>{const set=new Set(rows.map(r=>(r.classification||'').trim()).filter(Boolean));return [{label:'Any',value:'any' as const},...Array.from(set).sort().map(g=>({label:g,value:g}))];},[rows]);
 
   const pool=useMemo(()=>rows.filter(r=>{
-    if(sOnly&&(r.tier||'').toUpperCase()!=='S')return false;
     if(genre!=='any'&&r.classification!==genre)return false;
     if(format==='youtube')return !!r.youtube;
     if(format==='soundcloud')return !!r.soundcloud;
     return !!(r.youtube||r.soundcloud);
-  }),[rows,sOnly,genre,format]);
+  }),[rows,genre,format]);
 
   const [pick,setPick]=useState<PickItem|null>(null);
   const [isLaunching,setIsLaunching]=useState(false);
@@ -127,40 +125,39 @@ export default function ServePage(){
 
       {/* compact controls */}
       <div className="rounded-3xl border border-neutral-200 bg-neutral-50/60 backdrop-blur p-5 max-w-4xl mx-auto">
-        <div className="grid sm:grid-cols-2">
-          <div className="relative p-4 sm:pr-6 flex flex-col gap-6">
-            <div>
-              <div className={subhdr} style={{fontFamily:"'Space Grotesk',system-ui,sans-serif"}}>Genre</div>
-              <div className="mt-2 flex flex-wrap justify-center sm:justify-start gap-2">
-                {genres.map(g=><Pill key={g.value} active={genre===g.value} onClick={()=>setGenre(g.value)}>{g.label}</Pill>)}
-              </div>
+        <div className="grid sm:grid-cols-2 gap-4">
+          {/* Genre left */}
+          <div className="p-4 sm:pr-6">
+            <div className={subhdr} style={{fontFamily:"'Space Grotesk',system-ui,sans-serif"}}>Genre</div>
+            <div className="mt-2">
+              <select
+                className="w-full sm:w-auto min-w-56 h-10 rounded-full border border-neutral-300 bg-white px-4 text-sm"
+                value={genre}
+                onChange={(e)=>setGenre(e.target.value)}
+              >
+                {genres.map(g=> (
+                  <option key={g.value} value={g.value}>{g.label}</option>
+                ))}
+              </select>
             </div>
-            <div>
-              <div className={subhdr} style={{fontFamily:"'Space Grotesk',system-ui,sans-serif"}}>Format</div>
-              <div className="mt-2 flex gap-2">
-                <CircleOption label="SoundCloud" value="soundcloud" icon={<SCIcon/>}/>
-                <CircleOption label="YouTube" value="youtube" icon={<YouTubeIcon/>}/>
-              </div>
-            </div>
-            <div className="hidden sm:block absolute right-0 top-2 bottom-2 w-px bg-neutral-200"/>
           </div>
-
-          <div className="p-4 sm:pl-6 flex flex-col gap-6">
-            <div>
-              <div className={subhdr} style={{fontFamily:"'Space Grotesk',system-ui,sans-serif"}}>Tier</div>
-              <div className="mt-2 flex items-center gap-3">
-                <Switch checked={sOnly} onChange={()=>setSOnly(v=>!v)}/><span className="text-sm">S-tier only</span>
-              </div>
+          {/* Format right */}
+          <div className="p-4 sm:pl-6">
+            <div className={subhdr} style={{fontFamily:"'Space Grotesk',system-ui,sans-serif"}}>Format</div>
+            <div className="mt-2 flex gap-2 justify-start sm:justify-end">
+              <CircleOption label="SoundCloud" value="soundcloud" icon={<SCIcon/>}/>
+              <CircleOption label="YouTube" value="youtube" icon={<YouTubeIcon/>}/>
             </div>
-            <div>
-              <div className={subhdr} style={{fontFamily:"'Space Grotesk',system-ui,sans-serif"}}>Launch</div>
-              <motion.button onClick={launch}
-                whileHover={{y:-1,scale:1.02,boxShadow:"0 10px 20px rgba(37,99,235,.25)"}}
-                whileTap={{y:0,scale:0.98,boxShadow:"0 4px 8px rgba(37,99,235,.18)"}}
-                className="mt-2 inline-flex h-11 px-6 rounded-full bg-[var(--accent)] text-white leading-none items-center justify-center select-none">
-                {hasLaunched?'Go again!':'Go'}
-              </motion.button>
-            </div>
+          </div>
+          {/* Go button row */}
+          <div className="p-4 sm:col-span-2 grid place-items-center">
+            <motion.button onClick={launch}
+              whileHover={{y:-1,scale:1.02,boxShadow:"0 10px 20px rgba(37,99,235,.25)"}}
+              whileTap={{y:0,scale:0.98,boxShadow:"0 4px 8px rgba(37,99,235,.18)"}}
+              className="mt-1 inline-flex h-11 px-24 rounded-full bg-[var(--accent)] text-white leading-none items-center justify-center select-none"
+            >
+              {hasLaunched?'Go again!':'Go'}
+            </motion.button>
           </div>
         </div>
       </div>
@@ -236,4 +233,3 @@ export default function ServePage(){
     </section>
   );
 }
-
