@@ -9,7 +9,7 @@ export function PageTitle({title}:{title:string}) {
 export function IconButton({title,onClick,ariaLabel,children}:{title:string;onClick?:()=>void;ariaLabel?:string;children:ReactNode;}) {
   return (
     <button title={title} aria-label={ariaLabel||title} onClick={onClick}
-      className="w-8 h-8 grid place-items-center rounded-full border border-neutral-300 bg-white hover:bg-neutral-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-300">
+      className="w-11 h-11 sm:w-8 sm:h-8 grid place-items-center rounded-full border border-neutral-300 bg-white hover:bg-neutral-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-300">
       {children}
     </button>
   );
