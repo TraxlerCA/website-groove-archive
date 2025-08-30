@@ -45,21 +45,7 @@ async function fetchSoundcloudPicks(max = 5): Promise<Row[]> {
   return [...pool].sort(() => Math.random() - 0.5).slice(0, max);
 }
 
-const PlusIcon = () => (
-  <svg className="h-6 w-6 opacity-80" viewBox="0 0 24 24" fill="none" aria-hidden>
-    <path d="M4 12h16M12 4v16" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
-  </svg>
-);
-const ListIcon = () => (
-  <svg className="h-6 w-6 opacity-80" viewBox="0 0 24 24" fill="none" aria-hidden>
-    <path d="M6 7h12M6 12h12M6 17h12" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
-  </svg>
-);
-const HeatIcon = () => (
-  <svg className="h-6 w-6 opacity-80" viewBox="0 0 24 24" fill="none" aria-hidden>
-    <path d="M12 3C9 7 16 9 16 13a4 4 0 1 1-8 0c0-2 1-3 2-4" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
-  </svg>
-);
+// Icons are now images in /public/icons
 
 export default function Home() {
   const { play } = usePlayer();
@@ -78,7 +64,7 @@ export default function Home() {
     }
   }
 
-  const CSV = encodeURIComponent('https://docs.google.com/spreadsheets/d/e/2PACX-1vRexqa-1vfj-JdFSSFUjWycho-00d5rLdS76eBgvCbruyvtcVIIom-VM52SvfuhLg-CeHLRp2I6k5B2/pub?gid=116583245&single=true&output=csv');
+  // Heatmaps card removed from landing page
 
   return (
     <main className="container mx-auto max-w-5xl px-6 pt-14">
@@ -88,19 +74,16 @@ export default function Home() {
       <nav className="grid grid-cols-12 gap-7" role="navigation" aria-label="primary">
         {/* neutralize blue; match card styling used by the others */}
         <a href="/serve" aria-label="Serve up a set. Get served a tailored set"
-           className="group relative col-span-12 sm:col-span-4 block rounded-2xl border border-neutral-200/70 bg-white/70 backdrop-blur shadow-[0_10px_30px_rgb(0_0_0_/_0.06)] px-8 py-10 transform-gpu hover:-translate-y-0.5 hover:shadow-[0_18px_40px_rgb(0_0_0_/_0.10)] hover:border-blue-400/40 active:translate-y-0 active:scale-[.99] transition focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-blue-200">
-          <div className="flex items-start gap-3"><PlusIcon /><div><div className="text-lg font-semibold">Serve up a set</div><div className="text-xs font-medium tracking-widest mt-1 opacity-90">Get served a tailored set</div></div></div>
+           className="group relative col-span-12 sm:col-span-6 block rounded-2xl border border-neutral-200/70 bg-white/70 backdrop-blur shadow-[0_10px_30px_rgb(0_0_0_/_0.06)] px-8 py-10 transform-gpu hover:-translate-y-0.5 hover:shadow-[0_18px_40px_rgb(0_0_0_/_0.10)] hover:border-blue-400/40 active:translate-y-0 active:scale-[.99] transition focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-blue-200">
+          <div className="flex items-start gap-3"><img src="/icons/icon_serve.png" alt="" className="h-6 w-6 opacity-80" /><div><div className="text-lg font-semibold">Serve up a set</div><div className="text-xs font-medium tracking-widest mt-1 opacity-90">Get served a tailored set</div></div></div>
         </a>
 
         <a href="/list" aria-label="Show the list. Go through all hand-curated grooves"
-           className="group relative col-span-12 sm:col-span-4 block rounded-2xl border border-neutral-200/70 bg-white/70 backdrop-blur shadow-[0_10px_30px_rgb(0_0_0_/_0.06)] px-8 py-10 transform-gpu hover:-translate-y-0.5 hover:shadow-[0_18px_40px_rgb(0_0_0_/_0.10)] hover:border-blue-400/40 active:translate-y-0 active:scale-[.99] transition focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-blue-200">
-          <div className="flex items-start gap-3"><ListIcon /><div><div className="text-lg font-semibold text-neutral-900">Show the list</div><div className="text-xs font-medium tracking-widest text-neutral-500 mt-1">Go through all hand-curated grooves</div></div></div>
+           className="group relative col-span-12 sm:col-span-6 block rounded-2xl border border-neutral-200/70 bg-white/70 backdrop-blur shadow-[0_10px_30px_rgb(0_0_0_/_0.06)] px-8 py-10 transform-gpu hover:-translate-y-0.5 hover:shadow-[0_18px_40px_rgb(0_0_0_/_0.10)] hover:border-blue-400/40 active:translate-y-0 active:scale-[.99] transition focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-blue-200">
+          <div className="flex items-start gap-3"><img src="/icons/icon_list.png" alt="" className="h-6 w-6 opacity-80" /><div><div className="text-lg font-semibold text-neutral-900">Show the list</div><div className="text-xs font-medium tracking-widest text-neutral-500 mt-1">Go through all hand-curated grooves</div></div></div>
         </a>
 
-        <a href={`/heatmaps?csv=${CSV}`} aria-label="Map the heat. Glimpse that festival fire"
-           className="group relative col-span-12 sm:col-span-4 block rounded-2xl border border-neutral-200/70 bg-white/70 backdrop-blur shadow-[0_10px_30px_rgb(0_0_0_/_0.06)] px-8 py-10 transform-gpu hover:-translate-y-0.5 hover:shadow-[0_18px_40px_rgb(0_0_0_/_0.10)] hover:border-blue-400/40 active:translate-y-0 active:scale-[.99] transition focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-blue-200">
-          <div className="flex items-start gap-3"><HeatIcon /><div><div className="text-lg font-semibold text-neutral-900">Map the heat</div><div className="text-xs font-medium tracking-widest text-neutral-500 mt-1">Glimpse that festival fire</div></div></div>
-        </a>
+        {/* Heatmaps entry intentionally removed from landing page */}
       </nav>
 
       {/* call-to-action: centered pulse button */}
@@ -109,9 +92,7 @@ export default function Home() {
           onClick={loadServe}
           className="relative inline-flex items-center gap-3 rounded-full border border-neutral-300 bg-white px-5 py-3 text-sm font-semibold shadow-sm hover:shadow-md active:scale-[.99] transition"
         >
-          <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden className="opacity-70">
-            <path d="M12 5v14M5 12h14" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
-          </svg>
+          <img src="/icons/icon_random_serve.png" alt="" className="h-[18px] w-[18px] opacity-70" />
           Random serve
           {/* subtle pulse every 3s */}
           <span className="absolute inset-0 rounded-full pointer-events-none ring-2 ring-blue-400/30 animate-[pulse3_3s_ease-in-out_infinite]"/>
