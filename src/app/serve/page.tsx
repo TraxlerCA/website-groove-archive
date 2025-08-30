@@ -68,6 +68,7 @@ function SCArtwork({url, preserveRatio=false}:{url:string | null; preserveRatio?
 export default function ServePage(){
   const { rows }=useRows();
   const { play }=usePlayer();
+  const endRef = useRef<HTMLDivElement | null>(null);
 
   // defaults: Any; format persists
   const [genre,setGenre]=useState<'any'|string>('any');
@@ -93,6 +94,18 @@ export default function ServePage(){
   const [pick,setPick]=useState<PickItem|null>(null);
   const [isLaunching,setIsLaunching]=useState(false);
   const [hasLaunched,setHasLaunched]=useState(false);
+
+  // After a suggestion is shown on mobile, scroll it into view
+  useEffect(()=>{
+    if(!pick) return;
+    if (typeof window === 'undefined') return;
+    const isMobile = window.innerWidth < 640;
+    if(!isMobile) return;
+    const id = window.setTimeout(()=>{
+      endRef.current?.scrollIntoView({ behavior: 'smooth', block: 'end' });
+    }, 50);
+    return ()=> window.clearTimeout(id);
+  },[pick]);
 
   const chooseProviderForRow=(r: Row):Provider=>{
     if(format==='youtube'&&r.youtube)return'youtube';
@@ -187,7 +200,7 @@ export default function ServePage(){
             whileHover={{ y: -2 }}
             className={
               pick.provider === 'youtube'
-                ? 'rounded-2xl border border-neutral-200 overflow-hidden bg-white'
+                ? '' // remove outer white card to avoid wider box than video
                 : 'overflow-visible'
             }
             onClick={() => play(pick.row, pick.provider)}
@@ -230,6 +243,8 @@ export default function ServePage(){
           </div>
         </div>
       )}
+      {/* bottom spacer and anchor for scrolling */}
+      <div ref={endRef} className="h-8 sm:h-4" />
     </section>
   );
 }

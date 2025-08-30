@@ -44,8 +44,7 @@ export default function ListPage() {
     });
   }, [rows, q, genre]);
 
-  // Avoid hydration mismatch by keeping estimateSize stable on the server
-  // and the client's first render. After mount, recompute based on width.
+  // Keep estimate stable; recompute after mount based on width
   const [isNarrow, setIsNarrow] = useState(false);
   useEffect(() => {
     const update = () => setIsNarrow(window.innerWidth < 640);
@@ -67,11 +66,10 @@ export default function ListPage() {
       <PageTitle title="THE LIST" />
 
       <div className="rounded-2xl border border-neutral-200 overflow-hidden bg-white">
-        {/* Page scroll – sticky header stays at the top */}
         <div>
           {/* Sticky header */}
           <div className="sticky top-0 z-10 bg-white/95 backdrop-blur">
-            {/* Filters (compact, left aligned) */}
+            {/* Filters */}
             <div className="flex flex-wrap items-center gap-3 px-3 py-2 border-b border-neutral-200">
               <div className="flex items-center gap-2">
                 <span className="text-xs font-medium tracking-widest text-neutral-500">Search</span>
@@ -86,7 +84,7 @@ export default function ListPage() {
                 </label>
               </div>
 
-              {/* genre: dropdown on all breakpoints */}
+              {/* genre dropdown */}
               <div className="flex items-center gap-3">
                 <span className="text-xs font-medium tracking-widest text-neutral-500">Genre</span>
                 <span className="relative inline-flex items-center h-9 px-3 rounded-lg border border-neutral-300 bg-white">
@@ -97,16 +95,11 @@ export default function ListPage() {
                   >
                     {genres.map(g => (
                       <option key={g} value={g}>
-                        {g}
+                        {g === "any" ? "Any" : g}
                       </option>
                     ))}
                   </select>
-                  <svg
-                    width="16"
-                    height="16"
-                    viewBox="0 0 20 20"
-                    className="absolute right-1 pointer-events-none"
-                  >
+                  <svg width="16" height="16" viewBox="0 0 20 20" className="absolute right-1 pointer-events-none">
                     <path d="M5 7l5 6 5-6" fill="none" stroke="#000" strokeWidth="1.5" />
                   </svg>
                 </span>
@@ -129,6 +122,7 @@ export default function ListPage() {
               return (
                 <div
                   key={vi.key}
+                  data-index={vi.index}
                   className="absolute left-0 right-0"
                   style={{ transform: `translateY(${vi.start}px)`, height: `${vi.size}px` }}
                 >
@@ -140,7 +134,7 @@ export default function ListPage() {
                     </div>
                   ) : (
                     <>
-                      {/* desktop/tablet row: unchanged */}
+                      {/* desktop/tablet row */}
                       <div className={`${ROW_COLS} px-4 py-3 odd:bg-white hover:bg-blue-50/40 transition hidden sm:grid`}>
                         <div className="py-2 min-w-0">
                           <a
@@ -152,7 +146,6 @@ export default function ListPage() {
                           </a>
                         </div>
 
-                        {/* centered genre tag */}
                         <div className="py-1 flex justify-center">
                           {(r?.classification || "").trim() ? (
                             <Tag>{(r?.classification || "").toLowerCase()}</Tag>
@@ -161,10 +154,8 @@ export default function ListPage() {
                           )}
                         </div>
 
-                        {/* links column: SoundCloud left, YouTube right; fixed slots for alignment */}
                         <div className="py-1">
                           <div className="grid grid-cols-2 w-[88px] mx-auto place-items-center">
-                            {/* SoundCloud slot (left) */}
                             {r?.soundcloud ? (
                               <IconButton
                                 title="play on SoundCloud"
@@ -177,7 +168,6 @@ export default function ListPage() {
                               <span className="w-11 h-11" />
                             )}
 
-                            {/* YouTube slot (right) */}
                             {r?.youtube ? (
                               <IconButton
                                 title="play on YouTube"
@@ -196,7 +186,6 @@ export default function ListPage() {
                       {/* mobile card */}
                       <article className="sm:hidden border-b border-neutral-200 px-3 pt-3 pb-4">
                         <div className="flex items-start gap-3">
-                          {/* title + genre */}
                           <div className="min-w-0 flex-1">
                             <div className="font-medium leading-snug line-clamp-2">{r?.set}</div>
                             {(r?.classification || "").trim() ? (
@@ -208,7 +197,6 @@ export default function ListPage() {
                             )}
                           </div>
 
-                          {/* actions: icons trigger play */}
                           <div className="flex shrink-0 items-center gap-2">
                             {r?.soundcloud && (
                               <IconButton title="Play on SoundCloud" ariaLabel="Play on SoundCloud" onClick={() => play(r, "soundcloud")}>
@@ -231,7 +219,7 @@ export default function ListPage() {
           </div>
         </div>
 
-        <div className="p-4 text-xs text-neutral-500">data source: published Google Sheet.</div>
+        {/* footer removed per request */}
       </div>
     </section>
   );

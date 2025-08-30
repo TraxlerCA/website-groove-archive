@@ -1,17 +1,36 @@
 @import "tailwindcss";
 
 /* light base */
-html, body { height: 100%; }
+html,
+body {
+  /* was: height: 100%;  → this clamps the page and breaks window virtualizer */
+  height: auto;
+  min-height: 100%;
+  /* Avoid accidental horizontal scrolling on mobile */
+  overflow-x: hidden;
+  overscroll-behavior-x: contain;
+}
+
 body {
   min-height: 100svh;
   -webkit-font-smoothing: antialiased;
   text-rendering: optimizeLegibility;
   font-size: 15px;
   line-height: 1.75;
+  /* Restrict touch to vertical pan to avoid sideways swipes */
+  touch-action: pan-y;
 }
 
 /* media defaults */
-img, video { max-width: 100%; height: auto; display: block; }
+img,
+video {
+  max-width: 100%;
+  height: auto;
+  display: block;
+}
 
 /* focus */
-:focus-visible { outline: 2px solid rgba(37,99,235,.35); outline-offset: 2px; }
+:focus-visible {
+  outline: 2px solid rgba(37, 99, 235, 0.35);
+  outline-offset: 2px;
+}
