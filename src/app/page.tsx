@@ -110,9 +110,11 @@ export default function Home() {
       {/* extra room above the pentagon tiles; render only after click */}
       <section className="mt-6 min-h-[320px]">
         {serveItems.length === 0 ? (
-          <div className="mt-6 text-center text-sm text-neutral-500">
-            {loadingServe ? 'Summoning grooves…' : 'Tap the Random serve button to load tiles'}
-          </div>
+          loadingServe ? (
+            <div className="mt-6 text-center text-sm text-neutral-500">
+              {'Summoning grooves…'}
+            </div>
+          ) : null
         ) : (() => {
           // pick 5 soundcloud rows
           const items = serveItems.slice(0, 5);
