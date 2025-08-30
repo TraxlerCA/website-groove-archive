@@ -13,7 +13,7 @@ import type { Row } from '@/lib/useRows';
 type Provider='youtube'|'soundcloud';
 type PickItem={row: Row; provider: Provider};
 
-const subhdr="text-[13px] font-medium tracking-widest text-neutral-600 uppercase";
+const subhdr="text-[12px] font-medium tracking-wide text-neutral-600 uppercase";
 
 /* youtube utilities */
 const ytId=(u?:string|null)=>{if(!u) return null;try{const url=new URL(u);if(url.hostname.includes('youtu.be'))return url.pathname.slice(1);if(url.searchParams.get('v'))return url.searchParams.get('v');const p=url.pathname.split('/');const i=p.indexOf('embed');if(i>=0&&p[i+1])return p[i+1];return null;}catch{return null;}};
@@ -108,10 +108,10 @@ export default function ServePage(){
     setTimeout(()=>{setPick(chosen);setIsLaunching(false);setHasLaunched(true);},1000);
   };
 
-  const Circle=({selected}:{selected:boolean})=><span className={`inline-block h-3.5 w-3.5 rounded-full border ${selected?'bg-blue-600 border-blue-600':'border-neutral-400 bg-white'}`}/>;
+  const Circle=({selected}:{selected:boolean})=><span className={`inline-block h-3 w-3 rounded-full border ${selected?'bg-blue-600 border-blue-600':'border-neutral-400 bg-white'}`}/>;
   const CircleOption=({label,value,icon}:{label:string;value:Provider;icon:ReactElement})=>(
     <button type="button" aria-pressed={format===value} onClick={()=>setFormat(f=>f===value?'none':value)}
-      className={`h-8 px-3 rounded-full border text-sm inline-flex items-center gap-2 ${format===value?'bg-neutral-900 text-white border-neutral-900':'bg-white border-neutral-300 hover:bg-neutral-50'}`}>
+      className={`h-10 px-3 rounded-lg border text-sm inline-flex items-center gap-2 ${format===value?'bg-neutral-900 text-white border-neutral-900':'bg-white border-neutral-300 hover:bg-neutral-50'}`}>
       <Circle selected={format===value}/>{icon}<span>{label}</span>
     </button>
   );
@@ -120,18 +120,18 @@ export default function ServePage(){
   const labelOf=(r: Row)=> (r?.classification||'').trim();  
 
   return (
-    <section className="container mx-auto max-w-6xl px-6 mt-10 space-y-8">
+    <section className="container mx-auto max-w-6xl px-6 mt-8 space-y-6">
       <PageTitle title="SERVER"/>
 
       {/* compact controls */}
-      <div className="rounded-3xl border border-neutral-200 bg-neutral-50/60 backdrop-blur p-5 max-w-4xl mx-auto">
-        <div className="grid sm:grid-cols-2 gap-4">
+      <div className="rounded-2xl border border-neutral-200 bg-neutral-50/60 backdrop-blur p-4 shadow-sm max-w-2xl mx-auto">
+        <div className="grid sm:grid-cols-2 gap-3">
           {/* Genre left */}
           <div className="p-4 sm:pr-6">
             <div className={subhdr} style={{fontFamily:"'Space Grotesk',system-ui,sans-serif"}}>Genre</div>
-            <div className="mt-2">
+            <div className="mt-1.5">
               <select
-                className="w-full sm:w-auto min-w-56 h-10 rounded-full border border-neutral-300 bg-white px-4 text-sm"
+                className="w-full sm:w-auto min-w-56 h-10 rounded-lg border border-neutral-300 bg-white px-4 text-sm"
                 value={genre}
                 onChange={(e)=>setGenre(e.target.value)}
               >
@@ -144,17 +144,17 @@ export default function ServePage(){
           {/* Format right */}
           <div className="p-4 sm:pl-6">
             <div className={subhdr} style={{fontFamily:"'Space Grotesk',system-ui,sans-serif"}}>Format</div>
-            <div className="mt-2 flex gap-2 justify-start sm:justify-end">
+            <div className="mt-1.5 flex gap-2 justify-start sm:justify-end">
               <CircleOption label="SoundCloud" value="soundcloud" icon={<SCIcon/>}/>
               <CircleOption label="YouTube" value="youtube" icon={<YouTubeIcon/>}/>
             </div>
           </div>
           {/* Go button row */}
-          <div className="p-4 sm:col-span-2 grid place-items-center">
+          <div className="p-3 sm:col-span-2 grid place-items-center">
             <motion.button onClick={launch}
-              whileHover={{y:-1,scale:1.02,boxShadow:"0 10px 20px rgba(37,99,235,.25)"}}
-              whileTap={{y:0,scale:0.98,boxShadow:"0 4px 8px rgba(37,99,235,.18)"}}
-              className="mt-1 inline-flex h-11 px-24 rounded-full bg-[var(--accent)] text-white leading-none items-center justify-center select-none"
+              whileHover={{y:-1,scale:1.01,boxShadow:"0 8px 16px rgba(37,99,235,.2)"}}
+              whileTap={{y:0,scale:0.99,boxShadow:"0 4px 10px rgba(37,99,235,.15)"}}
+              className="mt-0 inline-flex h-11 w-72 rounded-full bg-[var(--accent)] text-white leading-none items-center justify-center select-none"
             >
               {hasLaunched?'Go again!':'Go'}
             </motion.button>
@@ -182,7 +182,7 @@ export default function ServePage(){
 
       {/* suggestion */}
       {!isLaunching&&pick&&(
-        <div className="max-w-4xl mx-auto">
+        <div className="max-w-2xl mx-auto">
           <motion.article
             whileHover={{ y: -2 }}
             className={
@@ -198,8 +198,8 @@ export default function ServePage(){
               className={
                 "relative mx-auto " +
                 (pick.provider === 'youtube'
-                  ? "aspect-video w-1/2 rounded-2xl overflow-hidden"
-                  : "w-1/2")
+                  ? "aspect-video w-full sm:w-4/5 md:w-3/4 rounded-2xl overflow-hidden"
+                  : "w-full sm:w-4/5 md:w-3/4")
               }
               style={pick.provider === 'soundcloud'
                 ? { aspectRatio: 'auto' }
@@ -218,12 +218,12 @@ export default function ServePage(){
           </motion.article>
 
           {/* big title and label (no dot) */}
-          <div className="px-1 pt-4 text-center">
-            <h3 className="text-2xl font-semibold break-words" style={{fontFamily:"'Space Grotesk',system-ui,sans-serif"}}>
+          <div className="px-1 pt-3 text-center">
+            <h3 className="text-2xl font-semibold leading-tight break-words" style={{fontFamily:"'Space Grotesk',system-ui,sans-serif"}}>
               {titleOf(pick.row)}
             </h3>
             {labelOf(pick.row) && (
-              <div className="mt-1 text-2xl font-semibold" style={{fontFamily:"'Space Grotesk',system-ui,sans-serif"}}>
+              <div className="mt-1 text-2xl font-semibold leading-tight" style={{fontFamily:"'Space Grotesk',system-ui,sans-serif"}}>
                 {labelOf(pick.row)}
               </div>
             )}
