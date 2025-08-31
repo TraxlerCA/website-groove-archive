@@ -75,12 +75,12 @@ export default function Home() {
         {/* neutralize blue; match card styling used by the others */}
         <a href="/serve" aria-label="Serve up a set. Get served a tailored set"
            className="group relative col-span-12 sm:col-span-6 block rounded-2xl border border-neutral-200/70 bg-white/70 backdrop-blur shadow-[0_10px_30px_rgb(0_0_0_/_0.06)] px-8 py-10 transform-gpu hover:-translate-y-0.5 hover:shadow-[0_18px_40px_rgb(0_0_0_/_0.10)] hover:border-blue-400/40 active:translate-y-0 active:scale-[.99] transition focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-blue-200">
-          <div className="flex items-start gap-3"><img src="/icons/icon_serve.png" alt="" className="h-6 w-6 opacity-80" /><div><div className="text-lg font-semibold">Serve up a set</div><div className="text-xs font-medium tracking-widest mt-1 opacity-90">Get served a tailored set</div></div></div>
+          <div className="flex items-start gap-3"><img src="/icons/icon_serve.png" alt="" className="h-9 w-9 opacity-80" /><div><div className="text-lg font-semibold">Serve up a set</div><div className="text-xs font-medium tracking-widest mt-1 opacity-90">Get served a tailored set</div></div></div>
         </a>
 
         <a href="/list" aria-label="Show the list. Go through all hand-curated grooves"
            className="group relative col-span-12 sm:col-span-6 block rounded-2xl border border-neutral-200/70 bg-white/70 backdrop-blur shadow-[0_10px_30px_rgb(0_0_0_/_0.06)] px-8 py-10 transform-gpu hover:-translate-y-0.5 hover:shadow-[0_18px_40px_rgb(0_0_0_/_0.10)] hover:border-blue-400/40 active:translate-y-0 active:scale-[.99] transition focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-blue-200">
-          <div className="flex items-start gap-3"><img src="/icons/icon_list.png" alt="" className="h-6 w-6 opacity-80" /><div><div className="text-lg font-semibold text-neutral-900">Show the list</div><div className="text-xs font-medium tracking-widest text-neutral-500 mt-1">Go through all hand-curated grooves</div></div></div>
+          <div className="flex items-start gap-3"><img src="/icons/icon_list.png" alt="" className="h-9 w-9 opacity-80" /><div><div className="text-lg font-semibold text-neutral-900">Show the list</div><div className="text-xs font-medium tracking-widest text-neutral-500 mt-1">Go through all hand-curated grooves</div></div></div>
         </a>
 
         {/* Heatmaps entry intentionally removed from landing page */}
@@ -90,20 +90,25 @@ export default function Home() {
       <div className="mt-10 flex justify-center">
         <button
           onClick={loadServe}
-          className="relative inline-flex items-center gap-3 rounded-full border border-neutral-300 bg-white px-5 py-3 text-sm font-semibold shadow-sm hover:shadow-md active:scale-[.99] transition"
+          className="relative inline-flex items-center gap-3 rounded-full border border-neutral-300 bg-white px-5 py-3 text-sm font-semibold shadow-sm hover:shadow-md active:scale-[.99] transition random-serve-pulse"
         >
           <img src="/icons/icon_random_serve.png" alt="" className="h-[18px] w-[18px] opacity-70" />
           Random serve
-          {/* subtle pulse every 3s */}
-          <span className="absolute inset-0 rounded-full pointer-events-none ring-2 ring-blue-400/30 animate-[pulse3_3s_ease-in-out_infinite]"/>
         </button>
       </div>
       <style>{`
-        @keyframes pulse3 {
-          0% { transform: scale(1); opacity: .4; }
-          30% { transform: scale(1.06); opacity: .9; }
-          60% { transform: scale(1); opacity: .4; }
-          100% { transform: scale(1); opacity: .4; }
+        /* Color-only pulse for Random serve button */
+        /* 0-2s: white, 2-3s: ramp to #b5e2ff, 3-3.5s: hold, 3.5-4.5s: ramp back */
+        @keyframes randomServeColorPulse {
+          0% { background-color: #ffffff; }
+          44.444% { background-color: #ffffff; }   /* 2.0s */
+          66.666% { background-color: #b5e2ff; }   /* 3.0s */
+          77.777% { background-color: #b5e2ff; }   /* 3.5s */
+          100% { background-color: #ffffff; }      /* 4.5s */
+        }
+        .random-serve-pulse {
+          /* total cycle: 4.5s (2s idle + 1s up + 0.5s hold + 1s down) */
+          animation: randomServeColorPulse 4.5s linear infinite;
         }
       `}</style>
 

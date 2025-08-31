@@ -99,11 +99,18 @@ export default function ServePage(){
   useEffect(()=>{
     if(!pick) return;
     if (typeof window === 'undefined') return;
-    const isMobile = window.innerWidth < 640;
+    // Use matchMedia for consistency with Tailwind breakpoints
+    const isMobile = window.matchMedia('(max-width: 640px)').matches;
     if(!isMobile) return;
     const id = window.setTimeout(()=>{
-      endRef.current?.scrollIntoView({ behavior: 'smooth', block: 'end' });
-    }, 50);
+      try{
+        if (endRef.current) {
+          endRef.current.scrollIntoView({ behavior: 'smooth', block: 'end' });
+        } else {
+          window.scrollTo({ top: document.documentElement.scrollHeight, behavior: 'smooth' });
+        }
+      }catch{/* noop */}
+    }, 180);
     return ()=> window.clearTimeout(id);
   },[pick]);
 
@@ -167,7 +174,8 @@ export default function ServePage(){
             <motion.button onClick={launch}
               whileHover={{y:-1,scale:1.01,boxShadow:"0 8px 16px rgba(37,99,235,.2)"}}
               whileTap={{y:0,scale:0.99,boxShadow:"0 4px 10px rgba(37,99,235,.15)"}}
-              className="mt-0 inline-flex h-11 w-72 rounded-full bg-[var(--accent)] text-white leading-none items-center justify-center select-none"
+              disabled={isLaunching}
+              className="mt-0 inline-flex h-11 w-72 rounded-full bg-[var(--accent)] text-white leading-none items-center justify-center select-none disabled:opacity-60 disabled:cursor-not-allowed"
             >
               {hasLaunched?'Go again!':'Go'}
             </motion.button>
@@ -175,19 +183,24 @@ export default function ServePage(){
         </div>
       </div>
 
-      {/* pulse overlay */}
+      {/* vinyl spin overlay - replaces pulse overlay */}
       <AnimatePresence>
         {isLaunching&&(
-          <motion.div className="fixed inset-0 z-40 pointer-events-none"
-            initial={{opacity:0}} animate={{opacity:1}} exit={{opacity:0}}
-            style={{background:"radial-gradient(1200px 1200px at 50% 50%, rgba(0,0,0,0.18), transparent 60%)"}}>
-            <div className="absolute inset-0 grid place-items-center">
-              {[0,1,2].map(i=>(
-                <motion.div key={i} initial={{scale:.6,opacity:.55}}
-                  animate={{scale:[.6,1.2,1.9],opacity:[.55,.85,0]}}
-                  transition={{duration:1,ease:"easeInOut",delay:i*.08}}
-                  className="rounded-full border border-black/30" style={{width:240+i*140,height:240+i*140}}/>
-              ))}
+          <motion.div
+            className="fixed inset-0 z-40 pointer-events-none grid place-items-center"
+            initial={{opacity:0}}
+            animate={{opacity:1}}
+            exit={{opacity:0}}
+            style={{background:'radial-gradient(1200px 1200px at 50% 50%, rgba(0,0,0,0.18), transparent 60%)'}}
+          >
+            <div className="relative">
+              <img
+                src="/icons/icon_serve.png"
+                alt=""
+                className="h-40 w-40 sm:h-48 sm:w-48 rounded-full select-none animate-[spin_1s_linear_1] drop-shadow-xl"
+                draggable={false}
+              />
+              <span className="pointer-events-none absolute inset-0 m-auto block h-6 w-6 rounded-full bg-white/90 ring-2 ring-neutral-300" />
             </div>
           </motion.div>
         )}
@@ -243,8 +256,8 @@ export default function ServePage(){
           </div>
         </div>
       )}
-      {/* bottom spacer and anchor for scrolling */}
-      <div ref={endRef} className="h-8 sm:h-4" />
+      {/* bottom spacer and anchor for scrolling (extra mobile space to avoid phone UI overlap) */}
+      <div ref={endRef} className="h-[120px] sm:h-4" />
     </section>
   );
 }
