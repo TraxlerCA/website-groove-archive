@@ -67,9 +67,9 @@ export default function Home() {
   // Heatmaps card removed from landing page
 
   return (
-    <main className="container mx-auto max-w-5xl px-6 pt-14">
+    <main className="container mx-auto max-w-5xl px-6 pt-4 sm:pt-14">
       {/* generous breathing room under the wordmark */}
-      <div className="h-10 sm:h-14" />
+      <div className="h-4 sm:h-14" />
 
       <nav className="grid grid-cols-12 gap-7" role="navigation" aria-label="primary">
         {/* neutralize blue; match card styling used by the others */}
