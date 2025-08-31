@@ -69,6 +69,7 @@ export default function ServePage(){
   const { rows }=useRows();
   const { play }=usePlayer();
   const endRef = useRef<HTMLDivElement | null>(null);
+  const suggestionRef = useRef<HTMLDivElement | null>(null);
 
   // defaults: Any; format persists
   const [genre,setGenre]=useState<'any'|string>('any');
@@ -95,7 +96,7 @@ export default function ServePage(){
   const [isLaunching,setIsLaunching]=useState(false);
   const [hasLaunched,setHasLaunched]=useState(false);
 
-  // After a suggestion is shown on mobile, scroll it into view
+  // After a suggestion is shown on mobile, scroll it into view (center)
   useEffect(()=>{
     if(!pick) return;
     if (typeof window === 'undefined') return;
@@ -104,13 +105,15 @@ export default function ServePage(){
     if(!isMobile) return;
     const id = window.setTimeout(()=>{
       try{
-        if (endRef.current) {
+        if (suggestionRef.current?.scrollIntoView) {
+          suggestionRef.current.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        } else if (endRef.current?.scrollIntoView) {
           endRef.current.scrollIntoView({ behavior: 'smooth', block: 'end' });
         } else {
           window.scrollTo({ top: document.documentElement.scrollHeight, behavior: 'smooth' });
         }
       }catch{/* noop */}
-    }, 180);
+    }, 300);
     return ()=> window.clearTimeout(id);
   },[pick]);
 
@@ -208,7 +211,7 @@ export default function ServePage(){
 
       {/* suggestion */}
       {!isLaunching&&pick&&(
-        <div className="max-w-2xl mx-auto">
+        <div ref={suggestionRef} className="max-w-2xl mx-auto">
           <motion.article
             whileHover={{ y: -2 }}
             className={
@@ -257,7 +260,7 @@ export default function ServePage(){
         </div>
       )}
       {/* bottom spacer and anchor for scrolling (extra mobile space to avoid phone UI overlap) */}
-      <div ref={endRef} className="h-[120px] sm:h-4" />
+      <div ref={endRef} className="h-[40px] sm:h-4" />
     </section>
   );
 }
