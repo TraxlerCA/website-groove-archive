@@ -75,12 +75,12 @@ export default function Home() {
         {/* neutralize blue; match card styling used by the others */}
         <a href="/serve" aria-label="Serve up a set. Get served a tailored set"
            className="group relative col-span-12 sm:col-span-6 block rounded-2xl border border-neutral-200/70 bg-white/70 backdrop-blur shadow-[0_10px_30px_rgb(0_0_0_/_0.06)] px-8 py-10 transform-gpu hover:-translate-y-0.5 hover:shadow-[0_18px_40px_rgb(0_0_0_/_0.10)] hover:border-blue-400/40 active:translate-y-0 active:scale-[.99] transition focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-blue-200">
-          <div className="flex items-start gap-3"><img src="/icons/icon_serve.png" alt="" className="h-6 w-6 opacity-80" /><div><div className="text-lg font-semibold">Serve up a set</div><div className="text-xs font-medium tracking-widest mt-1 opacity-90">Get served a tailored set</div></div></div>
+          <div className="flex items-start gap-3"><img src="/icons/icon_serve.png" alt="" className="h-9 w-9 opacity-80" /><div><div className="text-lg font-semibold">Serve up a set</div><div className="text-xs font-medium tracking-widest mt-1 opacity-90">Get served a tailored set</div></div></div>
         </a>
 
         <a href="/list" aria-label="Show the list. Go through all hand-curated grooves"
            className="group relative col-span-12 sm:col-span-6 block rounded-2xl border border-neutral-200/70 bg-white/70 backdrop-blur shadow-[0_10px_30px_rgb(0_0_0_/_0.06)] px-8 py-10 transform-gpu hover:-translate-y-0.5 hover:shadow-[0_18px_40px_rgb(0_0_0_/_0.10)] hover:border-blue-400/40 active:translate-y-0 active:scale-[.99] transition focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-blue-200">
-          <div className="flex items-start gap-3"><img src="/icons/icon_list.png" alt="" className="h-6 w-6 opacity-80" /><div><div className="text-lg font-semibold text-neutral-900">Show the list</div><div className="text-xs font-medium tracking-widest text-neutral-500 mt-1">Go through all hand-curated grooves</div></div></div>
+          <div className="flex items-start gap-3"><img src="/icons/icon_list.png" alt="" className="h-9 w-9 opacity-80" /><div><div className="text-lg font-semibold text-neutral-900">Show the list</div><div className="text-xs font-medium tracking-widest text-neutral-500 mt-1">Go through all hand-curated grooves</div></div></div>
         </a>
 
         {/* Heatmaps entry intentionally removed from landing page */}

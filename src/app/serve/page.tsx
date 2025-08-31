@@ -99,11 +99,18 @@ export default function ServePage(){
   useEffect(()=>{
     if(!pick) return;
     if (typeof window === 'undefined') return;
-    const isMobile = window.innerWidth < 640;
+    // Use matchMedia for consistency with Tailwind breakpoints
+    const isMobile = window.matchMedia('(max-width: 640px)').matches;
     if(!isMobile) return;
     const id = window.setTimeout(()=>{
-      endRef.current?.scrollIntoView({ behavior: 'smooth', block: 'end' });
-    }, 50);
+      try{
+        if (endRef.current) {
+          endRef.current.scrollIntoView({ behavior: 'smooth', block: 'end' });
+        } else {
+          window.scrollTo({ top: document.documentElement.scrollHeight, behavior: 'smooth' });
+        }
+      }catch{/* noop */}
+    }, 180);
     return ()=> window.clearTimeout(id);
   },[pick]);
 
@@ -249,8 +256,8 @@ export default function ServePage(){
           </div>
         </div>
       )}
-      {/* bottom spacer and anchor for scrolling */}
-      <div ref={endRef} className="h-8 sm:h-4" />
+      {/* bottom spacer and anchor for scrolling (extra mobile space to avoid phone UI overlap) */}
+      <div ref={endRef} className="h-[120px] sm:h-4" />
     </section>
   );
 }
