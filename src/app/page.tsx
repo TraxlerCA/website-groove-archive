@@ -90,20 +90,25 @@ export default function Home() {
       <div className="mt-10 flex justify-center">
         <button
           onClick={loadServe}
-          className="relative inline-flex items-center gap-3 rounded-full border border-neutral-300 bg-white px-5 py-3 text-sm font-semibold shadow-sm hover:shadow-md active:scale-[.99] transition"
+          className="relative inline-flex items-center gap-3 rounded-full border border-neutral-300 bg-white px-5 py-3 text-sm font-semibold shadow-sm hover:shadow-md active:scale-[.99] transition random-serve-pulse"
         >
           <img src="/icons/icon_random_serve.png" alt="" className="h-[18px] w-[18px] opacity-70" />
           Random serve
-          {/* subtle pulse every 3s */}
-          <span className="absolute inset-0 rounded-full pointer-events-none ring-2 ring-blue-400/30 animate-[pulse3_3s_ease-in-out_infinite]"/>
         </button>
       </div>
       <style>{`
-        @keyframes pulse3 {
-          0% { transform: scale(1); opacity: .4; }
-          30% { transform: scale(1.06); opacity: .9; }
-          60% { transform: scale(1); opacity: .4; }
-          100% { transform: scale(1); opacity: .4; }
+        /* Color-only pulse for Random serve button */
+        /* 0-2s: white, 2-3s: ramp to #b5e2ff, 3-3.5s: hold, 3.5-4.5s: ramp back */
+        @keyframes randomServeColorPulse {
+          0% { background-color: #ffffff; }
+          44.444% { background-color: #ffffff; }   /* 2.0s */
+          66.666% { background-color: #b5e2ff; }   /* 3.0s */
+          77.777% { background-color: #b5e2ff; }   /* 3.5s */
+          100% { background-color: #ffffff; }      /* 4.5s */
+        }
+        .random-serve-pulse {
+          /* total cycle: 4.5s (2s idle + 1s up + 0.5s hold + 1s down) */
+          animation: randomServeColorPulse 4.5s linear infinite;
         }
       `}</style>
 

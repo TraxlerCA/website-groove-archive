@@ -1,8 +1,17 @@
 // src/app/layout.tsx
 import './globals.css';
 import type { ReactNode } from 'react';
+import type { Metadata } from 'next';
 import { PlayerProvider } from '@/context/PlayerProvider';
 import AppShell from '@/components/AppShell';
+
+export const metadata: Metadata = {
+  icons: {
+    icon: [{ url: '/icons/icon_list.png', type: 'image/png', sizes: 'any' }],
+    shortcut: ['/icons/icon_list.png'],
+    apple: [{ url: '/icons/icon_list.png' }],
+  },
+};
 
 export default function RootLayout({ children }: { children: ReactNode }) {
   return (
