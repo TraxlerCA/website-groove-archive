@@ -103,18 +103,29 @@ export default function ServePage(){
     // Use matchMedia for consistency with Tailwind breakpoints
     const isMobile = window.matchMedia('(max-width: 640px)').matches;
     if(!isMobile) return;
-    const id = window.setTimeout(()=>{
-      try{
-        if (suggestionRef.current?.scrollIntoView) {
-          suggestionRef.current.scrollIntoView({ behavior: 'smooth', block: 'center' });
-        } else if (endRef.current?.scrollIntoView) {
-          endRef.current.scrollIntoView({ behavior: 'smooth', block: 'end' });
-        } else {
-          window.scrollTo({ top: document.documentElement.scrollHeight, behavior: 'smooth' });
-        }
-      }catch{/* noop */}
-    }, 300);
-    return ()=> window.clearTimeout(id);
+    const scrollEl = document.scrollingElement || document.documentElement;
+    const centerOnce = () => {
+      const el = suggestionRef.current;
+      if (!el) return;
+      const rect = el.getBoundingClientRect();
+      const viewportH = (window.visualViewport?.height ?? window.innerHeight) || window.innerHeight;
+      const currentY = window.scrollY || window.pageYOffset || document.documentElement.scrollTop || 0;
+      const targetTop = rect.top + currentY - Math.max(0, (viewportH - rect.height) / 2);
+      const top = Math.max(0, targetTop);
+      try {
+        scrollEl.scrollTo({ top, behavior: 'smooth' });
+      } catch {
+        // Safari fallback without smooth
+        (scrollEl as HTMLElement).scrollTop = top;
+      }
+    };
+
+    // Multiple attempts to account for late image/layout changes on iOS
+    const timeouts:number[] = [];
+    [120, 360, 720, 1200].forEach(ms => {
+      timeouts.push(window.setTimeout(centerOnce, ms));
+    });
+    return ()=> { timeouts.forEach(id => window.clearTimeout(id)); };
   },[pick]);
 
   const chooseProviderForRow=(r: Row):Provider=>{
