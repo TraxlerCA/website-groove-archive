@@ -1,6 +1,7 @@
 // src/components/Header.tsx
 'use client';
 import Link from 'next/link';
+import GlobalMenu from '@/components/GlobalMenu';
 
 export function Fonts() {
   return (
@@ -19,7 +20,11 @@ export function WordmarkHeader() {
     <header className="pt-8">
       {/* Removed pulsating blue background/animation behind wordmark */}
 
-      <div className="container mx-auto max-w-6xl px-6">
+      <div className="container mx-auto max-w-6xl px-6 relative">
+        {/* Global menu trigger */}
+        <div className="absolute right-0 top-0 mt-2 sm:mt-0">
+          <GlobalMenu />
+        </div>
         <div className="text-center">
           <Link href="/" className="wmk cursor-pointer select-none" aria-label="Go to home">
             <span className="text-2xl sm:text-3xl font-semibold tracking-[0.25em] inline-block" style={{fontFamily:"'Space Grotesk',system-ui,sans-serif"}}>

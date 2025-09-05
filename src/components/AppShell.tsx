@@ -10,8 +10,13 @@ import PlayerModal from '@/components/PlayerModal';
 import ScrollTopFab from '@/components/ScrollTopFab';
 import { useRows } from '@/lib/useRows';
 
-type Route = 'home'|'list'|'serve'|'heatmaps';
-const routeFromPath = (p: string): Route => p.startsWith('/list') ? 'list' : p.startsWith('/serve') ? 'serve' : p.startsWith('/heatmaps') ? 'heatmaps' : 'home';
+type Route = 'home'|'list'|'serve'|'heatmaps'|'suggest';
+const routeFromPath = (p: string): Route =>
+  p.startsWith('/list') ? 'list'
+  : p.startsWith('/serve') ? 'serve'
+  : p.startsWith('/heatmaps') ? 'heatmaps'
+  : p.startsWith('/suggest') ? 'suggest'
+  : 'home';
 
 export default function AppShell({ children }: { children: ReactNode }) {
   const pathname = usePathname() || '/';
