@@ -51,6 +51,58 @@ const bucketFromRating = (s?: string | null): Rating => {
 
 type Group = { title: string; date: string; rows: Row[]; key: string };
 
+// Full template CSV (Dekmantel - Saturday)
+const TEMPLATE_CSV_DEKMANTEL_SAT = [
+  'festival,date,stage,stage_order,artist,start,end,rating',
+  'Dekmantel - Saturday,2025-08-02,The Loop,1,MKS,13:00,16:00,ok',
+  'Dekmantel - Saturday,2025-08-02,The Loop,1,Bashkka & Roi Perez,16:00,18:00,hot',
+  'Dekmantel - Saturday,2025-08-02,The Loop,1,Steffi & Virginia,18:00,19:00,ok',
+  'Dekmantel - Saturday,2025-08-02,The Loop,1,Call Super,19:00,21:00,ok',
+  'Dekmantel - Saturday,2025-08-02,The Loop,1,Honey Dijon,21:00,23:00,blazing',
+  'Dekmantel - Saturday,2025-08-02,UFO I,2,AMORAL,13:00,15:00,',
+  'Dekmantel - Saturday,2025-08-02,UFO I,2,Blasha & Allatt,15:00,17:00,',
+  'Dekmantel - Saturday,2025-08-02,UFO I,2,MARRØN,17:00,19:00,nahh',
+  'Dekmantel - Saturday,2025-08-02,UFO I,2,Freddy K,19:00,21:00,ok',
+  'Dekmantel - Saturday,2025-08-02,UFO I,2,Rod & Sterac,21:00,23:00,nahh',
+  'Dekmantel - Saturday,2025-08-02,UFO II,3,Loek Frey & Timnah,13:00,16:00,',
+  'Dekmantel - Saturday,2025-08-02,UFO II,3,Steevio (live),16:00,17:00,',
+  'Dekmantel - Saturday,2025-08-02,UFO II,3,Priori (live),17:00,18:00,nahh',
+  'Dekmantel - Saturday,2025-08-02,UFO II,3,KIA,18:00,20:00,ok',
+  'Dekmantel - Saturday,2025-08-02,UFO II,3,IMDT (live),20:00,21:00,ok',
+  'Dekmantel - Saturday,2025-08-02,UFO II,3,Spekki Webu & Woody92,21:00,23:00,ok',
+  'Dekmantel - Saturday,2025-08-02,Selectors,4,Shanti Celeste,13:00,17:00,blazing',
+  'Dekmantel - Saturday,2025-08-02,Selectors,4,Casper Tielrooij & Victor,17:00,20:00,blazing',
+  'Dekmantel - Saturday,2025-08-02,Selectors,4,Hunee & Paquita Gordon,20:00,23:00,blazing',
+  'Dekmantel - Saturday,2025-08-02,Greenhouse,5,Mafalda,13:00,16:30,',
+  'Dekmantel - Saturday,2025-08-02,Greenhouse,5,Mark Ernestus’ Ndagga Rhythm Force,16:30,17:30,',
+  'Dekmantel - Saturday,2025-08-02,Greenhouse,5,Moda & Wolfers,18:00,19:00,nahh',
+  'Dekmantel - Saturday,2025-08-02,Greenhouse,5,The Sabres of Paradise,19:30,20:30,nahh',
+  'Dekmantel - Saturday,2025-08-02,Greenhouse,5,dBridge & Donato Dozzy,20:30,23:00,ok',
+  'Dekmantel - Saturday,2025-08-02,The Nest,6,State Offf,13:00,15:30,',
+  'Dekmantel - Saturday,2025-08-02,The Nest,6,Kampire,15:30,16:30,',
+  'Dekmantel - Saturday,2025-08-02,The Nest,6,De Schuurman & Shaun D,16:30,18:00,',
+  'Dekmantel - Saturday,2025-08-02,The Nest,6,DJ K,18:00,19:00,nahh',
+  'Dekmantel - Saturday,2025-08-02,The Nest,6,Moktar & Surusinghe,19:00,21:00,ok',
+  'Dekmantel - Saturday,2025-08-02,The Nest,6,Verraco,21:00,23:00,ok',
+  'Dekmantel - Saturday,2025-08-02,Radar,7,Om Unit – Acid Dub Studies (live),14:00,15:00,',
+  'Dekmantel - Saturday,2025-08-02,Radar,7,Ploy,15:00,16:00,',
+  'Dekmantel - Saturday,2025-08-02,Radar,7,Kia,16:00,17:00,',
+  'Dekmantel - Saturday,2025-08-02,Radar,7,Shed (live),17:15,18:15,',
+  'Dekmantel - Saturday,2025-08-02,Radar,7,Batu,18:15,19:15,nahh',
+  'Dekmantel - Saturday,2025-08-02,Radar,7,Mad Miran,19:15,20:15,nahh',
+  'Dekmantel - Saturday,2025-08-02,Radar,7,Djrum,20:30,21:45,nahh',
+  'Dekmantel - Saturday,2025-08-02,Radar,7,Quest,22:00,23:00,ok',
+].join('\n');
+
+// First 5 rows for example table
+const TEMPLATE_FIRST5: Row[] = [
+  { festival: 'Dekmantel - Saturday', date: '2025-08-02', stage: 'The Loop', stage_order: 1, artist: 'MKS', start: '13:00', end: '16:00', rating: 'ok' },
+  { festival: 'Dekmantel - Saturday', date: '2025-08-02', stage: 'The Loop', stage_order: 1, artist: 'Bashkka & Roi Perez', start: '16:00', end: '18:00', rating: 'hot' },
+  { festival: 'Dekmantel - Saturday', date: '2025-08-02', stage: 'The Loop', stage_order: 1, artist: 'Steffi & Virginia', start: '18:00', end: '19:00', rating: 'ok' },
+  { festival: 'Dekmantel - Saturday', date: '2025-08-02', stage: 'The Loop', stage_order: 1, artist: 'Call Super', start: '19:00', end: '21:00', rating: 'ok' },
+  { festival: 'Dekmantel - Saturday', date: '2025-08-02', stage: 'The Loop', stage_order: 1, artist: 'Honey Dijon', start: '21:00', end: '23:00', rating: 'blazing' },
+];
+
 export default function HeatmapsPage() {
   const DEFAULT_CSV =
     'https://docs.google.com/spreadsheets/d/e/2PACX-1vRexqa-1vfj-JdFSSFUjWycho-00d5rLdS76eBgvCbruyvtcVIIom-VM52SvfuhLg-CeHLRp2I6k5B2/pub?gid=116583245&single=true&output=csv';
@@ -153,16 +205,7 @@ export default function HeatmapsPage() {
             <button
               className="h-12 rounded-md border border-neutral-300 bg-white px-4 text-sm hover:bg-neutral-50"
               onClick={() => {
-                const today = new Date();
-                const yyyy = today.getFullYear();
-                const mm = String(today.getMonth() + 1).padStart(2, '0');
-                const dd = String(today.getDate()).padStart(2, '0');
-                const tmpl = [
-                  ['festival','date','stage','stage_order','artist','start','end','rating'].join(','),
-                  [`My Festival`,`${yyyy}-${mm}-${dd}`,`Main Stage`,`1`,`Artist A`,`22:30`,`23:45`,`hot`].join(','),
-                  [`My Festival`,`${yyyy}-${mm}-${dd}`,`Second Stage`,`2`,`Artist B`,`00:15`,`01:00`,`ok`].join(','),
-                ].join('\n');
-                const blob = new Blob([tmpl], { type: 'text/csv;charset=utf-8' });
+                const blob = new Blob([TEMPLATE_CSV_DEKMANTEL_SAT], { type: 'text/csv;charset=utf-8' });
                 const url = URL.createObjectURL(blob);
                 const a = document.createElement('a'); a.href = url; a.download = 'heatmap-template.csv'; a.click();
                 URL.revokeObjectURL(url);
@@ -393,7 +436,6 @@ function CreateHeatmapModal({
   onApply: (rows: Row[]) => void;
 }) {
   const dialogRef = useRef<HTMLDivElement | null>(null);
-  const [csvText, setCsvText] = useState('');
   const [errors, setErrors] = useState<string[]>([]);
   const [busy, setBusy] = useState(false);
   const [parsedRows, setParsedRows] = useState<Row[] | null>(null);
@@ -428,22 +470,6 @@ function CreateHeatmapModal({
       prev?.focus();
     };
   }, [open, onClose]);
-
-  const downloadTemplate = useCallback(() => {
-    const today = new Date();
-    const yyyy = today.getFullYear();
-    const mm = String(today.getMonth() + 1).padStart(2, '0');
-    const dd = String(today.getDate()).padStart(2, '0');
-    const tmpl = [
-      ['festival','date','stage','stage_order','artist','start','end','rating'].join(','),
-      [`My Festival`,`${yyyy}-${mm}-${dd}`,`Main Stage`,`1`,`Artist A`,`22:30`,`23:45`,`hot`].join(','),
-      [`My Festival`,`${yyyy}-${mm}-${dd}`,`Second Stage`,`2`,`Artist B`,`00:15`,`01:00`,`ok`].join(','),
-    ].join('\n');
-    const blob = new Blob([tmpl], { type: 'text/csv;charset=utf-8' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a'); a.href = url; a.download = 'heatmap-template.csv'; a.click();
-    URL.revokeObjectURL(url);
-  }, []);
 
   const normalizeTime = (t: string) => {
     const s = (t || '').trim();
@@ -523,21 +549,24 @@ function CreateHeatmapModal({
     setBusy(true); setErrors([]); setParsedRows(null);
     try {
       if (file.size > 1_000_000) { setErrors(['File is larger than 1 MB.']); return; }
-      const text = await file.text();
-      setCsvText(text);
+      let text: string;
+      const lower = (file.name || '').toLowerCase();
+      const isXlsx = lower.endsWith('.xlsx') || file.type.includes('spreadsheetml');
+      if (isXlsx) {
+        // Parse XLSX in-browser and convert to CSV using SheetJS
+        const XLSX: any = await import('xlsx');
+        const ab = await file.arrayBuffer();
+        const wb = XLSX.read(ab, { type: 'array' });
+        const ws = wb.Sheets[wb.SheetNames[0]];
+        text = XLSX.utils.sheet_to_csv(ws);
+      } else {
+        text = await file.text();
+      }
       await validateAndParse(text);
       // optional analytics
       try { (window as any).plausible?.('heatmap_upload_success'); } catch {}
     } finally { setBusy(false); }
   }, [validateAndParse]);
-
-  const onPasteParse = useCallback(async () => {
-    setBusy(true); setErrors([]); setParsedRows(null);
-    try {
-      await validateAndParse(csvText);
-      try { (window as any).plausible?.('heatmap_upload_success'); } catch {}
-    } finally { setBusy(false); }
-  }, [csvText, validateAndParse]);
 
   const apply = useCallback(() => {
     if (!parsedRows || parsedRows.length === 0) return;
@@ -559,32 +588,52 @@ function CreateHeatmapModal({
           <div>
             <h2 id="csv-title" className="text-lg font-semibold tracking-wide text-neutral-900">Create your own heatmap</h2>
             <p id="csv-desc" className="text-sm text-neutral-600">
-              Upload a CSV or paste its contents. Required columns: festival, date (YYYY-MM-DD), stage, artist, start (HH:MM), end (HH:MM), rating (nahh|ok|hot|blazing|empty).
+              Upload a CSV or Excel (.xlsx). Required columns: festival, date (YYYY-MM-DD), stage, artist, start (HH:MM), end (HH:MM), rating (nahh|ok|hot|blazing|empty).
             </p>
           </div>
-          <button className="rounded-md border border-neutral-300 bg-white px-3 py-1.5 text-sm hover:bg-neutral-50" onClick={downloadTemplate}>Download CSV template</button>
         </div>
 
         <div className="grid gap-3 sm:grid-cols-2">
           <div className="rounded-lg border border-neutral-200 p-3">
-            <label className="mb-2 block text-sm font-medium text-neutral-800">Upload CSV file</label>
+            <label className="mb-2 block text-sm font-medium text-neutral-800">Upload CSV or Excel (.xlsx)</label>
             <input
-              type="file" accept=".csv,text/csv" onChange={e => { const f = (e.target as HTMLInputElement).files?.[0]; if (f) onFile(f); }}
+              type="file" accept=".csv,.xlsx,text/csv,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" onChange={e => { const f = (e.target as HTMLInputElement).files?.[0]; if (f) onFile(f); }}
               className="block w-full text-sm file:mr-3 file:rounded-md file:border file:border-neutral-300 file:bg-white file:px-3 file:py-1.5 file:text-sm file:hover:bg-neutral-50"
             />
-            <p className="mt-2 text-xs text-neutral-500">Max 1 MB, 200 rows. Delimiter , or ; supported.</p>
+            <p className="mt-2 text-xs text-neutral-500">Max 1 MB, 200 rows. CSV delimiters , or ; supported. Excel files are converted automatically.</p>
           </div>
 
-          <div className="rounded-lg border border-neutral-200 p-3">
-            <label htmlFor="csv-text" className="mb-2 block text-sm font-medium text-neutral-800">Or paste CSV text</label>
-            <textarea id="csv-text" value={csvText} onChange={e => setCsvText(e.target.value)} rows={7}
-              className="w-full resize-y rounded-md border border-neutral-300 p-2 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-300"
-              placeholder="festival,date,stage,stage_order,artist,start,end,rating\nMy Festival,2025-09-01,Main Stage,1,Artist A,22:30,23:45,hot"
-            />
-            <div className="mt-2 flex items-center gap-2">
-              <button className="rounded-md border border-neutral-300 bg-white px-3 py-1.5 text-sm hover:bg-neutral-50" onClick={onPasteParse} disabled={busy}>Parse</button>
-              {busy && <span className="text-xs text-neutral-500">Parsing…</span>}
-            </div>
+          {/* Example table: first 5 rows */}
+          <div className="rounded-lg border border-neutral-200 p-3 overflow-x-auto">
+            <label className="mb-2 block text-sm font-medium text-neutral-800">Format example (first 5 rows)</label>
+            <table className="w-full text-xs">
+              <thead>
+                <tr className="text-left text-neutral-600">
+                  <th className="px-2 py-1">festival</th>
+                  <th className="px-2 py-1">date</th>
+                  <th className="px-2 py-1">stage</th>
+                  <th className="px-2 py-1">stage_order</th>
+                  <th className="px-2 py-1">artist</th>
+                  <th className="px-2 py-1">start</th>
+                  <th className="px-2 py-1">end</th>
+                  <th className="px-2 py-1">rating</th>
+                </tr>
+              </thead>
+              <tbody>
+                {TEMPLATE_FIRST5.map((r, i) => (
+                  <tr key={i} className="border-t border-neutral-200">
+                    <td className="px-2 py-1 whitespace-nowrap">{r.festival}</td>
+                    <td className="px-2 py-1 whitespace-nowrap">{r.date}</td>
+                    <td className="px-2 py-1 whitespace-nowrap">{r.stage}</td>
+                    <td className="px-2 py-1 whitespace-nowrap">{String(r.stage_order ?? '')}</td>
+                    <td className="px-2 py-1 whitespace-nowrap">{r.artist}</td>
+                    <td className="px-2 py-1 whitespace-nowrap">{r.start}</td>
+                    <td className="px-2 py-1 whitespace-nowrap">{r.end}</td>
+                    <td className="px-2 py-1 whitespace-nowrap">{r.rating}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
           </div>
         </div>
 
