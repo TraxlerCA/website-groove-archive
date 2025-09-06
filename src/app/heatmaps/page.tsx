@@ -223,7 +223,7 @@ export default function HeatmapsPage() {
       {userGroups.length > 0 && (
         <div className="mb-10 space-y-8">
           <div className="mb-1 flex items-center justify-between">
-            <h2 className="text-lg font-semibold tracking-wide text-neutral-900">Your preview</h2>
+            <h2 className="text-3xl font-semibold tracking-wide text-neutral-900">Your preview</h2>
             <div className="flex items-center gap-2">
               <button
                 className="rounded-md border border-neutral-300 bg-white px-3 py-2 text-sm hover:bg-neutral-50"
@@ -249,7 +249,7 @@ export default function HeatmapsPage() {
       )}
 
       {/* curated examples */}
-      <h2 className="mb-3 text-lg font-semibold tracking-wide text-neutral-900">Example heatmaps</h2>
+      <h2 className="mb-4 text-3xl font-semibold tracking-wide text-neutral-900">Example heatmaps</h2>
       <div className="space-y-12">
         {groups.map(g => (
           <Heatmap
@@ -324,7 +324,7 @@ function Heatmap({
         <div className="flex items-center gap-3">
           <span className="text-sm text-neutral-500">{date}</span>
           <button
-            className="rounded-md border border-neutral-300 bg-white px-3 py-2 text-sm hover:bg-neutral-50"
+            className="rounded-md bg-neutral-900 px-3 py-2 text-sm text-white hover:bg-neutral-800"
             onClick={onExport}
           >
             Export PNG
@@ -334,6 +334,13 @@ function Heatmap({
 
       {/* wrapper has no background */}
       <div ref={registerRef} className="rounded-xl border border-neutral-200 p-4">
+        {/* legend above stage names */}
+        <div className="mb-2 flex flex-wrap items-center gap-5 text-sm text-neutral-700">
+          <span className="inline-flex items-center gap-2"><i className="inline-block h-3 w-6 rounded" style={{ backgroundColor: COLORS.nahh }} /> nahh</span>
+          <span className="inline-flex items-center gap-2"><i className="inline-block h-3 w-6 rounded" style={{ backgroundColor: COLORS.ok }} /> ok</span>
+          <span className="inline-flex items-center gap-2"><i className="inline-block h-3 w-6 rounded" style={{ backgroundColor: COLORS.hot }} /> hot</span>
+          <span className="inline-flex items-center gap-2"><i className="inline-block h-3 w-6 rounded" style={{ backgroundColor: COLORS.blazing }} /> blazing</span>
+        </div>
         {/* headers with vertical black dividers */}
         <div className="flex items-stretch">
           <div style={{ width: TIME_W }} />
@@ -341,7 +348,7 @@ function Heatmap({
             {stages.map((s, i) => (
               <div
                 key={s}
-                className={`text-center text-[13px] font-medium tracking-wide text-neutral-700 border-r border-black ${i === stages.length - 1 ? 'border-r-0' : ''} py-1`}
+                className={`text-center text-[16px] font-bold text-neutral-900 border-r border-black ${i === stages.length - 1 ? 'border-r-0' : ''} py-1`}
               >
                 {s}
               </div>
@@ -598,7 +605,7 @@ function CreateHeatmapModal({
             <label className="mb-2 block text-sm font-medium text-neutral-800">Upload CSV or Excel (.xlsx)</label>
             <input
               type="file" accept=".csv,.xlsx,text/csv,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" onChange={e => { const f = (e.target as HTMLInputElement).files?.[0]; if (f) onFile(f); }}
-              className="block w-full text-sm file:mr-3 file:rounded-md file:border file:border-neutral-300 file:bg-white file:px-3 file:py-1.5 file:text-sm file:hover:bg-neutral-50"
+              className="block w-full text-sm file:mr-3 file:rounded-md file:border file:border-neutral-900 file:bg-neutral-900 file:text-white file:px-3 file:py-1.5 file:text-sm file:hover:bg-neutral-800"
             />
             <p className="mt-2 text-xs text-neutral-500">Max 1 MB, 200 rows. CSV delimiters , or ; supported. Excel files are converted automatically.</p>
           </div>
