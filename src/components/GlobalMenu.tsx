@@ -12,6 +12,7 @@ import {
   PaperPlaneOutlineIcon,
   PlayOutlineIcon,
 } from '@/components/icons';
+import SuggestModal from '@/components/SuggestModal';
 
 type Item = { label: string; href: string; icon: JSX.Element };
 
@@ -38,6 +39,7 @@ function useIsDesktop(minWidth = 640) {
 export default function GlobalMenu() {
   const [open, setOpen] = useState(false);
   const [sheetEnter, setSheetEnter] = useState(false);
+  const [suggestOpen, setSuggestOpen] = useState(false);
   const pathname = usePathname() || '/';
   const router = useRouter();
   const isDesktop = useIsDesktop();
@@ -187,6 +189,11 @@ export default function GlobalMenu() {
 
   const onActivate = (href: string, label: string) => {
     setOpen(false);
+    if (href === '/suggest') {
+      // Open suggest modal instead of navigating
+      setTimeout(() => setSuggestOpen(true), 0);
+      return;
+    }
     trackNav(label, href);
     router.push(href);
   };
@@ -309,6 +316,7 @@ export default function GlobalMenu() {
           </div>
         </div>
       )}
+      <SuggestModal open={suggestOpen} onClose={() => setSuggestOpen(false)} restoreFocusTo={triggerRef.current} />
     </div>
   );
 }

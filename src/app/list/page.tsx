@@ -1,12 +1,13 @@
 // src/app/list/page.tsx
 'use client';
 
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useWindowVirtualizer } from "@tanstack/react-virtual";
 import { IconButton, PageTitle, Tag } from "@/components/ui";
-import { YouTubeIcon, SCIcon, SearchIcon } from "@/components/icons";
+import { YouTubeIcon, SCIcon, SearchIcon, PaperPlaneOutlineIcon } from "@/components/icons";
 import { usePlayer } from "@/context/PlayerProvider";
 import { useRows } from "@/lib/useRows";
+import SuggestModal from "@/components/SuggestModal";
 
 /* title | genre | links */
 /*
@@ -24,6 +25,8 @@ export default function ListPage() {
 
   const [q, setQ] = useState("");
   const [genre, setGenre] = useState("any");
+  const [suggestOpen, setSuggestOpen] = useState(false);
+  const suggestBtnRef = useRef<HTMLButtonElement | null>(null);
 
   const genres = useMemo(() => {
     const s = new Set<string>();
@@ -103,6 +106,20 @@ export default function ListPage() {
                     <path d="M5 7l5 6 5-6" fill="none" stroke="#000" strokeWidth="1.5" />
                   </svg>
                 </span>
+              </div>
+
+              {/* Suggest a set action */}
+              <div className="ml-auto">
+                <button
+                  ref={suggestBtnRef}
+                  type="button"
+                  onClick={() => setSuggestOpen(true)}
+                  className="inline-flex items-center gap-2 rounded-md bg-neutral-900 px-4 h-9 text-white hover:bg-neutral-800 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-black/40"
+                  aria-label="Open the suggest a set modal"
+                >
+                  <span className="-ml-1"><PaperPlaneOutlineIcon /></span>
+                  <span>Suggest a set</span>
+                </button>
               </div>
             </div>
 
@@ -221,6 +238,7 @@ export default function ListPage() {
 
         {/* footer removed per request */}
       </div>
+      <SuggestModal open={suggestOpen} onClose={() => setSuggestOpen(false)} restoreFocusTo={suggestBtnRef.current} />
     </section>
   );
 }
