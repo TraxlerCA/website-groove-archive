@@ -177,7 +177,7 @@ export default function HeatmapsPage() {
       const dataUrl = await htmlToImage.toPng(el, {
         pixelRatio: 2, backgroundColor: '#ffffff', cacheBust: true, skipFonts: true
       });
-      try { (window as any).plausible?.('heatmap_download_png'); } catch {}
+      try { (window as unknown as { plausible?: (e: string) => void }).plausible?.('heatmap_download_png'); } catch {}
       const a = document.createElement('a'); a.href = dataUrl; a.download = `${slugify(title)}-heatmap.png`; a.click();
     } catch (e: unknown) { setErr(e instanceof Error ? e.message : 'Export failed'); console.error(e); }
   }
@@ -497,7 +497,7 @@ function CreateHeatmapModal({
     const bytes = new Blob([text]).size;
     if (bytes > 1_000_000) errs.push('File is larger than 1 MB.');
 
-    const res = await new Promise<ParseResult<any>>((resolve) => {
+    const res = await new Promise<ParseResult<Record<string, unknown>>>((resolve) => {
       Papa.parse(text, { header: true, skipEmptyLines: true, complete: resolve });
     });
 
@@ -506,7 +506,7 @@ function CreateHeatmapModal({
     const missing = required.filter(r => !fields.includes(r));
     if (missing.length) errs.push(`Missing required columns: ${missing.join(', ')}`);
 
-    const rawRows = (res.data || []) as any[];
+    const rawRows = (res.data || []) as Array<Record<string, unknown>>;
     if (rawRows.length > 200) errs.push('Too many rows. Maximum is 200.');
 
     const cleanRows: Row[] = [];
@@ -566,7 +566,7 @@ function CreateHeatmapModal({
       const isXlsx = lower.endsWith('.xlsx') || file.type.includes('spreadsheetml');
       if (isXlsx) {
         // Parse XLSX in-browser and convert to CSV using SheetJS
-        const XLSX: any = await import('xlsx');
+        const XLSX = await import('xlsx');
         const ab = await file.arrayBuffer();
         const wb = XLSX.read(ab, { type: 'array' });
         const ws = wb.Sheets[wb.SheetNames[0]];
@@ -576,7 +576,7 @@ function CreateHeatmapModal({
       }
       await validateAndParse(text);
       // optional analytics
-      try { (window as any).plausible?.('heatmap_upload_success'); } catch {}
+      try { (window as unknown as { plausible?: (e: string) => void }).plausible?.('heatmap_upload_success'); } catch {}
     } finally { setBusy(false); }
   }, [validateAndParse]);
 

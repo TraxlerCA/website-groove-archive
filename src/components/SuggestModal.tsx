@@ -24,12 +24,11 @@ function buildGmail(to: string, subject: string, body: string) {
 }
 
 function track(event: string) {
-  try { (window as any).plausible?.(event); } catch {}
+  try { (window as unknown as { plausible?: (e: string) => void }).plausible?.(event); } catch {}
   try {
-    // @ts-ignore optional Vercel Web Analytics
-    if (typeof window !== 'undefined' && window.va && typeof window.va.track === 'function') {
-      // @ts-ignore
-      window.va.track(event);
+    const w = window as unknown as { va?: { track?: (name: string, props?: Record<string, unknown>) => void } };
+    if (typeof window !== 'undefined' && w.va && typeof w.va.track === 'function') {
+      w.va.track(event);
     }
   } catch {}
 }

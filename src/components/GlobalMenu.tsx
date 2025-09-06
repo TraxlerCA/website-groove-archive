@@ -179,9 +179,9 @@ export default function GlobalMenu() {
   const trackNav = (label: string, href: string) => {
     try {
       // Optional Vercel Web Analytics if present on window
-      // @ts-ignore
+      // @ts-expect-error -- optional Vercel Web Analytics global
       if (typeof window !== 'undefined' && window.va && typeof window.va.track === 'function') {
-        // @ts-ignore
+        // @ts-expect-error -- optional Vercel Web Analytics global
         window.va.track('navigation_click', { label, href });
       }
     } catch {}
