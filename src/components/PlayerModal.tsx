@@ -135,8 +135,8 @@ function SoundCloudEmbed({ url }: { url: string }){
 
   const onPlay = useCallback(() => setPlayingState(true), [setPlayingState]);
   const onPause = useCallback(() => setPlayingState(false), [setPlayingState]);
-  const onProgress = useCallback((e: { currentPosition?: number }) => {
-    const curMs = e?.currentPosition || 0;
+  const onProgress = useCallback((e?: unknown) => {
+    const curMs = (e as { currentPosition?: number } | undefined)?.currentPosition || 0;
     lastPosMsRef.current = curMs;
     const totalMs = durationMsRef.current;
     if (totalMs > 0) setProgressAbs(curMs / 1000, totalMs / 1000);
