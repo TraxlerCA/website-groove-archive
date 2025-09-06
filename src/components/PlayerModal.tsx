@@ -62,7 +62,7 @@ function loadScriptOnce(src:string, check:()=>boolean):Promise<void>{
 function YouTubeEmbed({ url }: { url: string }){
   const containerRef = useRef<HTMLDivElement>(null);
   const playerRef = useRef<YTPlayer|null>(null);
-  const pollRef = useRef<ReturnType<typeof setInterval>|null>(null);
+  const pollRef = useRef<ReturnType<typeof setInterval>|undefined>(undefined);
   const { registerController, setProgressAbs, setPlayingState } = usePlayer();
   const id = ytid(url) || '';
 
@@ -107,7 +107,7 @@ function YouTubeEmbed({ url }: { url: string }){
     init();
     return () => {
       alive = false;
-      if (pollRef.current) { clearInterval(pollRef.current); pollRef.current = null; }
+      if (pollRef.current) { clearInterval(pollRef.current); pollRef.current = undefined; }
       try { registerController(null); playerRef.current?.destroy?.(); } catch {}
     };
   // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -130,7 +130,7 @@ function SoundCloudEmbed({ url }: { url: string }){
   const widgetRef = useRef<SCWidget|null>(null);
   const durationMsRef = useRef<number>(0);
   const lastPosMsRef = useRef<number>(0);
-  const durationPollRef = useRef<ReturnType<typeof setInterval>|null>(null);
+  const durationPollRef = useRef<ReturnType<typeof setInterval>|undefined>(undefined);
   const { registerController, setProgressAbs, setPlayingState } = usePlayer();
 
   const onPlay = useCallback(() => setPlayingState(true), [setPlayingState]);
@@ -146,7 +146,7 @@ function SoundCloudEmbed({ url }: { url: string }){
   const startDurationPoll = useCallback(() => {
     const w = widgetRef.current;
     if (!w) return;
-    if (durationPollRef.current) { clearInterval(durationPollRef.current); durationPollRef.current = null; }
+    if (durationPollRef.current) { clearInterval(durationPollRef.current); durationPollRef.current = undefined; }
     durationMsRef.current = 0;
     durationPollRef.current = setInterval(() => {
       try {
@@ -157,7 +157,7 @@ function SoundCloudEmbed({ url }: { url: string }){
             const cur = lastPosMsRef.current || 0;
             setProgressAbs(cur / 1000, ms / 1000);
             clearInterval(durationPollRef.current);
-            durationPollRef.current = null;
+            durationPollRef.current = undefined;
           }
         });
       } catch {}
@@ -203,7 +203,7 @@ function SoundCloudEmbed({ url }: { url: string }){
           w.unbind(SC.Widget.Events.PAUSE, onPause);
           w.unbind(SC.Widget.Events.PLAY_PROGRESS, onProgress);
         }
-        if (durationPollRef.current) { clearInterval(durationPollRef.current); durationPollRef.current = null; }
+        if (durationPollRef.current) { clearInterval(durationPollRef.current); durationPollRef.current = undefined; }
         registerController(null);
       } catch {}
     };
