@@ -15,12 +15,13 @@ import SuggestModal from '@/components/SuggestModal';
 
 type Item = { label: string; href: string; icon: ReactNode };
 
+// Order: Home, The list, Heatmaps, Serve up a set, Suggest a set
 const MENU_ITEMS: Item[] = [
-  { label: 'Serve up a set', href: '/serve', icon: <PlayOutlineIcon /> },
+  { label: 'Home', href: '/', icon: <HomeOutlineIcon /> },
   { label: 'The list', href: '/list', icon: <ListOutlineIcon /> },
   { label: 'Heatmaps', href: '/heatmaps', icon: <HeatmapOutlineIcon /> },
+  { label: 'Serve up a set', href: '/serve', icon: <PlayOutlineIcon /> },
   { label: 'Suggest a set', href: '/suggest', icon: <PaperPlaneOutlineIcon /> },
-  { label: 'Home', href: '/', icon: <HomeOutlineIcon /> },
 ];
 
 function useIsDesktop(minWidth = 640) {
@@ -37,7 +38,6 @@ function useIsDesktop(minWidth = 640) {
 
 export default function GlobalMenu() {
   const [open, setOpen] = useState(false);
-  const [sheetEnter, setSheetEnter] = useState(false);
   const [suggestOpen, setSuggestOpen] = useState(false);
   const pathname = usePathname() || '/';
   const router = useRouter();
@@ -99,36 +99,12 @@ export default function GlobalMenu() {
     setTimeout(() => itemRefs.current[0]?.focus(), 0);
   }, [open]);
 
-  // Mobile sheet swipe-to-dismiss
+  // Lock background scroll on mobile overlay
   useEffect(() => {
     if (!open || isDesktop) return;
-    // trigger slide-in after mount
-    const id = setTimeout(() => setSheetEnter(true), 0);
-    const el = sheetRef.current;
-    if (!el) return;
-    let startX = 0;
-    let dx = 0;
-    const onStart = (e: TouchEvent) => {
-      startX = e.touches[0]?.clientX ?? 0;
-      dx = 0;
-    };
-    const onMove = (e: TouchEvent) => {
-      dx = (e.touches[0]?.clientX ?? 0) - startX;
-    };
-    const onEnd = () => {
-      // swipe right to close (sheet sits on the right)
-      if (dx > 50) setOpen(false);
-    };
-    el.addEventListener('touchstart', onStart, { passive: true });
-    el.addEventListener('touchmove', onMove, { passive: true });
-    el.addEventListener('touchend', onEnd);
-    return () => {
-      clearTimeout(id);
-      el.removeEventListener('touchstart', onStart);
-      el.removeEventListener('touchmove', onMove);
-      el.removeEventListener('touchend', onEnd);
-      setSheetEnter(false);
-    };
+    const prev = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+    return () => { document.body.style.overflow = prev; };
   }, [open, isDesktop]);
 
   const handleOpen = () => setOpen(true);
@@ -192,9 +168,10 @@ export default function GlobalMenu() {
     router.push(href);
   };
 
+  // Tinted active row, consistent for desktop/mobile
   const commonItemClass = (active: boolean) =>
-    `flex items-center gap-3 px-3 py-2 rounded-md focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-black/40 hover:bg-black/5 ${
-      active ? 'font-semibold border-l-2 border-black/60 pl-[10px]' : 'pl-3'
+    `flex items-center gap-3 px-3 min-h-14 rounded-lg focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-black/40 ${
+      active ? 'bg-black/10 font-medium' : 'hover:bg-black/5'
     }`;
 
   return (
@@ -239,6 +216,7 @@ export default function GlobalMenu() {
                       if (el) itemRefs.current[i] = el;
                     }}
                     href={it.href}
+                    aria-current={active ? 'page' : undefined}
                     role="menuitem"
                     onClick={(e) => {
                       e.preventDefault();
@@ -258,56 +236,46 @@ export default function GlobalMenu() {
       )}
 
       {open && !isDesktop && (
-        <div className="fixed inset-0 z-50" aria-labelledby="mobileMenuTitle">
-          <div
-            className="absolute inset-0 bg-black/40 backdrop-blur-[1px]" 
-            onClick={handleClose}
-          />
-          <div
-            ref={sheetRef}
-            role="dialog"
-            aria-modal="true"
-            aria-label="Global navigation"
-            className={`absolute right-0 top-0 h-full w-[85vw] max-w-sm bg-white shadow-xl border-l border-black/10 motion-reduce:transition-none transition-transform duration-200 ease-out ${sheetEnter ? 'translate-x-0' : 'translate-x-full'}`}
-          >
-            <div className="flex items-center justify-between px-4 py-3 border-b border-black/10">
-              <div id="mobileMenuTitle" className="text-sm font-semibold">Menu</div>
-              <button
-                ref={closeRef}
-                type="button"
-                aria-label="Close menu"
-                onClick={handleClose}
-                onKeyDown={onCloseKeyDown}
-                className="inline-flex h-10 w-10 items-center justify-center rounded-md hover:bg-black/5 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-black/40"
-              >
-                <CloseIcon />
-              </button>
-            </div>
-            <nav className="flex flex-col gap-1 p-2" aria-label="Main">
-              {MENU_ITEMS.map((it, i) => {
-                const active = it.href === '/' ? pathname === '/' : pathname.startsWith(it.href);
-                return (
-                  <a
-                    key={it.href}
-                    ref={(el) => {
-                      if (el) itemRefs.current[i] = el;
-                    }}
-                    href={it.href}
-                    role="menuitem"
-                    onClick={(e) => {
-                      e.preventDefault();
-                      onActivate(it.href, it.label);
-                    }}
-                    onKeyDown={(e) => onItemKeyDown(e, i)}
-                    className={`min-h-11 ${commonItemClass(active)}`}
-                  >
-                    <span className="shrink-0 text-black/80">{it.icon}</span>
-                    <span className="truncate">{it.label}</span>
-                  </a>
-                );
-              })}
-            </nav>
+        <div
+          ref={sheetRef}
+          className="fixed inset-0 z-50 bg-white"
+          role="dialog"
+          aria-modal="true"
+          aria-label="Global navigation"
+        >
+          {/* Top bar: close in the same place as the hamburger (right aligned) */}
+          <div className="h-14 flex items-center justify-end border-b border-black/10 px-4">
+            <button
+              ref={closeRef}
+              type="button"
+              aria-label="Close menu"
+              onClick={handleClose}
+              onKeyDown={onCloseKeyDown}
+              className="inline-flex h-10 w-10 items-center justify-center rounded-md hover:bg-black/5 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-black/40"
+            >
+              <CloseIcon />
+            </button>
           </div>
+          <nav className="flex flex-col gap-1 p-3 pb-4" aria-label="Main">
+            {MENU_ITEMS.map((it, i) => {
+              const active = it.href === '/' ? pathname === '/' : pathname.startsWith(it.href);
+              return (
+                <a
+                  key={it.href}
+                  ref={(el) => { if (el) itemRefs.current[i] = el; }}
+                  href={it.href}
+                  role="menuitem"
+                  aria-current={active ? 'page' : undefined}
+                  onClick={(e) => { e.preventDefault(); onActivate(it.href, it.label); }}
+                  onKeyDown={(e) => onItemKeyDown(e, i)}
+                  className={commonItemClass(active)}
+                >
+                  <span className="shrink-0 text-black/80">{it.icon}</span>
+                  <span className="truncate">{it.label}</span>
+                </a>
+              );
+            })}
+          </nav>
         </div>
       )}
       <SuggestModal open={suggestOpen} onClose={() => setSuggestOpen(false)} restoreFocusTo={triggerRef.current} />
