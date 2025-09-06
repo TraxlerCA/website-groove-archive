@@ -46,7 +46,7 @@ export async function GET(req: Request) {
     const artwork = data?.thumbnail_url || null;
     setCached(key, artwork);
     return NextResponse.json({ artwork }, { headers: { "Cache-Control": "no-store" } });
-  } catch (_e: unknown) {
+  } catch {
     return NextResponse.json({ artwork: null }, { status: 200 });
   }
 }

@@ -1,7 +1,6 @@
 'use client';
 
-import { useEffect, useMemo, useRef, useState } from 'react';
-import Link from 'next/link';
+import { useEffect, useRef, useState, type ReactNode } from 'react';
 import { usePathname, useRouter } from 'next/navigation';
 import {
   CloseIcon,
@@ -14,7 +13,7 @@ import {
 } from '@/components/icons';
 import SuggestModal from '@/components/SuggestModal';
 
-type Item = { label: string; href: string; icon: JSX.Element };
+type Item = { label: string; href: string; icon: ReactNode };
 
 const MENU_ITEMS: Item[] = [
   { label: 'Serve up a set', href: '/serve', icon: <PlayOutlineIcon /> },
@@ -53,12 +52,7 @@ export default function GlobalMenu() {
   // Reset refs array on each render to current items count
   itemRefs.current = [];
 
-  const activeIndex = useMemo(() => {
-    const idx = MENU_ITEMS.findIndex((it) =>
-      it.href === '/' ? pathname === '/' : pathname.startsWith(it.href)
-    );
-    return idx === -1 ? undefined : idx;
-  }, [pathname]);
+  // active index not used for UI behavior currently; removed to avoid lint noise
 
   // Close on route change
   useEffect(() => {

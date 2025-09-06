@@ -292,24 +292,24 @@ function Heatmap({
   const NIGHT_CUTOFF_H = 10;           // anything earlier is treated as next day
   const CUTOFF = NIGHT_CUTOFF_H * 60;
 
-  const startMin = (r: Row) => {
+  const startMin = React.useCallback((r: Row) => {
     const s = toMin(r.start);
     return s < CUTOFF ? s + DAY : s;
-  };
-  const endMin = (r: Row) => {
+  }, [CUTOFF, DAY]);
+  const endMin = React.useCallback((r: Row) => {
     const s = startMin(r);
     let e = toMin(r.end);
     e = e < CUTOFF ? e + DAY : e;
     if (e <= s) e += DAY; // safety for 22:00→01:00 and odd cases
     return e;
-  };
+  }, [startMin, CUTOFF, DAY]);
   const fmtHour = (mins: number) => {
     const hr = Math.floor((((mins % DAY) + DAY) % DAY) / 60);
     return String(hr).padStart(2, '0') + ':00';
   };
 
-  const minStart = useMemo(() => Math.min(...rows.map(r => startMin(r))), [rows]);
-  const maxEnd   = useMemo(() => Math.max(...rows.map(r => endMin(r))),   [rows]);
+  const minStart = useMemo(() => Math.min(...rows.map(r => startMin(r))), [rows, startMin]);
+  const maxEnd   = useMemo(() => Math.max(...rows.map(r => endMin(r))),   [rows, endMin]);
   const totalMin = clamp(Math.max(60, maxEnd - minStart), 60, 20 * 60);
   const heightPx = Math.round(totalMin * pxPerMin);
 
@@ -449,7 +449,6 @@ function CreateHeatmapModal({
 }) {
   const dialogRef = useRef<HTMLDivElement | null>(null);
   const [errors, setErrors] = useState<string[]>([]);
-  const [busy, setBusy] = useState(false);
   const [parsedRows, setParsedRows] = useState<Row[] | null>(null);
 
   // focus trap + esc close
@@ -558,7 +557,7 @@ function CreateHeatmapModal({
   }, []);
 
   const onFile = useCallback(async (file: File) => {
-    setBusy(true); setErrors([]); setParsedRows(null);
+    setErrors([]); setParsedRows(null);
     try {
       if (file.size > 1_000_000) { setErrors(['File is larger than 1 MB.']); return; }
       let text: string;
@@ -577,7 +576,9 @@ function CreateHeatmapModal({
       await validateAndParse(text);
       // optional analytics
       try { (window as unknown as { plausible?: (e: string) => void }).plausible?.('heatmap_upload_success'); } catch {}
-    } finally { setBusy(false); }
+    } finally {
+      // no-op
+    }
   }, [validateAndParse]);
 
   const apply = useCallback(() => {

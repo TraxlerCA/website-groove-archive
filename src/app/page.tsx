@@ -12,28 +12,9 @@ type Row = {
   soundcloud?: string | null;
 };
 
-function ytId(u?: string | null) {
-  if (!u) return null;
-  try {
-    const url = new URL(u);
-    if (url.hostname.includes('youtu.be')) return url.pathname.slice(1);
-    if (url.searchParams.get('v')) return url.searchParams.get('v');
-    const seg = url.pathname.split('/');
-    const i = seg.indexOf('embed');
-    if (i >= 0 && seg[i + 1]) return seg[i + 1];
-  } catch {}
-  return null;
-}
+// ytId helper removed (unused)
 
-function ytThumbs(u?: string | null) {
-  const id = ytId(u); if (!id) return [];
-  return [
-    `https://i.ytimg.com/vi/${id}/maxresdefault.jpg`,
-    `https://i.ytimg.com/vi/${id}/sddefault.jpg`,
-    `https://i.ytimg.com/vi/${id}/hqdefault.jpg`,
-    `https://i.ytimg.com/vi/${id}/mqdefault.jpg`,
-  ];
-}
+// ytThumbs helper removed (unused)
 
 // on-demand loader for Random serve (no preload on first paint)
 async function fetchSoundcloudPicks(max = 5): Promise<Row[]> {
@@ -199,15 +180,7 @@ export default function Home() {
   );
 }
 
-function CoverBackground({ urls }: { urls: string[] }) {
-  const [idx, setIdx] = React.useState(0);
-  const src = urls[idx];
-  return (
-    <div className="absolute inset-0" style={{ backgroundImage: `url(${src})`, backgroundSize: 'cover', backgroundPosition: 'center' }}>
-      <img src={src} alt="" className="hidden" onError={() => { if (idx < urls.length - 1) setIdx(idx + 1); }} />
-    </div>
-  );
-}
+// CoverBackground component removed (unused)
 
 function SCArtwork({url, preserveRatio=false}:{url:string; preserveRatio?:boolean}) {
   const [art,setArt]=React.useState<string|null>(null);
