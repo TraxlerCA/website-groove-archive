@@ -3,6 +3,42 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { usePlayer } from "@/context/PlayerProvider";
 import { ytid } from "@/lib/utils";
 
+// Minimal typings for the YouTube IFrame API and SoundCloud Widget API
+type YTOnStateChangeEvent = { data?: number };
+type YTPlayer = {
+  playVideo: () => void;
+  pauseVideo: () => void;
+  seekTo: (seconds: number, allowSeekAhead?: boolean) => void;
+  getCurrentTime?: () => number;
+  getDuration?: () => number;
+  loadVideoById: (id: string) => void;
+  destroy?: () => void;
+};
+type YTPlayerConfig = {
+  videoId: string;
+  playerVars?: Record<string, unknown>;
+  events?: {
+    onReady?: () => void;
+    onStateChange?: (e: YTOnStateChangeEvent) => void;
+  };
+};
+type SCWidget = {
+  play: () => void;
+  pause: () => void;
+  seekTo: (ms: number) => void;
+  load: (url: string, options?: Record<string, unknown>) => void;
+  bind: (event: string, listener: (e?: unknown) => void) => void;
+  unbind: (event: string, listener: (e?: unknown) => void) => void;
+  getDuration: (cb: (ms: number) => void) => void;
+};
+
+declare global {
+  interface Window {
+    YT?: { Player: new (el: HTMLElement, config: YTPlayerConfig) => YTPlayer };
+    SC?: { Widget: ((iframe: HTMLIFrameElement) => SCWidget) & { Events: { PLAY: string; PAUSE: string; PLAY_PROGRESS: string } } };
+  }
+}
+
 // --- Lightweight script loader that waits until `check()` is true
 function loadScriptOnce(src:string, check:()=>boolean):Promise<void>{
   if (typeof window === 'undefined') return Promise.resolve();
@@ -25,8 +61,8 @@ function loadScriptOnce(src:string, check:()=>boolean):Promise<void>{
 // --- YouTube Embed with IFrame API
 function YouTubeEmbed({ url }: { url: string }){
   const containerRef = useRef<HTMLDivElement>(null);
-  const playerRef = useRef<any>(null);
-  const pollRef = useRef<any>(null);
+  const playerRef = useRef<YTPlayer|null>(null);
+  const pollRef = useRef<ReturnType<typeof setInterval>|null>(null);
   const { registerController, setProgressAbs, setPlayingState } = usePlayer();
   const id = ytid(url) || '';
 
@@ -34,9 +70,9 @@ function YouTubeEmbed({ url }: { url: string }){
   useEffect(() => {
     let alive = true;
     const init = async () => {
-      await loadScriptOnce('https://www.youtube.com/iframe_api', () => !!(window as any).YT?.Player);
+      await loadScriptOnce('https://www.youtube.com/iframe_api', () => typeof window !== 'undefined' && !!window.YT?.Player);
       if (!alive || !containerRef.current) return;
-      const YT = (window as any).YT;
+      const YT = window.YT!;
       const origin = typeof window !== 'undefined' ? window.location.origin : '';
       playerRef.current = new YT.Player(containerRef.current, {
         videoId: id,
@@ -60,7 +96,7 @@ function YouTubeEmbed({ url }: { url: string }){
               }, 250);
             }
           },
-          onStateChange: (e: any) => {
+          onStateChange: (e: YTOnStateChangeEvent) => {
             const st = e?.data; // -1,0,1,2,3,5
             if (st === 1) setPlayingState(true); // playing
             else if (st === 2 || st === 0) setPlayingState(false); // paused or ended
@@ -91,15 +127,15 @@ function YouTubeEmbed({ url }: { url: string }){
 // --- SoundCloud Embed with Widget API
 function SoundCloudEmbed({ url }: { url: string }){
   const iframeRef = useRef<HTMLIFrameElement>(null);
-  const widgetRef = useRef<any>(null);
+  const widgetRef = useRef<SCWidget|null>(null);
   const durationMsRef = useRef<number>(0);
   const lastPosMsRef = useRef<number>(0);
-  const durationPollRef = useRef<any>(null);
+  const durationPollRef = useRef<ReturnType<typeof setInterval>|null>(null);
   const { registerController, setProgressAbs, setPlayingState } = usePlayer();
 
   const onPlay = useCallback(() => setPlayingState(true), [setPlayingState]);
   const onPause = useCallback(() => setPlayingState(false), [setPlayingState]);
-  const onProgress = useCallback((e: any) => {
+  const onProgress = useCallback((e: { currentPosition?: number }) => {
     const curMs = e?.currentPosition || 0;
     lastPosMsRef.current = curMs;
     const totalMs = durationMsRef.current;
@@ -132,11 +168,11 @@ function SoundCloudEmbed({ url }: { url: string }){
   useEffect(() => {
     let alive = true;
     const init = async () => {
-      await loadScriptOnce('https://w.soundcloud.com/player/api.js', () => !!(window as any).SC?.Widget);
+      await loadScriptOnce('https://w.soundcloud.com/player/api.js', () => typeof window !== 'undefined' && !!window.SC?.Widget);
       if (!alive || !iframeRef.current) return;
       // Minimal base src so the widget can attach
       iframeRef.current.src = `https://w.soundcloud.com/player/?url=`;
-      const SC = (window as any).SC;
+      const SC = window.SC!;
       const widget = SC.Widget(iframeRef.current);
       widgetRef.current = widget;
       // Controller once
@@ -161,7 +197,7 @@ function SoundCloudEmbed({ url }: { url: string }){
       alive = false;
       const w = widgetRef.current;
       try {
-        const SC = (window as any).SC;
+        const SC = window.SC!;
         if (w && SC?.Widget?.Events) {
           w.unbind(SC.Widget.Events.PLAY, onPlay);
           w.unbind(SC.Widget.Events.PAUSE, onPause);

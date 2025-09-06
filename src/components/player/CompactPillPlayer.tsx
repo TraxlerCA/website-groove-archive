@@ -43,7 +43,6 @@ function fmtTime(sec: number) {
 
 export default function CompactPillPlayer() {
   const { current, playing, toggle, progress, setOpen, durationSec } = usePlayer();
-  const onToggle = () => toggle();
   
   // Keyboard: space toggles when hovering or focusing the pill
   const wrapRef = useRef<HTMLDivElement>(null);
@@ -54,7 +53,7 @@ export default function CompactPillPlayer() {
     const onKey = (e: KeyboardEvent) => {
       if (e.code === 'Space' || e.key === ' ') {
         e.preventDefault();
-        onToggle();
+        toggle();
       }
     };
 
@@ -73,6 +72,8 @@ export default function CompactPillPlayer() {
       el.removeEventListener('pointerleave', leave);
       window.removeEventListener('keydown', onKey);
     };
+  // Stable deps: only rebind on playing change; toggle is stable from context
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [playing]);
 
   // Guard: render nothing if no track (hooks above remain stable)
@@ -110,7 +111,7 @@ export default function CompactPillPlayer() {
           {/* Play / Pause */}
           <button
             aria-label={playing ? 'Pause' : 'Play'}
-            onClick={onToggle}
+            onClick={toggle}
             className="grid place-items-center rounded-full bg-white text-neutral-900 w-8 h-8 active:scale-95 shadow ring-1 ring-black/10"
           >
             {playing ? <Pause className="h-4 w-4" /> : <Play className="h-4 w-4" />}
