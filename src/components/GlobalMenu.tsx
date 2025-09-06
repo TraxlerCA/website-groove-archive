@@ -15,13 +15,13 @@ import SuggestModal from '@/components/SuggestModal';
 
 type Item = { label: string; href: string; icon: ReactNode };
 
-// Order: Home, The list, Heatmaps, Serve up a set, Suggest a set
+// Order: Serve up a set, The list, Heatmaps, Suggest a set, Home
 const MENU_ITEMS: Item[] = [
-  { label: 'Home', href: '/', icon: <HomeOutlineIcon /> },
+  { label: 'Serve up a set', href: '/serve', icon: <PlayOutlineIcon /> },
   { label: 'The list', href: '/list', icon: <ListOutlineIcon /> },
   { label: 'Heatmaps', href: '/heatmaps', icon: <HeatmapOutlineIcon /> },
-  { label: 'Serve up a set', href: '/serve', icon: <PlayOutlineIcon /> },
   { label: 'Suggest a set', href: '/suggest', icon: <PaperPlaneOutlineIcon /> },
+  { label: 'Home', href: '/', icon: <HomeOutlineIcon /> },
 ];
 
 function useIsDesktop(minWidth = 640) {

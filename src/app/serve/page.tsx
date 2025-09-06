@@ -144,7 +144,7 @@ export default function ServePage(){
 
   const Circle=({selected}:{selected:boolean})=><span className={`inline-block h-3 w-3 rounded-full border ${selected?'bg-black border-black':'border-neutral-400 bg-white'}`}/>;
   const CircleOption=({label,value,icon}:{label:string;value:Provider;icon:ReactElement})=>(
-    <motion.button type="button" aria-pressed={format===value} onClick={()=>setFormat(f=>f===value?'none':value)}
+    <motion.button type="button" aria-pressed={format===value} onClick={(e)=>{ e.stopPropagation(); setFormat(f=>f===value?'none':value); }}
       className={`h-10 px-3 rounded-lg border text-sm inline-flex items-center gap-2 ${format===value?'bg-white text-neutral-900 border-neutral-900':'bg-white border-neutral-300 hover:bg-neutral-50'}`}
       whileHover={{ y: -1, scale: 1.01 }}
       whileTap={{ y: 0, scale: 0.99 }}
@@ -161,7 +161,7 @@ export default function ServePage(){
       <PageTitle title="SERVER"/>
 
       {/* compact controls */}
-      <div className="rounded-2xl border border-neutral-200 bg-neutral-50/60 backdrop-blur p-4 shadow-sm max-w-2xl mx-auto">
+      <div className="relative z-10 rounded-2xl border border-neutral-200 bg-neutral-50/60 backdrop-blur p-4 shadow-sm max-w-2xl mx-auto">
         <div className="grid sm:grid-cols-2 gap-3">
           {/* Genre left */}
           <div className="p-4 sm:pr-6">
@@ -225,7 +225,7 @@ export default function ServePage(){
 
       {/* suggestion */}
       {!isLaunching&&pick&&(
-        <div ref={suggestionRef} className="max-w-2xl mx-auto">
+        <div ref={suggestionRef} className="relative z-0 max-w-2xl mx-auto mt-4">
           <motion.article
             whileHover={{ y: -2 }}
             className={
