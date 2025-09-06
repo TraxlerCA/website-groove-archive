@@ -196,7 +196,6 @@ type CacheVal = { ts: number; payload: SheetsPayload };
 const TTL = 5 * 60 * 1000;
 
 declare global {
-  // eslint-disable-next-line no-var
   var __sheetCache: Map<string, CacheVal> | undefined;
 }
 globalThis.__sheetCache = globalThis.__sheetCache ?? new Map<string, CacheVal>();

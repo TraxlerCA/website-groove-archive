@@ -5,7 +5,6 @@ type CacheVal = { ts: number; val: string | null };
 const TTL = 10 * 60 * 1000;
 
 declare global {
-  // eslint-disable-next-line no-var
   var __scArtCache: Map<string, CacheVal> | undefined;
 }
 globalThis.__scArtCache = globalThis.__scArtCache ?? new Map<string, CacheVal>();
@@ -47,7 +46,7 @@ export async function GET(req: Request) {
     const artwork = data?.thumbnail_url || null;
     setCached(key, artwork);
     return NextResponse.json({ artwork }, { headers: { "Cache-Control": "no-store" } });
-  } catch (_e: unknown) {
+  } catch {
     return NextResponse.json({ artwork: null }, { status: 200 });
   }
 }
