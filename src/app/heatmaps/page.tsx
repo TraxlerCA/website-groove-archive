@@ -64,7 +64,8 @@ export default function HeatmapsPage() {
   // user-provided preview rows (ephemeral)
   const [userRows, setUserRows] = useState<Row[]>([]);
   const [uploadOpen, setUploadOpen] = useState(false);
-  const [pxPerMin, setPxPerMin] = useState(1.0);
+  // Fixed density (removed slider)
+  const pxPerMin = 1.0;
   const [err, setErr] = useState<string | null>(null);
   const refs = useRef<Record<string, HTMLDivElement | null>>({});
 
@@ -129,42 +130,47 @@ export default function HeatmapsPage() {
   }
 
   return (
-    <div className="mx-auto max-w-6xl px-6 py-4">
+    <div className="mx-auto max-w-6xl px-6 py-6">
       <CreateHeatmapModal
         open={uploadOpen}
         onClose={() => setUploadOpen(false)}
         onApply={(rows) => { setUserRows(rows); setUploadOpen(false); }}
       />
-      {/* 1) entry: create your own heatmap */}
-      <div className="mb-4 flex items-center justify-between gap-4">
-        <h1 className="text-xl font-semibold tracking-wide text-neutral-900">Heatmaps</h1>
-        <button
-          className="rounded-md bg-neutral-900 px-4 py-2 text-white shadow hover:bg-neutral-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-300"
-          onClick={() => setUploadOpen(true)}
-        >
-          Create your own heatmap
-        </button>
-      </div>
-
-      {/* 2) sticky legend */}
-      <div className="sticky top-2 z-30 mb-4">
-        <div className="inline-flex items-center gap-6 rounded-lg border border-neutral-700 bg-neutral-900/95 px-4 py-2 text-sm text-white shadow-md">
-          <span className="inline-flex items-center gap-2">
-            <span className="inline-block h-3 w-6 rounded" style={{ backgroundColor: COLORS.nahh }} />
-            nahh
-          </span>
-          <span className="inline-flex items-center gap-2">
-            <span className="inline-block h-3 w-6 rounded" style={{ backgroundColor: COLORS.ok }} />
-            ok
-          </span>
-          <span className="inline-flex items-center gap-2">
-            <span className="inline-block h-3 w-6 rounded" style={{ backgroundColor: COLORS.hot }} />
-            hot
-          </span>
-          <span className="inline-flex items-center gap-2">
-            <span className="inline-block h-3 w-6 rounded" style={{ backgroundColor: COLORS.blazing }} />
-            blazing
-          </span>
+      {/* Hero CTA: dominant primary action */}
+      <div className="mb-10 rounded-2xl border border-neutral-200 bg-white p-6 sm:p-10 shadow-sm">
+        <div className="grid items-center gap-6 sm:grid-cols-[1fr_auto]">
+          <div>
+            <h1 className="text-2xl sm:text-4xl font-semibold tracking-wide text-neutral-900">Create your own heatmap</h1>
+            <p className="mt-2 text-sm sm:text-base text-neutral-600">Upload a CSV, preview instantly, and download a PNG. All processing stays in your browser.</p>
+          </div>
+          <div className="flex flex-wrap items-center gap-3">
+            <button
+              className="h-12 rounded-md bg-neutral-900 px-6 text-white shadow hover:bg-neutral-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-300"
+              onClick={() => setUploadOpen(true)}
+            >
+              Create your own heatmap
+            </button>
+            <button
+              className="h-12 rounded-md border border-neutral-300 bg-white px-4 text-sm hover:bg-neutral-50"
+              onClick={() => {
+                const today = new Date();
+                const yyyy = today.getFullYear();
+                const mm = String(today.getMonth() + 1).padStart(2, '0');
+                const dd = String(today.getDate()).padStart(2, '0');
+                const tmpl = [
+                  ['festival','date','stage','stage_order','artist','start','end','rating'].join(','),
+                  [`My Festival`,`${yyyy}-${mm}-${dd}`,`Main Stage`,`1`,`Artist A`,`22:30`,`23:45`,`hot`].join(','),
+                  [`My Festival`,`${yyyy}-${mm}-${dd}`,`Second Stage`,`2`,`Artist B`,`00:15`,`01:00`,`ok`].join(','),
+                ].join('\n');
+                const blob = new Blob([tmpl], { type: 'text/csv;charset=utf-8' });
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a'); a.href = url; a.download = 'heatmap-template.csv'; a.click();
+                URL.revokeObjectURL(url);
+              }}
+            >
+              CSV template
+            </button>
+          </div>
         </div>
       </div>
 
@@ -199,6 +205,8 @@ export default function HeatmapsPage() {
         </div>
       )}
 
+      {/* curated examples */}
+      <h2 className="mb-3 text-lg font-semibold tracking-wide text-neutral-900">Example heatmaps</h2>
       <div className="space-y-12">
         {groups.map(g => (
           <Heatmap
@@ -212,19 +220,6 @@ export default function HeatmapsPage() {
             onExport={() => exportPng(g.key, `${g.title}-${g.date}`)}
           />
         ))}
-      </div>
-
-      <div className="mt-6 flex items-center gap-3 text-xs text-neutral-600">
-        <label>density</label>
-        <input
-          type="range"
-          min={0.6}
-          max={2.0}
-          step={0.05}
-          value={pxPerMin}
-          onChange={e => setPxPerMin(parseFloat((e.target as HTMLInputElement).value))}
-        />
-        <span>{pxPerMin.toFixed(2)} px/min</span>
       </div>
     </div>
   );
@@ -617,6 +612,14 @@ function CreateHeatmapModal({
             Add preview
           </button>
         </div>
+      </div>
+
+      {/* inline legend per heatmap */}
+      <div className="mb-2 flex flex-wrap items-center gap-5 text-sm text-neutral-700">
+        <span className="inline-flex items-center gap-2"><i className="inline-block h-3 w-6 rounded" style={{ backgroundColor: COLORS.nahh }} /> nahh</span>
+        <span className="inline-flex items-center gap-2"><i className="inline-block h-3 w-6 rounded" style={{ backgroundColor: COLORS.ok }} /> ok</span>
+        <span className="inline-flex items-center gap-2"><i className="inline-block h-3 w-6 rounded" style={{ backgroundColor: COLORS.hot }} /> hot</span>
+        <span className="inline-flex items-center gap-2"><i className="inline-block h-3 w-6 rounded" style={{ backgroundColor: COLORS.blazing }} /> blazing</span>
       </div>
     </div>
   );
