@@ -1,17 +1,25 @@
 // src/components/ui.tsx
 'use client';
 import type { ReactNode } from "react";
+import { motion } from 'framer-motion';
 
 export function PageTitle({title}:{title:string}) {
   return <h2 className="text-center text-4xl sm:text-5xl font-semibold tracking-wide" style={{fontFamily:"'Space Grotesk',system-ui,sans-serif"}}>{title}</h2>;
 }
 
-export function IconButton({title,onClick,ariaLabel,children}:{title:string;onClick?:()=>void;ariaLabel?:string;children:ReactNode;}) {
+export function IconButton({title,onClick,ariaLabel,children,variant}:{title:string;onClick?:()=>void;ariaLabel?:string;children:ReactNode;variant?:'default'|'inverted';}) {
+  const v = variant||'default';
+  const base = 'w-11 h-11 sm:w-8 sm:h-8 grid place-items-center rounded-full border focus-visible:outline-none focus-visible:ring-2';
+  const cls = v==='inverted'
+    ? `${base} border-black bg-black text-white hover:brightness-110 focus-visible:ring-black/40`
+    : `${base} border-neutral-300 bg-white hover:bg-neutral-50 focus-visible:ring-black/30`;
   return (
-    <button title={title} aria-label={ariaLabel||title} onClick={onClick}
-      className="w-11 h-11 sm:w-8 sm:h-8 grid place-items-center rounded-full border border-neutral-300 bg-white hover:bg-neutral-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-300">
+    <motion.button title={title} aria-label={ariaLabel||title} onClick={onClick} className={cls}
+      whileHover={{ y: -1, scale: 1.01 }}
+      whileTap={{ y: 0, scale: 0.99 }}
+    >
       {children}
-    </button>
+    </motion.button>
   );
 }
 
@@ -28,7 +36,7 @@ export function Switch({checked,onChange}:{checked:boolean;onChange:()=>void}) {
   return (
     <button role="switch" aria-checked={checked} onClick={onChange}
       className={`relative inline-flex items-center w-12 h-7 rounded-full border transition
-      ${checked?"bg-[var(--accent)] border-[var(--accent)]":"bg-neutral-200 border-neutral-300"} hover:brightness-[.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-300`}>
+      ${checked?"bg-[var(--accent)] border-[var(--accent)]":"bg-neutral-200 border-neutral-300"} hover:brightness-[.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-black/30`}>
       <i className={`absolute top-[4px] left-[4px] h-[18px] w-[18px] rounded-full bg-white shadow-sm transition-transform
         ${checked?"translate-x-[20px]":""}`}/>
     </button>

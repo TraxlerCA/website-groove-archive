@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useMemo, useRef } from 'react';
+import { motion } from 'framer-motion';
 
 const SUGGEST_TO = 'tga.suggestions@gmail.com';
 const SUGGEST_SUBJECT = 'Set suggestion for The Groove Archive';
@@ -91,23 +92,25 @@ export default function SuggestModal({ open, onClose, restoreFocusTo }: { open: 
         </div>
 
         <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
-          <a
+          <motion.a
             href={mailtoHref}
             onClick={() => { track('suggest_click_mailto'); }}
             className="inline-flex items-center justify-center rounded-md bg-neutral-900 px-4 py-2 text-white hover:bg-neutral-800 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-black/40 w-full sm:w-auto"
             aria-label="Open your email app to send a suggestion"
+            whileHover={{ y: -1, scale: 1.01 }} whileTap={{ y: 0, scale: 0.99 }}
           >
             Mail
-          </a>
-          <a
+          </motion.a>
+          <motion.a
             href={gmailHref}
             target="_blank" rel="noopener noreferrer"
             onClick={() => { track('suggest_click_gmail'); }}
             className="inline-flex items-center justify-center rounded-md border border-neutral-300 bg-white px-4 py-2 text-neutral-900 hover:bg-black/5 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-black/40 w-full sm:w-auto"
             aria-label="Open Gmail to send a suggestion"
+            whileHover={{ y: -1, scale: 1.01 }} whileTap={{ y: 0, scale: 0.99 }}
           >
             Open in Gmail
-          </a>
+          </motion.a>
         </div>
       </div>
     </div>

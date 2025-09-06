@@ -142,12 +142,15 @@ export default function ServePage(){
     setTimeout(()=>{setPick(chosen);setIsLaunching(false);setHasLaunched(true);},1000);
   };
 
-  const Circle=({selected}:{selected:boolean})=><span className={`inline-block h-3 w-3 rounded-full border ${selected?'bg-blue-600 border-blue-600':'border-neutral-400 bg-white'}`}/>;
+  const Circle=({selected}:{selected:boolean})=><span className={`inline-block h-3 w-3 rounded-full border ${selected?'bg-black border-black':'border-neutral-400 bg-white'}`}/>;
   const CircleOption=({label,value,icon}:{label:string;value:Provider;icon:ReactElement})=>(
-    <button type="button" aria-pressed={format===value} onClick={()=>setFormat(f=>f===value?'none':value)}
-      className={`h-10 px-3 rounded-lg border text-sm inline-flex items-center gap-2 ${format===value?'bg-neutral-900 text-white border-neutral-900':'bg-white border-neutral-300 hover:bg-neutral-50'}`}>
+    <motion.button type="button" aria-pressed={format===value} onClick={()=>setFormat(f=>f===value?'none':value)}
+      className={`h-10 px-3 rounded-lg border text-sm inline-flex items-center gap-2 ${format===value?'bg-white text-neutral-900 border-neutral-900':'bg-white border-neutral-300 hover:bg-neutral-50'}`}
+      whileHover={{ y: -1, scale: 1.01 }}
+      whileTap={{ y: 0, scale: 0.99 }}
+    >
       <Circle selected={format===value}/>{icon}<span>{label}</span>
-    </button>
+    </motion.button>
   );
 
   const titleOf=(r: Row)=>r?.set||'Untitled set';
@@ -186,8 +189,8 @@ export default function ServePage(){
           {/* Go button row */}
           <div className="p-3 sm:col-span-2 grid place-items-center">
             <motion.button onClick={launch}
-              whileHover={{y:-1,scale:1.01,boxShadow:"0 8px 16px rgba(37,99,235,.2)"}}
-              whileTap={{y:0,scale:0.99,boxShadow:"0 4px 10px rgba(37,99,235,.15)"}}
+              whileHover={{y:-1,scale:1.01,boxShadow:"0 8px 16px rgba(0,0,0,.20)"}}
+              whileTap={{y:0,scale:0.99,boxShadow:"0 4px 10px rgba(0,0,0,.15)"}}
               disabled={isLaunching}
               className="mt-0 inline-flex h-11 w-72 rounded-full bg-[var(--accent)] text-white leading-none items-center justify-center select-none disabled:opacity-60 disabled:cursor-not-allowed"
             >

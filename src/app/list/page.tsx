@@ -8,6 +8,7 @@ import { YouTubeIcon, SCIcon, SearchIcon, PaperPlaneOutlineIcon } from "@/compon
 import { usePlayer } from "@/context/PlayerProvider";
 import { useRows } from "@/lib/useRows";
 import SuggestModal from "@/components/SuggestModal";
+import { motion } from 'framer-motion';
 
 /* title | genre | links */
 /*
@@ -110,16 +111,18 @@ export default function ListPage() {
 
               {/* Suggest a set action */}
               <div className="ml-auto">
-                <button
+                <motion.button
                   ref={suggestBtnRef}
                   type="button"
                   onClick={() => setSuggestOpen(true)}
                   className="inline-flex items-center gap-2 rounded-md bg-neutral-900 px-4 h-9 text-white hover:bg-neutral-800 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-black/40"
                   aria-label="Open the suggest a set modal"
+                  whileHover={{ y: -1, scale: 1.01 }}
+                  whileTap={{ y: 0, scale: 0.99 }}
                 >
                   <span className="-ml-1"><PaperPlaneOutlineIcon /></span>
                   <span>Suggest a set</span>
-                </button>
+                </motion.button>
               </div>
             </div>
 
@@ -152,7 +155,7 @@ export default function ListPage() {
                   ) : (
                     <>
                       {/* desktop/tablet row */}
-                      <div className={`${ROW_COLS} px-4 py-3 odd:bg-white hover:bg-blue-50/40 transition hidden sm:grid`}>
+                      <div className={`${ROW_COLS} px-4 py-3 odd:bg-white hover:bg-black/5 transition hidden sm:grid`}>
                         <div className="py-2 min-w-0">
                           <a
                             href={r?.youtube || r?.soundcloud || "#"}
@@ -178,6 +181,7 @@ export default function ListPage() {
                                 title="play on SoundCloud"
                                 ariaLabel="play on SoundCloud"
                                 onClick={() => play(r, "soundcloud")}
+                                variant="inverted"
                               >
                                 <SCIcon />
                               </IconButton>
@@ -190,6 +194,7 @@ export default function ListPage() {
                                 title="play on YouTube"
                                 ariaLabel="play on YouTube"
                                 onClick={() => play(r, "youtube")}
+                                variant="inverted"
                               >
                                 <YouTubeIcon />
                               </IconButton>
@@ -216,12 +221,12 @@ export default function ListPage() {
 
                           <div className="flex shrink-0 items-center gap-2">
                             {r?.soundcloud && (
-                              <IconButton title="Play on SoundCloud" ariaLabel="Play on SoundCloud" onClick={() => play(r, "soundcloud")}>
+                              <IconButton title="Play on SoundCloud" ariaLabel="Play on SoundCloud" onClick={() => play(r, "soundcloud")} variant="inverted">
                                 <SCIcon />
                               </IconButton>
                             )}
                             {r?.youtube && (
-                              <IconButton title="Play on YouTube" ariaLabel="Play on YouTube" onClick={() => play(r, "youtube")}>
+                              <IconButton title="Play on YouTube" ariaLabel="Play on YouTube" onClick={() => play(r, "youtube")} variant="inverted">
                                 <YouTubeIcon />
                               </IconButton>
                             )}

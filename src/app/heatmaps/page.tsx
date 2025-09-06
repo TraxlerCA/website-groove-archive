@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useEffect, useMemo, useRef, useState, useCallback } from 'react';
+import { motion } from 'framer-motion';
 import Papa, { ParseResult } from 'papaparse';
 import * as htmlToImage from 'html-to-image';
 
@@ -196,13 +197,15 @@ export default function HeatmapsPage() {
             <p className="mt-2 text-sm sm:text-base text-neutral-600">Upload a CSV, preview instantly, and download a PNG. All processing stays in your browser.</p>
           </div>
           <div className="flex flex-wrap items-center gap-3">
-            <button
-              className="h-12 rounded-md bg-neutral-900 px-6 text-white shadow hover:bg-neutral-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-300"
+            <motion.button
+              className="h-12 rounded-md bg-neutral-900 px-6 text-white shadow hover:bg-neutral-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-black/30"
               onClick={() => setUploadOpen(true)}
+              whileHover={{ y: -1, scale: 1.01 }}
+              whileTap={{ y: 0, scale: 0.99 }}
             >
               Create your own heatmap
-            </button>
-            <button
+            </motion.button>
+            <motion.button
               className="h-12 rounded-md border border-neutral-300 bg-white px-4 text-sm hover:bg-neutral-50"
               onClick={() => {
                 const blob = new Blob([TEMPLATE_CSV_DEKMANTEL_SAT], { type: 'text/csv;charset=utf-8' });
@@ -212,7 +215,7 @@ export default function HeatmapsPage() {
               }}
             >
               CSV template
-            </button>
+            </motion.button>
           </div>
         </div>
       </div>
@@ -323,12 +326,14 @@ function Heatmap({
         </h2>
         <div className="flex items-center gap-3">
           <span className="text-sm text-neutral-500">{date}</span>
-          <button
+          <motion.button
             className="rounded-md bg-neutral-900 px-3 py-2 text-sm text-white hover:bg-neutral-800"
             onClick={onExport}
+            whileHover={{ y: -1, scale: 1.01 }}
+            whileTap={{ y: 0, scale: 0.99 }}
           >
             Export PNG
-          </button>
+          </motion.button>
         </div>
       </div>
 
@@ -659,14 +664,17 @@ function CreateHeatmapModal({
         )}
 
         <div className="mt-4 flex items-center justify-end gap-2">
-          <button className="rounded-md border border-neutral-300 bg-white px-3 py-2 text-sm hover:bg-neutral-50" onClick={onClose}>Cancel</button>
-          <button
+          <motion.button className="rounded-md border border-neutral-300 bg-white px-3 py-2 text-sm hover:bg-neutral-50" onClick={onClose}
+            whileHover={{ y: -1, scale: 1.01 }} whileTap={{ y: 0, scale: 0.99 }}
+          >Cancel</motion.button>
+          <motion.button
             className="rounded-md bg-neutral-900 px-3 py-2 text-sm text-white disabled:opacity-50"
             onClick={apply}
             disabled={!parsedRows || !!errors.length}
+            whileHover={{ y: -1, scale: 1.01 }} whileTap={{ y: 0, scale: 0.99 }}
           >
             Add preview
-          </button>
+          </motion.button>
         </div>
       </div>
 

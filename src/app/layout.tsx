@@ -18,7 +18,7 @@ export default function RootLayout({ children }: { children: ReactNode }) {
     <html lang="en">
       <body className="min-h-screen bg-neutral-50 text-neutral-800 font-sans relative overflow-x-hidden">
         {/* light theme variables for any legacy components that still reference them */}
-        <style>{`:root{--accent:#2563eb;--label:#737373;--radius:0.75rem;--sodium:#2563eb}`}</style>
+        <style>{`:root{--accent:#000000;--label:#737373;--radius:0.75rem;--sodium:#000000}`}</style>
         <PlayerProvider>
           <AppShell>{children}</AppShell>
         </PlayerProvider>
