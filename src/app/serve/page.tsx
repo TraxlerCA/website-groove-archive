@@ -4,6 +4,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import type { ReactElement } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
+import Image from 'next/image';
 import { PageTitle } from '@/components/ui';
 import { YouTubeIcon, SCIcon } from '@/components/icons';
 import { useRows } from '@/lib/useRows';
@@ -210,12 +211,14 @@ export default function ServePage(){
             exit={{opacity:0}}
             style={{background:'radial-gradient(1200px 1200px at 50% 50%, rgba(0,0,0,0.18), transparent 60%)'}}
           >
-            <div className="relative">
-              <img
+            <div className="relative h-40 w-40 sm:h-48 sm:w-48">
+              <Image
                 src="/icons/icon_serve.png"
                 alt=""
-                className="h-40 w-40 sm:h-48 sm:w-48 rounded-full select-none animate-[spin_1s_linear_1] drop-shadow-xl"
+                fill
+                className="rounded-full select-none animate-[spin_1s_linear_1] drop-shadow-xl object-cover"
                 draggable={false}
+                priority
               />
               <span className="pointer-events-none absolute inset-0 m-auto block h-6 w-6 rounded-full bg-white/90 ring-2 ring-neutral-300" />
             </div>
