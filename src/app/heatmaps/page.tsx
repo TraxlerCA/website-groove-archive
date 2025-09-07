@@ -565,7 +565,6 @@ function CreateHeatmapModal({
       const isXlsx = lower.endsWith('.xlsx') || file.type.includes('spreadsheetml');
       if (isXlsx) {
         // Parse XLSX in-browser and convert to CSV using SheetJS
-        // @ts-expect-error - dynamic import is runtime-only; bundler TS may not resolve 'xlsx'
         const XLSX = await import('xlsx');
         const ab = await file.arrayBuffer();
         const wb = XLSX.read(ab, { type: 'array' });
