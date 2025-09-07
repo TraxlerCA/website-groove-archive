@@ -74,9 +74,10 @@ function YouTubeEmbed({ url }: { url: string }){
       if (!alive || !containerRef.current) return;
       const YT = window.YT!;
       const origin = typeof window !== 'undefined' ? window.location.origin : '';
+      await new Promise(requestAnimationFrame);
       playerRef.current = new YT.Player(containerRef.current, {
         videoId: id,
-        playerVars: { autoplay: 1, controls: 0, rel: 0, modestbranding: 1, origin },
+        playerVars: { autoplay: 1, controls: 0, disablekb: 1, rel: 0, modestbranding: 1, origin },
         events: {
           onReady: () => {
             // Bridge controls once
@@ -85,6 +86,8 @@ function YouTubeEmbed({ url }: { url: string }){
               pause: () => playerRef.current?.pauseVideo(),
               seek: (seconds: number) => playerRef.current?.seekTo(seconds, true)
             });
+            // Keep iframe out of tab order
+            try { const i = containerRef.current?.querySelector('iframe') as HTMLIFrameElement|null; if(i) i.tabIndex = -1; } catch {}
             // Start polling once
             if (!pollRef.current) {
               pollRef.current = setInterval(() => {
@@ -179,6 +182,7 @@ function SoundCloudEmbed({ url }: { url: string }){
       iframe.title = 'SoundCloud player';
       iframe.className = 'w-full h-full';
       iframe.setAttribute('allow', 'autoplay; encrypted-media');
+      iframe.tabIndex = -1;
       // Minimal base src so the widget can attach
       iframe.src = `https://w.soundcloud.com/player/?url=`;
       try { containerRef.current.appendChild(iframe); } catch {}
@@ -216,8 +220,8 @@ function SoundCloudEmbed({ url }: { url: string }){
         }
         if (durationPollRef.current) { clearInterval(durationPollRef.current); durationPollRef.current = undefined; }
         registerController(null);
-        // Drop the iframe safely if SC mutated it
-        try { if (containerRef.current) containerRef.current.innerHTML = ''; } catch {}
+        // Drop the iframe safely if SC mutated it (defer to avoid internal races)
+        setTimeout(() => { try { if (containerRef.current) containerRef.current.innerHTML = ''; } catch {} }, 0);
         iframeElRef.current = null;
       } catch {}
     };
@@ -247,6 +251,11 @@ export default function PlayerModal(){
   const [mounted, setMounted] = useState(false);
   useEffect(()=>{ if(open) setMounted(true); },[open]);
 
+  // Hydration guard: render the card only after client hydration to avoid
+  // SSR/CSR markup drift from provider-driven conditionals.
+  const [hydrated, setHydrated] = useState(false);
+  useEffect(()=>{ setHydrated(true); },[]);
+
   // Show/hide with CSS so component remains mounted
   const overlayClasses = useMemo(()=>[
     'fixed inset-0 z-50 grid place-items-center p-4',
@@ -256,10 +265,19 @@ export default function PlayerModal(){
 
   const onBackdrop = useCallback(()=> setOpen(false), [setOpen]);
 
+  // Utility: ignore keyboard when typing in inputs or contentEditable
+  const isTypingTarget = (el: EventTarget|null) => {
+    const t = el as HTMLElement | null;
+    if (!t) return false;
+    const tag = t.tagName;
+    return t.isContentEditable || tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT';
+  };
+
   // Keyboard: Space toggles, Esc minimizes (keeps playing)
   useEffect(()=>{
     if(!open) return;
     const onKey=(e: KeyboardEvent)=>{
+      if (isTypingTarget(e.target)) return;
       if(e.key===' '||e.code==='Space'){ e.preventDefault(); toggle(); }
       if(e.key==='Escape'){ e.preventDefault(); setOpen(false); }
     };
@@ -286,14 +304,14 @@ export default function PlayerModal(){
         ref={ref}
         className="relative w-full bg-white/10 rounded-md"
         style={{height:8}}
-        onMouseMove={(e)=>{
-          if(!ref.current||!total) return; const r=ref.current.getBoundingClientRect();
+        onPointerMove={(e)=>{
+          if(e.pointerType!=='mouse') return; if(!ref.current||!durationSec) return; const r=ref.current.getBoundingClientRect();
           setHoverPct(Math.min(1, Math.max(0, (e.clientX - r.left)/r.width)));
         }}
-        onMouseLeave={()=>setHoverPct(null)}
+        onPointerLeave={()=>setHoverPct(null)}
         onClick={(e)=>{
-          if(!ref.current||!total) return; const r=ref.current.getBoundingClientRect();
-          const p=(e.clientX - r.left)/r.width; seekTo(p*total);
+          if(!ref.current||!durationSec) return; const r=ref.current.getBoundingClientRect();
+          const p=(e.clientX - r.left)/r.width; seekTo(p*durationSec);
         }}
         role="slider" aria-valuemin={0} aria-valuemax={total} aria-valuenow={elapsedSec}
       >
@@ -301,7 +319,7 @@ export default function PlayerModal(){
         <div className="absolute top-1/2 h-3 w-3 -translate-y-1/2 -translate-x-1/2 rounded-full bg-white shadow" style={{left:`${pct*100}%`}}/>
         {hoverPct!==null&& (
           <div className="pointer-events-none absolute -top-6 -translate-x-1/2 rounded bg-black/70 px-1.5 py-0.5 text-[10px] text-white ring-1 ring-white/10" style={{left:`${hoverPct*100}%`}}>
-            {fmt((hoverPct||0)*total)}
+            {secondsToTime((hoverPct||0)*(durationSec||0))}
           </div>
         )}
       </div>
@@ -332,14 +350,14 @@ export default function PlayerModal(){
       <div className={["relative w-full bg-white/10", rounded, className].filter(Boolean).join(' ')}
         style={{height}}
         ref={ref}
-        onMouseMove={(e)=>{
-          if(!ref.current||!total) return; const r=ref.current.getBoundingClientRect();
+        onPointerMove={(e)=>{
+          if(e.pointerType!=='mouse') return; if(!ref.current||!durationSec) return; const r=ref.current.getBoundingClientRect();
           setHoverPct(Math.min(1, Math.max(0, (e.clientX - r.left)/r.width)));
         }}
-        onMouseLeave={()=>setHoverPct(null)}
+        onPointerLeave={()=>setHoverPct(null)}
         onClick={(e)=>{
-          if(!ref.current||!total) return; const r=ref.current.getBoundingClientRect();
-          const p=(e.clientX - r.left)/r.width; seekTo(p*total);
+          if(!ref.current||!durationSec) return; const r=ref.current.getBoundingClientRect();
+          const p=(e.clientX - r.left)/r.width; seekTo(p*durationSec);
         }}
         role="slider" aria-valuemin={0} aria-valuemax={total} aria-valuenow={elapsedSec}
       >
@@ -347,7 +365,7 @@ export default function PlayerModal(){
         <div className="absolute top-1/2 h-3 w-3 -translate-y-1/2 -translate-x-1/2 rounded-full bg-white shadow" style={{left:`${pct*100}%`}}/>
         {hoverPct!==null&& (
           <div className="pointer-events-none absolute -top-6 -translate-x-1/2 rounded bg-black/70 px-1.5 py-0.5 text-[10px] text-white ring-1 ring-white/10" style={{left:`${hoverPct*100}%`}}>
-            {secondsToTime((hoverPct||0)*total)}
+            {secondsToTime((hoverPct||0)*(durationSec||0))}
           </div>
         )}
       </div>
@@ -357,6 +375,7 @@ export default function PlayerModal(){
   return (
     <div className={overlayClasses} aria-hidden={!open} onClick={onBackdrop}>
       <div className="relative w-full max-w-4xl aspect-video" onClick={e=>e.stopPropagation()}>
+        {hydrated && (
         <div className="relative w-full max-w-4xl h-full rounded-xl overflow-hidden border border-white/10 bg-black shadow-2xl">
           {/* 1) top bezel */}
           <div className="absolute inset-x-0 top-0 h-14 md:h-16 px-3 flex items-center justify-between gap-3 bg-black/35 backdrop-blur supports-[backdrop-filter]:bg-black/35 z-20">
@@ -364,20 +383,33 @@ export default function PlayerModal(){
             <div className="min-w-0 text-white text-sm font-semibold truncate pr-2">{current?.row.set}</div>
             {/* right: controls */}
             <div className="flex items-center gap-2">
-              <a
-                href={current?.provider === 'youtube' ? current?.row.youtube! : current?.row.soundcloud!}
-                target="_blank" rel="noopener noreferrer"
-                className="grid h-9 w-9 place-items-center rounded-full bg-white/10 text-white ring-1 ring-white/20 hover:bg-white/20"
-                aria-label="Open on source" title="Open on source"
-              >
-                <svg viewBox="0 0 24 24" className="h-5 w-5" fill="currentColor" aria-hidden>
-                  <path d="M14 3h7v7h-2V6.41l-9.29 9.3-1.42-1.42 9.3-9.29H14V3zM5 5h6v2H7v10h10v-4h2v6H5V5z"/>
-                </svg>
-              </a>
+              {(() => {
+                const href = current?.provider === 'youtube' ? (current?.row.youtube || '') : (current?.row.soundcloud || '');
+                const enabled = !!href;
+                return (
+                  <a
+                    href={enabled ? href : '#'}
+                    target={enabled ? '_blank' : undefined}
+                    rel={enabled ? 'noopener noreferrer' : undefined}
+                    aria-disabled={!enabled}
+                    tabIndex={enabled ? 0 : -1}
+                    className={[
+                      'grid h-9 w-9 place-items-center rounded-full ring-1',
+                      enabled ? 'bg-white/10 text-white ring-white/20 hover:bg-white/20' : 'bg-white/5 text-white/50 ring-white/10 pointer-events-none'
+                    ].join(' ')}
+                    aria-label="Open on source"
+                    title="Open on source"
+                  >
+                    <svg viewBox="0 0 24 24" className="h-5 w-5" fill="currentColor" aria-hidden>
+                      <path d="M14 3h7v7h-2V6.41l-9.29 9.3-1.42-1.42 9.3-9.29H14V3zM5 5h6v2H7v10h10v-4h2v6H5V5z"/>
+                    </svg>
+                  </a>
+                );
+              })()}
               <button type="button" onClick={()=>setOpen(false)} className="rounded-full bg-white px-3 py-1.5 text-sm font-semibold text-neutral-900 shadow ring-1 ring-black/10 hover:bg-white" aria-label="Minimize" title="Minimize">minimize</button>
             </div>
           </div>
-
+        
           {/* 2) media area */}
           <div className="absolute left-0 right-0" style={{ top: '3.5rem', bottom: '6.0rem' }} tabIndex={-1}>
             {mounted && current && (current.provider==="youtube"?
@@ -400,6 +432,7 @@ export default function PlayerModal(){
             </div>
           </div>
         </div>
+        )}
       </div>
     </div>
   );

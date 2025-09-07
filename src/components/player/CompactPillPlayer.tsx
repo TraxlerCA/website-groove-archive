@@ -27,7 +27,8 @@ function ProgressBar({
   percent,
   total,
   onSeek,
-}: { percent: number; total: number; onSeek: (sec: number) => void }) {
+  seekEnabled,
+}: { percent: number; total: number; onSeek: (sec: number) => void; seekEnabled: boolean }) {
   const ref = useRef<HTMLDivElement>(null);
   const [hoverPct, setHoverPct] = useState<number | null>(null);
   const pct = Math.max(0, Math.min(1, percent / 100));
@@ -35,14 +36,15 @@ function ProgressBar({
     <div
       ref={ref}
       className="relative w-full h-[6px] rounded-full bg-white/10"
-      onMouseMove={(e) => {
-        if (!ref.current || !total) return;
+      onPointerMove={(e) => {
+        if (e.pointerType !== 'mouse') return;
+        if (!ref.current || !seekEnabled) return;
         const r = ref.current.getBoundingClientRect();
         setHoverPct(Math.min(1, Math.max(0, (e.clientX - r.left) / r.width)));
       }}
-      onMouseLeave={() => setHoverPct(null)}
+      onPointerLeave={() => setHoverPct(null)}
       onClick={(e) => {
-        if (!ref.current || !total) return;
+        if (!ref.current || !seekEnabled) return;
         const r = ref.current.getBoundingClientRect();
         const p = Math.min(1, Math.max(0, (e.clientX - r.left) / r.width));
         onSeek(p * total);
@@ -80,6 +82,10 @@ export default function CompactPillPlayer() {
     if (!el) return;
 
     const onKey = (e: KeyboardEvent) => {
+      const target = e.target as HTMLElement | null;
+      const tag = target?.tagName;
+      const typing = !!(target && (target.isContentEditable || tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT'));
+      if (typing) return;
       if (e.code === 'Space' || e.key === ' ') {
         e.preventDefault();
         toggle();
@@ -114,7 +120,8 @@ export default function CompactPillPlayer() {
   // Map provider progress [0..1] -> percent for micro bar
   const pct = Math.max(0, Math.min(100, (progress ?? 0) * 100));
   // Timecode next to micro bar (elapsed / total) based on provider's durationSec
-  const total = durationSec || 30 * 60; // fallback safety
+  const seekEnabled = !!durationSec && durationSec > 0;
+  const total = durationSec || 30 * 60; // fallback safety for display only
   const elapsedSec = Math.min(total, Math.floor((progress ?? 0) * total));
 
   return (
@@ -151,7 +158,7 @@ export default function CompactPillPlayer() {
             <p className="truncate text-sm font-semibold tracking-tight">{title}</p>
             <div className="mt-0.5 flex items-center gap-2">
               <div className="flex-1">
-                <ProgressBar percent={pct} total={total} onSeek={seekTo} />
+                <ProgressBar percent={pct} total={total} onSeek={seekTo} seekEnabled={seekEnabled} />
               </div>
               <span className="text-[11px] text-neutral-300 tabular-nums">{fmtTime(elapsedSec)} / {fmtTime(total)}</span>
             </div>
