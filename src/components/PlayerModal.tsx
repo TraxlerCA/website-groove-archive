@@ -203,6 +203,8 @@ function SoundCloudEmbed({ url }: { url: string }){
       // Load initial URL
       try {
         widget.load(url, { auto_play: true, hide_related: true, show_comments: false, show_user: false, show_reposts: false, visual: true });
+        // Nudge playback explicitly in addition to auto_play for reliability
+        try { widget.play(); } catch {}
         // Begin polling duration until it becomes available
         startDurationPoll();
       } catch {}
@@ -236,6 +238,8 @@ function SoundCloudEmbed({ url }: { url: string }){
         // Reset known duration and start polling again
         durationMsRef.current = 0;
         w.load(url, { auto_play: true, hide_related: true, show_comments: false, show_user: false, show_reposts: false, visual: true });
+        // Explicitly request play after load to avoid stuck states
+        try { w.play(); } catch {}
         startDurationPoll();
       } catch {}
     }

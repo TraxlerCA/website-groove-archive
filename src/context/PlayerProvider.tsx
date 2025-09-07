@@ -36,6 +36,9 @@ export function PlayerProvider({children}:{children:ReactNode}){
   // When a live player registers, we stop simulating clock and delegate play/pause to it
   const controllerRef=useRef<PlayerController|null>(null);
   const [hasController,setHasController]=useState(false);
+  // When a new track is requested, remember intent to start playback as
+  // soon as a provider controller becomes available.
+  const autoplayNextRef=useRef<boolean>(false);
   // Gate fallback clock while switching tracks so we don't show misleading time
   const [expectingController,setExpectingController]=useState(false);
 
@@ -52,26 +55,33 @@ export function PlayerProvider({children}:{children:ReactNode}){
     try{ controllerRef.current?.pause(); }catch{}
     controllerRef.current=null; setHasController(false);
     setProgress(0); setDurationSec(0); setExpectingController(true);
+    // We intend to start playback once the new provider is ready
+    autoplayNextRef.current = true;
     // Auto-clear expectation after short grace if no controller mounts
     setTimeout(()=>setExpectingController(false), 1500);
     setCurrent({row,provider:pick(row,preferred)});
-    setPlaying(true);
+    // Defer flipping UI to playing until the provider reports playing
+    setPlaying(false);
     setOpen(true);
   },[]);
   const toggle=useCallback(()=>{
     setPlaying(v=>{
       const next=!v;
       const ctrl=controllerRef.current;
+      // Persist user intent for cases where controller isn't ready yet
+      autoplayNextRef.current = next;
       if(ctrl){ if(next) ctrl.play(); else ctrl.pause(); }
       return next;
     });
   },[]);
   const pause=useCallback(()=>{
     try{ controllerRef.current?.pause(); }catch{}
+    autoplayNextRef.current = false;
     setPlaying(false);
   },[]);
   const resume=useCallback(()=>{
     try{ controllerRef.current?.play(); }catch{}
+    autoplayNextRef.current = true;
     setPlaying(true);
   },[]);
   const seekTo=useCallback((seconds:number)=>{
@@ -87,8 +97,10 @@ export function PlayerProvider({children}:{children:ReactNode}){
     try{ controllerRef.current?.pause(); }catch{}
     controllerRef.current=null; setHasController(false);
     setProgress(0); setDurationSec(0); setExpectingController(true);
+    // We intend to continue playing the next item
+    autoplayNextRef.current = true;
     setTimeout(()=>setExpectingController(false), 1500);
-    setCurrent(n); setPlaying(true); setOpen(true); return q.slice(1);
+    setCurrent(n); setPlaying(false); setOpen(true); return q.slice(1);
   } setPlaying(false); return q;}),[]);
   useEffect(()=>{document.documentElement.style.setProperty("--playPulse",playing?"1":"0");},[playing]);
   // Removed defensive reset on current change to avoid racing real provider updates
@@ -97,7 +109,13 @@ export function PlayerProvider({children}:{children:ReactNode}){
   const registerController=useCallback((ctrl:PlayerController|null)=>{
     controllerRef.current=ctrl;
     setHasController(!!ctrl);
-    if (ctrl) setExpectingController(false);
+    if (ctrl) {
+      setExpectingController(false);
+      // If a new track was requested with intent to play, kick it off now
+      if (autoplayNextRef.current) {
+        try { ctrl.play(); } catch {}
+      }
+    }
   },[]);
   const setProgressAbs=useCallback((elapsedSec:number,totalSec:number)=>{
     const total=Math.max(1,Math.floor(totalSec||0));
