@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import type { SVGProps } from 'react';
 import { usePlayer } from '@/context/PlayerProvider';
 
@@ -23,13 +23,42 @@ const ExternalLink = (props: SVGProps<SVGSVGElement>) => (
   </svg>
 );
 
-function ProgressBar({ value }: { value: number }) {
+function ProgressBar({
+  percent,
+  total,
+  onSeek,
+}: { percent: number; total: number; onSeek: (sec: number) => void }) {
+  const ref = useRef<HTMLDivElement>(null);
+  const [hoverPct, setHoverPct] = useState<number | null>(null);
+  const pct = Math.max(0, Math.min(1, percent / 100));
   return (
-    <div className="w-full h-[3px] rounded-full bg-white/15 overflow-hidden">
-      <div
-        className="h-full bg-white/80 transition-[width] duration-200"
-        style={{ width: `${Math.max(0, Math.min(100, value))}%` }}
-      />
+    <div
+      ref={ref}
+      className="relative w-full h-[6px] rounded-full bg-white/10"
+      onMouseMove={(e) => {
+        if (!ref.current || !total) return;
+        const r = ref.current.getBoundingClientRect();
+        setHoverPct(Math.min(1, Math.max(0, (e.clientX - r.left) / r.width)));
+      }}
+      onMouseLeave={() => setHoverPct(null)}
+      onClick={(e) => {
+        if (!ref.current || !total) return;
+        const r = ref.current.getBoundingClientRect();
+        const p = Math.min(1, Math.max(0, (e.clientX - r.left) / r.width));
+        onSeek(p * total);
+      }}
+      role="slider"
+      aria-valuemin={0}
+      aria-valuemax={total}
+      aria-valuenow={pct * total}
+    >
+      <div className="absolute inset-y-0 left-0 rounded-full bg-white/60" style={{ width: `${pct * 100}%` }} />
+      <div className="absolute top-1/2 h-3 w-3 -translate-y-1/2 -translate-x-1/2 rounded-full bg-white shadow" style={{ left: `${pct * 100}%` }} />
+      {hoverPct !== null && (
+        <div className="pointer-events-none absolute -top-6 -translate-x-1/2 rounded bg-black/70 px-1.5 py-0.5 text-[10px] text-white ring-1 ring-white/10" style={{ left: `${hoverPct * 100}%` }}>
+          {fmtTime((hoverPct || 0) * total)}
+        </div>
+      )}
     </div>
   );
 }
@@ -42,7 +71,7 @@ function fmtTime(sec: number) {
 }
 
 export default function CompactPillPlayer() {
-  const { current, playing, toggle, progress, setOpen, durationSec } = usePlayer();
+  const { current, playing, toggle, progress, setOpen, durationSec, seekTo } = usePlayer();
   
   // Keyboard: space toggles when hovering or focusing the pill
   const wrapRef = useRef<HTMLDivElement>(null);
@@ -85,7 +114,7 @@ export default function CompactPillPlayer() {
   // Map provider progress [0..1] -> percent for micro bar
   const pct = Math.max(0, Math.min(100, (progress ?? 0) * 100));
   // Timecode next to micro bar (elapsed / total) based on provider's durationSec
-  const total = durationSec || 30*60; // fallback safety
+  const total = durationSec || 30 * 60; // fallback safety
   const elapsedSec = Math.min(total, Math.floor((progress ?? 0) * total));
 
   return (
@@ -122,7 +151,7 @@ export default function CompactPillPlayer() {
             <p className="truncate text-sm font-semibold tracking-tight">{title}</p>
             <div className="mt-0.5 flex items-center gap-2">
               <div className="flex-1">
-                <ProgressBar value={pct} />
+                <ProgressBar percent={pct} total={total} onSeek={seekTo} />
               </div>
               <span className="text-[11px] text-neutral-300 tabular-nums">{fmtTime(elapsedSec)} / {fmtTime(total)}</span>
             </div>
@@ -132,12 +161,11 @@ export default function CompactPillPlayer() {
           <button
             type="button"
             onClick={() => { if(!playing) toggle(); setOpen(true); }}
-            className="inline-flex items-center gap-1.5 rounded-full bg-white text-neutral-900 px-2.5 py-1 text-xs font-medium shadow ring-1 ring-black/10 hover:bg-neutral-50"
+            className="grid h-8 w-8 place-items-center rounded-full bg-white/90 text-neutral-900 ring-1 ring-black/10 hover:bg-white"
             aria-label="Open player"
             title="Open player"
           >
-            open
-            <ExternalLink className="h-4 w-4 opacity-80" />
+            <ExternalLink className="h-4 w-4" />
           </button>
         </div>
       </div>

@@ -76,7 +76,7 @@ function YouTubeEmbed({ url }: { url: string }){
       const origin = typeof window !== 'undefined' ? window.location.origin : '';
       playerRef.current = new YT.Player(containerRef.current, {
         videoId: id,
-        playerVars: { autoplay: 1, rel: 0, modestbranding: 1, origin },
+        playerVars: { autoplay: 1, controls: 0, rel: 0, modestbranding: 1, origin },
         events: {
           onReady: () => {
             // Bridge controls once
@@ -126,7 +126,11 @@ function YouTubeEmbed({ url }: { url: string }){
 
 // --- SoundCloud Embed with Widget API
 function SoundCloudEmbed({ url }: { url: string }){
-  const iframeRef = useRef<HTMLIFrameElement>(null);
+  // Use a container div and imperatively create the iframe inside it.
+  // This avoids React owning the exact iframe node that SC may replace,
+  // preventing removeChild errors during unmount.
+  const containerRef = useRef<HTMLDivElement>(null);
+  const iframeElRef = useRef<HTMLIFrameElement|null>(null);
   const widgetRef = useRef<SCWidget|null>(null);
   const durationMsRef = useRef<number>(0);
   const lastPosMsRef = useRef<number>(0);
@@ -169,11 +173,18 @@ function SoundCloudEmbed({ url }: { url: string }){
     let alive = true;
     const init = async () => {
       await loadScriptOnce('https://w.soundcloud.com/player/api.js', () => typeof window !== 'undefined' && !!window.SC?.Widget);
-      if (!alive || !iframeRef.current) return;
+      if (!alive || !containerRef.current) return;
+      // Create iframe dynamically so React doesn't track it
+      const iframe = document.createElement('iframe');
+      iframe.title = 'SoundCloud player';
+      iframe.className = 'w-full h-full';
+      iframe.setAttribute('allow', 'autoplay; encrypted-media');
       // Minimal base src so the widget can attach
-      iframeRef.current.src = `https://w.soundcloud.com/player/?url=`;
+      iframe.src = `https://w.soundcloud.com/player/?url=`;
+      try { containerRef.current.appendChild(iframe); } catch {}
+      iframeElRef.current = iframe;
       const SC = window.SC!;
-      const widget = SC.Widget(iframeRef.current);
+      const widget = SC.Widget(iframe);
       widgetRef.current = widget;
       // Controller once
       registerController({
@@ -205,6 +216,9 @@ function SoundCloudEmbed({ url }: { url: string }){
         }
         if (durationPollRef.current) { clearInterval(durationPollRef.current); durationPollRef.current = undefined; }
         registerController(null);
+        // Drop the iframe safely if SC mutated it
+        try { if (containerRef.current) containerRef.current.innerHTML = ''; } catch {}
+        iframeElRef.current = null;
       } catch {}
     };
   // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -223,11 +237,11 @@ function SoundCloudEmbed({ url }: { url: string }){
     }
   }, [url, startDurationPoll]);
 
-  return <iframe ref={iframeRef} title="SoundCloud player" className="w-full h-full" allow="autoplay; encrypted-media" />;
+  return <div ref={containerRef} className="w-full h-full" />;
 }
 
 export default function PlayerModal(){
-  const { current, open, setOpen }=usePlayer();
+  const { current, open, setOpen, playing, toggle, durationSec, progress, seekTo }=usePlayer();
 
   // Persist the iframe after first open to avoid resetting playback time
   const [mounted, setMounted] = useState(false);
@@ -242,28 +256,150 @@ export default function PlayerModal(){
 
   const onBackdrop = useCallback(()=> setOpen(false), [setOpen]);
 
+  // Keyboard: Space toggles, Esc minimizes (keeps playing)
+  useEffect(()=>{
+    if(!open) return;
+    const onKey=(e: KeyboardEvent)=>{
+      if(e.key===' '||e.code==='Space'){ e.preventDefault(); toggle(); }
+      if(e.key==='Escape'){ e.preventDefault(); setOpen(false); }
+    };
+    window.addEventListener('keydown', onKey);
+    return ()=> window.removeEventListener('keydown', onKey);
+  },[open, toggle, setOpen]);
+
+  // Derived UI values
+  const total = Math.max(1, durationSec || 30*60);
+  const elapsedSec = Math.max(0, Math.floor((progress || 0) * total));
+
+  const secondsToTime = (s:number)=>{
+    s=Math.max(0, Math.floor(s));
+    const h=Math.floor(s/3600), m=Math.floor((s%3600)/60), ss=String(s%60).padStart(2,'0');
+    return h>0? `${h}:${String(m).padStart(2,'0')}:${ss}` : `${m}:${ss}`;
+  };
+
+  function ProgressBar(){
+    const ref=useRef<HTMLDivElement>(null);
+    const pct = total>0? Math.max(0, Math.min(1, (progress||0))) : 0;
+    const [hoverPct,setHoverPct]=useState<number|null>(null);
+    return (
+      <div
+        ref={ref}
+        className="relative w-full bg-white/10 rounded-md"
+        style={{height:8}}
+        onMouseMove={(e)=>{
+          if(!ref.current||!total) return; const r=ref.current.getBoundingClientRect();
+          setHoverPct(Math.min(1, Math.max(0, (e.clientX - r.left)/r.width)));
+        }}
+        onMouseLeave={()=>setHoverPct(null)}
+        onClick={(e)=>{
+          if(!ref.current||!total) return; const r=ref.current.getBoundingClientRect();
+          const p=(e.clientX - r.left)/r.width; seekTo(p*total);
+        }}
+        role="slider" aria-valuemin={0} aria-valuemax={total} aria-valuenow={elapsedSec}
+      >
+        <div className="absolute inset-y-0 left-0 bg-white/60 rounded-md" style={{width:`${pct*100}%`}}/>
+        <div className="absolute top-1/2 h-3 w-3 -translate-y-1/2 -translate-x-1/2 rounded-full bg-white shadow" style={{left:`${pct*100}%`}}/>
+        {hoverPct!==null&& (
+          <div className="pointer-events-none absolute -top-6 -translate-x-1/2 rounded bg-black/70 px-1.5 py-0.5 text-[10px] text-white ring-1 ring-white/10" style={{left:`${hoverPct*100}%`}}>
+            {fmt((hoverPct||0)*total)}
+          </div>
+        )}
+      </div>
+    );
+  }
+
+  // Local UI atoms
+  const PlayPauseButton = () => (
+    <button
+      onClick={toggle}
+      className="grid place-items-center rounded-full bg-white text-neutral-900 shadow ring-1 ring-black/10 hover:opacity-95"
+      style={{width:36,height:36}}
+      aria-label={playing? 'Pause':'Play'}
+    >
+      {playing? (
+        <svg viewBox="0 0 24 24" className="h-5 w-5" aria-hidden><path fill="currentColor" d="M6 5h4v14H6zm8 0h4v14h-4z"/></svg>
+      ):(
+        <svg viewBox="0 0 24 24" className="h-5 w-5" aria-hidden><path fill="currentColor" d="M8 5v14l11-7z"/></svg>
+      )}
+    </button>
+  );
+
+  function ProgressBarUI({ className = '', height = 8, rounded = 'rounded-md' }:{ className?: string; height?: number; rounded?: string }){
+    const ref=useRef<HTMLDivElement>(null);
+    const pct = total>0? Math.max(0, Math.min(1, (progress||0))) : 0;
+    const [hoverPct,setHoverPct]=useState<number|null>(null);
+    return (
+      <div className={["relative w-full bg-white/10", rounded, className].filter(Boolean).join(' ')}
+        style={{height}}
+        ref={ref}
+        onMouseMove={(e)=>{
+          if(!ref.current||!total) return; const r=ref.current.getBoundingClientRect();
+          setHoverPct(Math.min(1, Math.max(0, (e.clientX - r.left)/r.width)));
+        }}
+        onMouseLeave={()=>setHoverPct(null)}
+        onClick={(e)=>{
+          if(!ref.current||!total) return; const r=ref.current.getBoundingClientRect();
+          const p=(e.clientX - r.left)/r.width; seekTo(p*total);
+        }}
+        role="slider" aria-valuemin={0} aria-valuemax={total} aria-valuenow={elapsedSec}
+      >
+        <div className={["absolute inset-y-0 left-0", rounded, "bg-white/60"].join(' ')} style={{width:`${pct*100}%`}}/>
+        <div className="absolute top-1/2 h-3 w-3 -translate-y-1/2 -translate-x-1/2 rounded-full bg-white shadow" style={{left:`${pct*100}%`}}/>
+        {hoverPct!==null&& (
+          <div className="pointer-events-none absolute -top-6 -translate-x-1/2 rounded bg-black/70 px-1.5 py-0.5 text-[10px] text-white ring-1 ring-white/10" style={{left:`${hoverPct*100}%`}}>
+            {secondsToTime((hoverPct||0)*total)}
+          </div>
+        )}
+      </div>
+    );
+  }
+
   return (
     <div className={overlayClasses} aria-hidden={!open} onClick={onBackdrop}>
-      <div className="relative w-full max-w-4xl aspect-video bg-black rounded-xl overflow-hidden border border-white/10 shadow-2xl" onClick={e=>e.stopPropagation()}>
-        {/* Minimize button */}
-        <div className="absolute top-2 right-2 z-10">
-          <button
-            type="button"
-            onClick={()=>setOpen(false)}
-            className="inline-flex items-center gap-1.5 rounded-full bg-white/90 text-neutral-900 px-3 py-1 text-sm font-medium shadow ring-1 ring-black/10 hover:bg-white"
-            aria-label="Minimize player"
-            title="Minimize"
-          >
-            minimize
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden>
-              <path d="M5 12h14" />
-            </svg>
-          </button>
+      <div className="relative w-full max-w-4xl aspect-video" onClick={e=>e.stopPropagation()}>
+        <div className="relative w-full max-w-4xl h-full rounded-xl overflow-hidden border border-white/10 bg-black shadow-2xl">
+          {/* 1) top bezel */}
+          <div className="absolute inset-x-0 top-0 h-14 md:h-16 px-3 flex items-center justify-between gap-3 bg-black/35 backdrop-blur supports-[backdrop-filter]:bg-black/35 z-20">
+            {/* left: title */}
+            <div className="min-w-0 text-white text-sm font-semibold truncate pr-2">{current?.row.set}</div>
+            {/* right: controls */}
+            <div className="flex items-center gap-2">
+              <a
+                href={current?.provider === 'youtube' ? current?.row.youtube! : current?.row.soundcloud!}
+                target="_blank" rel="noopener noreferrer"
+                className="grid h-9 w-9 place-items-center rounded-full bg-white/10 text-white ring-1 ring-white/20 hover:bg-white/20"
+                aria-label="Open on source" title="Open on source"
+              >
+                <svg viewBox="0 0 24 24" className="h-5 w-5" fill="currentColor" aria-hidden>
+                  <path d="M14 3h7v7h-2V6.41l-9.29 9.3-1.42-1.42 9.3-9.29H14V3zM5 5h6v2H7v10h10v-4h2v6H5V5z"/>
+                </svg>
+              </a>
+              <button type="button" onClick={()=>setOpen(false)} className="rounded-full bg-white px-3 py-1.5 text-sm font-semibold text-neutral-900 shadow ring-1 ring-black/10 hover:bg-white" aria-label="Minimize" title="Minimize">minimize</button>
+            </div>
+          </div>
+
+          {/* 2) media area */}
+          <div className="absolute left-0 right-0" style={{ top: '3.5rem', bottom: '6.0rem' }} tabIndex={-1}>
+            {mounted && current && (current.provider==="youtube"?
+              <YouTubeEmbed key="youtube" url={current.row.youtube!}/>
+              : <SoundCloudEmbed key="soundcloud" url={current.row.soundcloud!}/>
+            )}
+          </div>
+
+          {/* 3) bottom bezel */}
+          <div className="absolute inset-x-0 bottom-0 h-24 md:h-28 px-3 flex items-center bg-black/35 backdrop-blur supports-[backdrop-filter]:bg-black/35 z-20">
+            <div className="flex w-full items-center gap-3 text-white">
+              <PlayPauseButton />
+              <div className="min-w-0 flex-1">
+                <div className="truncate text-[13px] font-medium leading-tight">{current?.row.set}</div>
+                <ProgressBarUI className="mt-2" height={8} rounded="rounded-md" />
+              </div>
+              <div className="tabular-nums text-xs bg-white/90 text-neutral-900 rounded-md ring-1 ring-black/10 px-2 py-0.5 whitespace-nowrap">
+                {secondsToTime(elapsedSec)} / {secondsToTime(total)}
+              </div>
+            </div>
+          </div>
         </div>
-        {mounted && current && (current.provider==="youtube"?
-          <YouTubeEmbed key="youtube" url={current.row.youtube!}/>
-          : <SoundCloudEmbed key="soundcloud" url={current.row.soundcloud!}/>
-        )}
       </div>
     </div>
   );

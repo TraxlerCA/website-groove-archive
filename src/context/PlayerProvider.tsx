@@ -13,6 +13,9 @@ type PlayerState={
   durationSec:number; // absolute duration in seconds (if known)
   play:(row:Row,preferred?:Provider)=>void;
   toggle:()=>void;
+  pause:()=>void;
+  resume:()=>void;
+  seekTo:(seconds:number)=>void;
   enqueue:(row:Row,preferred?:Provider)=>void;
   next:()=>void;
   setOpen:(v:boolean)=>void;
@@ -63,6 +66,22 @@ export function PlayerProvider({children}:{children:ReactNode}){
       return next;
     });
   },[]);
+  const pause=useCallback(()=>{
+    try{ controllerRef.current?.pause(); }catch{}
+    setPlaying(false);
+  },[]);
+  const resume=useCallback(()=>{
+    try{ controllerRef.current?.play(); }catch{}
+    setPlaying(true);
+  },[]);
+  const seekTo=useCallback((seconds:number)=>{
+    const sec=Math.max(0, seconds||0);
+    try{ controllerRef.current?.seek(sec); }catch{}
+    setProgress(p=>{
+      const total=Math.max(1, durationSec||0);
+      return Math.max(0, Math.min(1, sec/total));
+    });
+  },[durationSec]);
   const enqueue=useCallback((row:Row,preferred?:Provider)=>setQueue(q=>[...q,{row,provider:pick(row,preferred)}]),[]);
   const next=useCallback(()=>setQueue(q=>{const n=q[0]; if(n){
     try{ controllerRef.current?.pause(); }catch{}
@@ -91,7 +110,7 @@ export function PlayerProvider({children}:{children:ReactNode}){
   return (
     <Ctx.Provider value={{
       current,queue,playing,progress,open,durationSec,
-      play,toggle,enqueue,next,setOpen,
+      play,toggle,pause,resume,seekTo,enqueue,next,setOpen,
       registerController,setProgressAbs,setPlayingState
     }}>
       {children}
