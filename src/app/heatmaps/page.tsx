@@ -560,19 +560,10 @@ function CreateHeatmapModal({
     setErrors([]); setParsedRows(null);
     try {
       if (file.size > 1_000_000) { setErrors(['File is larger than 1 MB.']); return; }
-      let text: string;
       const lower = (file.name || '').toLowerCase();
-      const isXlsx = lower.endsWith('.xlsx') || file.type.includes('spreadsheetml');
-      if (isXlsx) {
-        // Parse XLSX in-browser and convert to CSV using SheetJS
-        const XLSX = await import('xlsx');
-        const ab = await file.arrayBuffer();
-        const wb = XLSX.read(ab, { type: 'array' });
-        const ws = wb.Sheets[wb.SheetNames[0]];
-        text = XLSX.utils.sheet_to_csv(ws);
-      } else {
-        text = await file.text();
-      }
+      const looksCsv = lower.endsWith('.csv') || /(^text\/csv$|csv)/i.test(file.type || '');
+      if (!looksCsv) { setErrors(['Only CSV files are supported.']); return; }
+      const text = await file.text();
       await validateAndParse(text);
       // optional analytics
       try { (window as unknown as { plausible?: (e: string) => void }).plausible?.('heatmap_upload_success'); } catch {}
@@ -601,19 +592,19 @@ function CreateHeatmapModal({
           <div>
             <h2 id="csv-title" className="text-lg font-semibold tracking-wide text-neutral-900">Create your own heatmap</h2>
             <p id="csv-desc" className="text-sm text-neutral-600">
-              Upload a CSV or Excel (.xlsx). Required columns: festival, date (YYYY-MM-DD), stage, artist, start (HH:MM), end (HH:MM), rating (nahh|ok|hot|blazing|empty).
+              Upload a CSV. Required columns: festival, date (YYYY-MM-DD), stage, artist, start (HH:MM), end (HH:MM), rating (nahh|ok|hot|blazing|empty).
             </p>
           </div>
         </div>
 
         <div className="grid gap-3 sm:grid-cols-2">
           <div className="rounded-lg border border-neutral-200 p-3">
-            <label className="mb-2 block text-sm font-medium text-neutral-800">Upload CSV or Excel (.xlsx)</label>
+            <label className="mb-2 block text-sm font-medium text-neutral-800">Upload CSV</label>
             <input
-              type="file" accept=".csv,.xlsx,text/csv,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" onChange={e => { const f = (e.target as HTMLInputElement).files?.[0]; if (f) onFile(f); }}
+              type="file" accept=".csv,text/csv" onChange={e => { const f = (e.target as HTMLInputElement).files?.[0]; if (f) onFile(f); }}
               className="block w-full text-sm file:mr-3 file:rounded-md file:border file:border-neutral-900 file:bg-neutral-900 file:text-white file:px-3 file:py-1.5 file:text-sm file:hover:bg-neutral-800"
             />
-            <p className="mt-2 text-xs text-neutral-500">Max 1 MB, 200 rows. CSV delimiters , or ; supported. Excel files are converted automatically.</p>
+            <p className="mt-2 text-xs text-neutral-500">Max 1 MB, 200 rows. CSV delimiters , or ; are supported.</p>
           </div>
 
           {/* Example table: first 5 rows */}
