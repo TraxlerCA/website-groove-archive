@@ -5,7 +5,7 @@ import { ReactNode } from 'react';
 import { useRouter } from 'next/navigation';
 import { Fonts, WordmarkHeader } from '@/components/Header';
 import CommandBar from '@/components/CommandBar';
-import NowPlayingBar from '@/components/NowPlayingBar';
+import CompactPillPlayer from '@/components/player/CompactPillPlayer';
 import PlayerModal from '@/components/PlayerModal';
 import ScrollTopFab from '@/components/ScrollTopFab';
 import { useRows } from '@/lib/useRows';
@@ -25,7 +25,7 @@ export default function AppShell({ children }: { children: ReactNode }) {
       {children}
       <CommandBar rows={rows} onNavigate={onNavigate} />
       <ScrollTopFab />
-      <NowPlayingBar />
+      <CompactPillPlayer />
       <PlayerModal />
     </>
   );

@@ -2,6 +2,7 @@
 'use client';
 
 import React from 'react';
+import Image from 'next/image';
 import { motion } from 'framer-motion';
 import { usePlayer } from '@/context/PlayerProvider';
 
@@ -56,40 +57,114 @@ export default function Home() {
         {/* neutralize blue; match card styling used by the others */}
         <a href="/serve" aria-label="Serve up a set. Get served a tailored set"
            className="group relative col-span-12 sm:col-span-6 block rounded-2xl border border-neutral-200/70 bg-white/70 backdrop-blur shadow-[0_10px_30px_rgb(0_0_0_/_0.06)] px-8 py-10 transform-gpu hover:-translate-y-0.5 hover:shadow-[0_18px_40px_rgb(0_0_0_/_0.10)] hover:border-black/30 active:translate-y-0 active:scale-[.99] transition focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-black/20">
-          <div className="flex items-start gap-3"><img src="/icons/icon_serve.png" alt="" className="h-9 w-9 opacity-80" /><div><div className="text-lg font-semibold">Serve up a set</div><div className="text-xs font-medium tracking-widest mt-1 opacity-90">Get served a tailored set</div></div></div>
+          <div className="flex items-start gap-3">
+            <Image
+              src="/icons/icon_serve.png"
+              alt=""
+              width={36}
+              height={36}
+              className="h-9 w-9 opacity-80"
+            />
+            <div>
+              <div className="text-lg font-semibold">Serve up a set</div>
+              <div className="text-xs font-medium tracking-widest mt-1 opacity-90">Get served a tailored set</div>
+            </div>
+          </div>
         </a>
 
         <a href="/list" aria-label="Show the list. Go through all hand-curated grooves"
            className="group relative col-span-12 sm:col-span-6 block rounded-2xl border border-neutral-200/70 bg-white/70 backdrop-blur shadow-[0_10px_30px_rgb(0_0_0_/_0.06)] px-8 py-10 transform-gpu hover:-translate-y-0.5 hover:shadow-[0_18px_40px_rgb(0_0_0_/_0.10)] hover:border-black/30 active:translate-y-0 active:scale-[.99] transition focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-black/20">
-          <div className="flex items-start gap-3"><img src="/icons/icon_list.png" alt="" className="h-9 w-9 opacity-80" /><div><div className="text-lg font-semibold text-neutral-900">Show the list</div><div className="text-xs font-medium tracking-widest text-neutral-500 mt-1">Go through all hand-curated grooves</div></div></div>
+          <div className="flex items-start gap-3">
+            <Image
+              src="/icons/icon_list.png"
+              alt=""
+              width={36}
+              height={36}
+              className="h-9 w-9 opacity-80"
+            />
+            <div>
+              <div className="text-lg font-semibold text-neutral-900">Show the list</div>
+              <div className="text-xs font-medium tracking-widest text-neutral-500 mt-1">Go through all hand-curated grooves</div>
+            </div>
+          </div>
         </a>
 
         {/* Heatmaps entry intentionally removed from landing page */}
       </nav>
 
-      {/* call-to-action: centered pulse button */}
+      {/* call-to-action: centered dice animation button */}
       <div className="mt-10 flex justify-center">
         <button
           onClick={loadServe}
-          className="relative inline-flex items-center gap-3 rounded-full border border-neutral-300 bg-white px-5 py-3 text-sm font-semibold shadow-sm hover:shadow-md active:scale-[.99] transition random-serve-pulse"
+          className="relative inline-flex items-center gap-3 rounded-full border border-neutral-300 bg-white px-5 py-3 text-sm font-semibold shadow-sm hover:shadow-md active:scale-[.99] transition random-serve-dice"
         >
-          <img src="/icons/icon_random_serve.png" alt="" className="h-[18px] w-[18px] opacity-70" />
+          <span className="dice-wrap" aria-hidden="true">
+            <Dice variant="a" />
+            <Dice variant="b" />
+          </span>
           Random serve
         </button>
       </div>
       <style>{`
-        /* Color-only pulse for Random serve button */
-        /* 0-2s: white, 2-3s: ramp to black, 3-3.5s: hold, 3.5-4.5s: ramp back */
-        @keyframes randomServeColorPulse {
-          0% { background-color: #ffffff; color: #111111; }
-          44.444% { background-color: #ffffff; color: #111111; }   /* 2.0s */
-          66.666% { background-color: #000000; color: #ffffff; }   /* 3.0s */
-          77.777% { background-color: #000000; color: #ffffff; }   /* 3.5s */
-          100% { background-color: #ffffff; color: #111111; }      /* 4.5s */
+        /* Dice toss/roll animation: 5s cycle => 4s idle, 1s roll */
+        @keyframes diceTossCycle {
+          0%, 79.999% {
+            transform: translate(0, 0) rotate(0deg) scale(1);
+            filter: drop-shadow(0 0 0 rgba(0,0,0,0));
+          }
+          /* lift-off + first spin */
+          82% {
+            transform: translate(calc(var(--x, 0px) * .3), -12px) rotate(var(--rA, 200deg)) scale(1.03);
+            filter: drop-shadow(0 10px 14px rgba(0,0,0,.18));
+          }
+          /* descend with momentum */
+          90% {
+            transform: translate(var(--x, 0px), 4px) rotate(var(--rB, 410deg)) scale(.985);
+            filter: drop-shadow(0 5px 10px rgba(0,0,0,.16));
+          }
+          /* small bounce */
+          96% {
+            transform: translate(calc(var(--x, 0px) * .6), -3px) rotate(var(--rC, 520deg)) scale(1.01);
+            filter: drop-shadow(0 6px 10px rgba(0,0,0,.12));
+          }
+          /* settle */
+          100% {
+            transform: translate(0, 0) rotate(var(--rEnd, 540deg)) scale(1);
+            filter: drop-shadow(0 0 0 rgba(0,0,0,0));
+          }
         }
-        .random-serve-pulse {
-          /* total cycle: 4.5s (2s idle + 1s up + 0.5s hold + 1s down) */
-          animation: randomServeColorPulse 4.5s linear infinite;
+        .random-serve-dice .dice-wrap { display: inline-flex; align-items: center; gap: 6px; }
+        .random-serve-dice .die {
+          /* default motion params for die A */
+          --x: -8px;
+          --rA: 200deg;
+          --rB: 410deg;
+          --rC: 520deg;
+          --rEnd: 540deg;
+          animation: diceTossCycle 5s ease-in-out infinite;
+          will-change: transform;
+          transform-origin: 55% 48%;
+        }
+        .random-serve-dice .die-b {
+          /* mirrored + slightly faster spin for variety */
+          --x: 8px;
+          --rA: -220deg;
+          --rB: -430deg;
+          --rC: -560deg;
+          --rEnd: -600deg;
+          animation-delay: .04s;
+          transform-origin: 45% 52%;
+        }
+        /* Only display the matching face for each die */
+        .random-serve-dice .die .face { display: none; }
+        .random-serve-dice .die[data-face='1'] .face-1 { display: block; }
+        .random-serve-dice .die[data-face='2'] .face-2 { display: block; }
+        .random-serve-dice .die[data-face='3'] .face-3 { display: block; }
+        .random-serve-dice .die[data-face='4'] .face-4 { display: block; }
+        .random-serve-dice .die[data-face='5'] .face-5 { display: block; }
+        .random-serve-dice .die[data-face='6'] .face-6 { display: block; }
+        @media (prefers-reduced-motion: reduce) {
+          .random-serve-dice .die { animation: none; }
         }
       `}</style>
 
@@ -181,6 +256,62 @@ export default function Home() {
 }
 
 // CoverBackground component removed (unused)
+
+function Dice({ variant }: { variant: 'a' | 'b' }) {
+  const [face, setFace] = React.useState<number>(variant === 'a' ? 1 : 4);
+  const onIter = React.useCallback(() => {
+    setFace(f => (f % 6) + 1);
+  }, []);
+  return (
+    <svg
+      className={`die die-${variant}`}
+      viewBox="0 0 24 24"
+      width="18"
+      height="18"
+      fill="none"
+      role="img"
+      focusable="false"
+      onAnimationIteration={onIter}
+      data-face={face}
+    >
+      <rect x="2" y="2" width="20" height="20" rx="5" fill="#111" stroke="#111" strokeWidth="1.5" />
+      {/* Faces 1..6; show one at a time via CSS */}
+      <g className="face face-1">
+        <circle cx="12" cy="12" r="1.7" fill="#fff" />
+      </g>
+      <g className="face face-2">
+        <circle cx="8" cy="8" r="1.7" fill="#fff" />
+        <circle cx="16" cy="16" r="1.7" fill="#fff" />
+      </g>
+      <g className="face face-3">
+        <circle cx="8" cy="8" r="1.7" fill="#fff" />
+        <circle cx="12" cy="12" r="1.7" fill="#fff" />
+        <circle cx="16" cy="16" r="1.7" fill="#fff" />
+      </g>
+      <g className="face face-4">
+        <circle cx="8" cy="8" r="1.7" fill="#fff" />
+        <circle cx="16" cy="8" r="1.7" fill="#fff" />
+        <circle cx="8" cy="16" r="1.7" fill="#fff" />
+        <circle cx="16" cy="16" r="1.7" fill="#fff" />
+      </g>
+      <g className="face face-5">
+        <circle cx="8" cy="8" r="1.7" fill="#fff" />
+        <circle cx="16" cy="8" r="1.7" fill="#fff" />
+        <circle cx="12" cy="12" r="1.7" fill="#fff" />
+        <circle cx="8" cy="16" r="1.7" fill="#fff" />
+        <circle cx="16" cy="16" r="1.7" fill="#fff" />
+      </g>
+      <g className="face face-6">
+        <circle cx="8" cy="7.5" r="1.7" fill="#fff" />
+        <circle cx="8" cy="12" r="1.7" fill="#fff" />
+        <circle cx="8" cy="16.5" r="1.7" fill="#fff" />
+        <circle cx="16" cy="7.5" r="1.7" fill="#fff" />
+        <circle cx="16" cy="12" r="1.7" fill="#fff" />
+        <circle cx="16" cy="16.5" r="1.7" fill="#fff" />
+      </g>
+    </svg>
+  );
+}
 
 function SCArtwork({url, preserveRatio=false}:{url:string; preserveRatio?:boolean}) {
   const [art,setArt]=React.useState<string|null>(null);

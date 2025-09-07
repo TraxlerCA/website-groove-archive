@@ -22,7 +22,8 @@ export function WordmarkHeader() {
 
       <div className="container mx-auto max-w-6xl px-6 relative">
         {/* Global menu trigger */}
-        <div className="absolute right-0 top-0 mt-2 sm:mt-0">
+        {/* Nudge in a bit on mobile so it doesn't hug the edge */}
+        <div className="absolute right-2 sm:right-0 top-0 mt-2 sm:mt-0">
           <GlobalMenu />
         </div>
         <div className="text-center">
