@@ -31,6 +31,8 @@ const TICK_W = 12;          // horizontal tick length inside time rail
 const LABEL_GAP = 10;       // space between tick end and time label
 
 const CARD_BORDER = 'border border-white shadow-[0_1px_2px_rgba(0,0,0,0.06)] rounded-md';
+// tiny sliver between overlapping boxes
+const SLOT_GAP_PX = 6;
 
 const norm = (v?: string | null) => (v ?? '').replace(/\u00a0/g, ' ').replace(/\s+/g, ' ').trim();
 const toMin = (t: string) => {
@@ -403,6 +405,42 @@ function Heatmap({
                   .filter(r => r.stage === stage)
                   .sort((a, b) => startMin(a) - startMin(b));
 
+                // Build basic event list with computed minutes
+                type Ev = { r: Row; i: number; s: number; e: number };
+                const events: Ev[] = sets.map((r, i) => ({ r, i, s: startMin(r), e: endMin(r) }));
+
+                // Partition into clusters of mutually overlapping intervals
+                const clusters: Ev[][] = [];
+                let cur: Ev[] = [];
+                let curEnd = -Infinity;
+                for (const ev of events) {
+                  if (!cur.length || ev.s < curEnd) {
+                    cur.push(ev);
+                    if (ev.e > curEnd) curEnd = ev.e;
+                  } else {
+                    clusters.push(cur);
+                    cur = [ev];
+                    curEnd = ev.e;
+                  }
+                }
+                if (cur.length) clusters.push(cur);
+
+                // For each cluster, assign a column index (interval partitioning)
+                const placement: Record<number, { col: number; cols: number }> = {};
+                for (const cluster of clusters) {
+                  const colEnds: number[] = [];
+                  type Placed = { idx: number; col: number };
+                  const placed: Placed[] = [];
+                  for (const ev of cluster) {
+                    let col = colEnds.findIndex(end => end <= ev.s);
+                    if (col === -1) { colEnds.push(ev.e); col = colEnds.length - 1; }
+                    else { colEnds[col] = ev.e; }
+                    placed.push({ idx: ev.i, col });
+                  }
+                  const cols = colEnds.length;
+                  for (const p of placed) placement[p.idx] = { col: p.col, cols };
+                }
+
                 return (
                   <div key={stage} className={`relative border-r border-black ${idx === stages.length - 1 ? 'border-r-0' : ''}`}>
                     {sets.map((r, i) => {
@@ -417,13 +455,21 @@ function Heatmap({
                       const bg = bucket ? COLORS[bucket] : COLORS.unrated;
                       const txt = (bucket === 'ok' || bucket === '') ? '#111827' : '#FFFFFF';
 
+                      const place = placement[i] || { col: 0, cols: 1 };
+                      const n = Math.max(1, place.cols);
+                      const c = Math.max(0, Math.min(place.col, n - 1));
+                      const width = `calc((100% - ${(n - 1) * SLOT_GAP_PX}px) / ${n})`;
+                      const left  = `calc(${c} * (100% - ${(n - 1) * SLOT_GAP_PX}px) / ${n} + ${c * SLOT_GAP_PX}px)`;
+
                       return (
                         <div key={stage + '-' + i} className="absolute left-2 right-2" style={{ top }}>
-                          <div
-                            className={`${CARD_BORDER} flex items-center justify-center text-center px-2`}
-                            style={{ height: innerH, backgroundColor: bg, color: txt }}
-                          >
-                            <div className="text-[13px] leading-snug">{r.artist}</div>
+                          <div className="relative" style={{ height: innerH }}>
+                            <div
+                              className={`${CARD_BORDER} absolute inset-y-0 flex items-center justify-center text-center px-2`}
+                              style={{ left, width, height: '100%', backgroundColor: bg, color: txt }}
+                            >
+                              <div className="text-[13px] leading-snug">{r.artist}</div>
+                            </div>
                           </div>
                         </div>
                       );
