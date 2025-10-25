@@ -96,7 +96,7 @@ export default function Home() {
       <div className="mt-10 flex justify-center">
         <button
           onClick={loadServe}
-          className="relative inline-flex items-center gap-3 rounded-full border border-neutral-300 bg-white px-5 py-3 text-sm font-semibold shadow-sm hover:shadow-md active:scale-[.99] transition random-serve-dice"
+          className="relative inline-flex items-center gap-3 rounded-full border border-neutral-300 bg-white px-5 py-3 text-sm font-semibold shadow-sm hover:shadow-md active:scale-[.99] transition random-serve-dice hover-lift"
         >
           <span className="dice-wrap" aria-hidden="true">
             <Dice variant="a" />
@@ -219,6 +219,8 @@ export default function Home() {
                     initial={{ opacity: 0, scale: 0.94, y: 6 }}
                     animate={{ opacity: 1, scale: 1, y: 0 }}
                     transition={{ duration: 0.45, ease: 'easeOut', delay: 0.08 * i }}
+                    whileHover={{ y: -4 }}
+                    whileTap={{ scale: 0.98, y: -1 }}
                   >
                     <SCArtwork url={r.soundcloud!} />
                   </motion.button>

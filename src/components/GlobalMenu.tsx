@@ -170,8 +170,8 @@ export default function GlobalMenu() {
 
   // Tinted active row, consistent for desktop/mobile
   const commonItemClass = (active: boolean) =>
-    `flex items-center gap-3 px-3 min-h-14 rounded-lg focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-black/40 ${
-      active ? 'bg-black/10 font-medium' : 'hover:bg-black/5'
+    `flex items-center gap-3 px-3 min-h-14 rounded-lg transition-transform duration-150 ease-out focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-black/40 ${
+      active ? 'bg-black/10 font-medium' : 'hover:bg-black/5 hover-lift'
     }`;
 
   return (
@@ -183,7 +183,7 @@ export default function GlobalMenu() {
         aria-expanded={open}
         aria-label={open ? 'Close menu' : 'Open menu'}
         onClick={() => (open ? handleClose() : handleOpen())}
-        className="h-10 w-10 inline-flex items-center justify-center rounded-full hover:bg-black/5 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-black/40"
+        className="h-10 w-10 inline-flex items-center justify-center rounded-full hover:bg-black/5 hover-lift focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-black/40"
       >
         <MenuIcon />
       </button>
@@ -202,7 +202,7 @@ export default function GlobalMenu() {
               aria-label="Close menu"
               onClick={handleClose}
               onKeyDown={onCloseKeyDown}
-              className="absolute right-2 top-2 inline-flex h-8 w-8 items-center justify-center rounded-md hover:bg-black/5 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-black/40"
+              className="absolute right-2 top-2 inline-flex h-8 w-8 items-center justify-center rounded-md hover:bg-black/5 hover-lift focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-black/40"
             >
               <CloseIcon />
             </button>
@@ -251,7 +251,7 @@ export default function GlobalMenu() {
               aria-label="Close menu"
               onClick={handleClose}
               onKeyDown={onCloseKeyDown}
-              className="inline-flex h-10 w-10 items-center justify-center rounded-md hover:bg-black/5 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-black/40"
+              className="inline-flex h-10 w-10 items-center justify-center rounded-md hover:bg-black/5 hover-lift focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-black/40"
             >
               <CloseIcon />
             </button>

@@ -19,6 +19,8 @@ export default function ScrollTopFab() {
       className="fixed bottom-6 left-6 z-40 p-3 rounded-full bg-white/5 border border-white/10 hover:bg-white/10"
       initial={{ opacity: 0, y: 8 }}
       animate={{ opacity: 1, y: 0 }}
+      whileHover={{ y: -4 }}
+      whileTap={{ y: 0 }}
       aria-label="scroll to top"
     >
       <ArrowUpIcon />

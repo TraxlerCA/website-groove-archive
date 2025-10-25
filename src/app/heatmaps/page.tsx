@@ -215,6 +215,8 @@ export default function HeatmapsPage() {
                 const a = document.createElement('a'); a.href = url; a.download = 'heatmap-template.csv'; a.click();
                 URL.revokeObjectURL(url);
               }}
+              whileHover={{ y: -1, scale: 1.01 }}
+              whileTap={{ y: 0, scale: 0.99 }}
             >
               CSV template
             </motion.button>
@@ -230,12 +232,14 @@ export default function HeatmapsPage() {
           <div className="mb-1 flex items-center justify-between">
             <h2 className="text-3xl font-semibold tracking-wide text-neutral-900">Your preview</h2>
             <div className="flex items-center gap-2">
-              <button
+              <motion.button
                 className="rounded-md border border-neutral-300 bg-white px-3 py-2 text-sm hover:bg-neutral-50"
                 onClick={() => setUserRows([])}
+                whileHover={{ y: -1, scale: 1.01 }}
+                whileTap={{ y: 0, scale: 0.99 }}
               >
                 Clear preview
-              </button>
+              </motion.button>
             </div>
           </div>
           {userGroups.map(g => (

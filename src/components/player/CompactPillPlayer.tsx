@@ -148,7 +148,7 @@ export default function CompactPillPlayer() {
           <button
             aria-label={playing ? 'Pause' : 'Play'}
             onClick={toggle}
-            className="grid place-items-center rounded-full bg-white text-neutral-900 w-8 h-8 active:scale-95 shadow ring-1 ring-black/10"
+            className="grid place-items-center rounded-full bg-white text-neutral-900 w-8 h-8 active:scale-95 shadow ring-1 ring-black/10 hover-lift"
           >
             {playing ? <Pause className="h-4 w-4" /> : <Play className="h-4 w-4" />}
           </button>
@@ -168,7 +168,7 @@ export default function CompactPillPlayer() {
           <button
             type="button"
             onClick={() => { if(!playing) toggle(); setOpen(true); }}
-            className="grid h-8 w-8 place-items-center rounded-full bg-white/90 text-neutral-900 ring-1 ring-black/10 hover:bg-white"
+            className="grid h-8 w-8 place-items-center rounded-full bg-white/90 text-neutral-900 ring-1 ring-black/10 hover:bg-white hover-lift"
             aria-label="Open player"
             title="Open player"
           >
