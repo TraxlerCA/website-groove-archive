@@ -2,8 +2,28 @@
 
 import React, { useEffect, useMemo, useRef, useState, useCallback } from 'react';
 import { motion } from 'framer-motion';
-import Papa, { ParseResult } from 'papaparse';
-import * as htmlToImage from 'html-to-image';
+
+type ParseResult<T> = import('papaparse').ParseResult<T>;
+type PapaModule = typeof import('papaparse');
+type HtmlToImageModule = typeof import('html-to-image');
+
+let papaPromise: Promise<PapaModule> | null = null;
+async function loadPapa(): Promise<PapaModule> {
+  if (!papaPromise) {
+    papaPromise = import('papaparse').then(mod =>
+      ('parse' in mod ? mod : Object.assign(mod.default, mod)) as PapaModule,
+    );
+  }
+  return papaPromise;
+}
+
+let htmlToImagePromise: Promise<HtmlToImageModule> | null = null;
+function loadHtmlToImage(): Promise<HtmlToImageModule> {
+  if (!htmlToImagePromise) {
+    htmlToImagePromise = import('html-to-image');
+  }
+  return htmlToImagePromise;
+}
 
 type Rating = 'nahh' | 'ok' | 'hot' | 'blazing' | '';
 type Row = {
@@ -125,24 +145,34 @@ export default function HeatmapsPage() {
   const refs = useRef<Record<string, HTMLDivElement | null>>({});
 
   useEffect(() => {
-    Papa.parse<Row>(CSV_URL, {
-      download: true, header: true, skipEmptyLines: true,
-      complete: (res: ParseResult<Row>) => {
-        const clean = (res.data || [])
-          .map(r => ({
-            festival: norm(r.festival),
-            date: norm(r.date),
-            stage: norm(r.stage),
-            stage_order: Number(r.stage_order ?? 9999),
-            artist: norm(r.artist),
-            start: norm(r.start),
-            end: norm(r.end),
-            rating: norm(r.rating || ''),
-          }))
-          .filter(r => r.festival && r.date && r.stage && r.artist && r.start && r.end);
-        setRows(clean);
-      }
-    });
+    let cancelled = false;
+    (async () => {
+      const Papa = await loadPapa();
+      Papa.parse<Row>(CSV_URL, {
+        download: true,
+        header: true,
+        skipEmptyLines: true,
+        complete: (res: ParseResult<Row>) => {
+          if (cancelled) return;
+          const clean = (res.data || [])
+            .map(r => ({
+              festival: norm(r.festival),
+              date: norm(r.date),
+              stage: norm(r.stage),
+              stage_order: Number(r.stage_order ?? 9999),
+              artist: norm(r.artist),
+              start: norm(r.start),
+              end: norm(r.end),
+              rating: norm(r.rating || ''),
+            }))
+            .filter(r => r.festival && r.date && r.stage && r.artist && r.start && r.end);
+          setRows(clean);
+        },
+      });
+    })();
+    return () => {
+      cancelled = true;
+    };
   }, [CSV_URL]);
 
   const groups: Group[] = useMemo(() => {
@@ -176,6 +206,7 @@ export default function HeatmapsPage() {
     const el = refs.current[key]; if (!el) return;
     setErr(null);
     try {
+      const htmlToImage = await loadHtmlToImage();
       const dataUrl = await htmlToImage.toPng(el, {
         pixelRatio: 2, backgroundColor: '#ffffff', cacheBust: true, skipFonts: true
       });
@@ -546,6 +577,7 @@ function CreateHeatmapModal({
     const bytes = new Blob([text]).size;
     if (bytes > 1_000_000) errs.push('File is larger than 1 MB.');
 
+    const Papa = await loadPapa();
     const res = await new Promise<ParseResult<Record<string, unknown>>>((resolve) => {
       Papa.parse(text, { header: true, skipEmptyLines: true, complete: resolve });
     });
