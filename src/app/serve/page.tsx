@@ -42,14 +42,19 @@ function YTThumb({url}:{url?:string|null}) {
 function SCArtwork({url, preserveRatio=false}:{url:string | null; preserveRatio?:boolean}) {
   const [art,setArt]=useState<string|null>(null);
   const [failed,setFailed]=useState(false);
-  useEffect(()=>{let ok=true;(async()=>{
-    try{
-      if(!url){ if(ok) setArt(null); return; }
-      const res=await fetch(`/api/soundcloud-artwork?url=${encodeURIComponent(url)}`,{cache:"no-store"});
-      const json=await res.json();
-      if(ok) setArt(json?.artwork||null);
-    }catch{ if(ok) setArt(null); }
-  })(); return ()=>{ok=false};},[url]);  
+  useEffect(()=>{let ok=true;
+    setFailed(false);
+    setArt(null);
+    if(!url){ return ()=>{ok=false;}; }
+    (async()=>{
+      try{
+        const res=await fetch(`/api/soundcloud-artwork?url=${encodeURIComponent(url)}`,{cache:"no-store"});
+        const json=await res.json();
+        if(ok) setArt(json?.artwork||null);
+      }catch{ if(ok) setArt(null); }
+    })();
+    return ()=>{ok=false;};
+  },[url]);  
   if(!art||failed){
     return <div className="absolute inset-0 bg-gradient-to-br from-orange-200 to-orange-400"/>;
   }

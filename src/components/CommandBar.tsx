@@ -5,16 +5,34 @@ import { usePlayer } from "@/context/PlayerProvider";
 import type { Row } from "@/lib/types";
 import { SearchIcon } from "@/components/icons";
 import { copyToClipboard } from "@/lib/utils";
+import SuggestModal from "@/components/SuggestModal";
 
 export default function CommandBar({ rows, onNavigate }: { rows: Row[]; onNavigate: (r: 'home'|'list'|'serve'|'heatmaps'|'suggest') => void }) {
-  const [open,setOpen]=useState(false); const [q,setQ]=useState(""); const inputRef=useRef<HTMLInputElement|null>(null); const [sel,setSel]=useState(0);
+  const [open,setOpen]=useState(false); const [q,setQ]=useState(""); const inputRef=useRef<HTMLInputElement|null>(null); const [sel,setSel]=useState(0); const [suggestOpen,setSuggestOpen]=useState(false);
   const { play, enqueue }=usePlayer();
-  useEffect(()=>{const onKey=(e:KeyboardEvent)=>{if(e.key.toLowerCase()==="k"&&!e.metaKey&&!e.ctrlKey&&!e.altKey){e.preventDefault();setOpen(v=>!v);} if(e.key==="Escape") setOpen(false);}; window.addEventListener("keydown",onKey); return()=>window.removeEventListener("keydown",onKey);},[]);
+  useEffect(()=>{const onKey=(e:KeyboardEvent)=>{
+    const target=e.target as HTMLElement|null;
+    const typing=!!(target&&(target.isContentEditable||["INPUT","TEXTAREA","SELECT"].includes(target.tagName)||target.getAttribute("role")==="textbox"));
+    if((e.key==="k"||e.key==="K")&&(e.metaKey||e.ctrlKey)&&!e.altKey){
+      e.preventDefault();
+      if(!typing) setOpen(v=>!v);
+      return;
+    }
+    if(e.key==="Escape") setOpen(false);
+  }; window.addEventListener("keydown",onKey); return()=>window.removeEventListener("keydown",onKey);},[]);
   useEffect(()=>{if(open) setTimeout(()=>inputRef.current?.focus(),0); else{setQ("");setSel(0);}},[open]);
   const filtered=useMemo(()=>{const term=q.toLowerCase().trim(); const base=term?rows.filter(r=>r.set.toLowerCase().includes(term)||(r.classification||"").toLowerCase().includes(term)):rows; return base.slice(0,8);},[q,rows]);
+  const pageActions=useMemo(()=>[
+    {label:"Home",action:()=>onNavigate("home")},
+    {label:"The list",action:()=>onNavigate("list")},
+    {label:"Serve up a set",action:()=>onNavigate("serve")},
+    {label:"Heatmaps",action:()=>onNavigate("heatmaps")},
+    {label:"Suggest a set",action:()=>setSuggestOpen(true)},
+  ],[onNavigate]);
   const onKeyDown=(e:React.KeyboardEvent)=>{if(e.key==="ArrowDown"){setSel(i=>Math.min(i+1,filtered.length-1));e.preventDefault();} if(e.key==="ArrowUp"){setSel(i=>Math.max(i-1,0));e.preventDefault();} if(e.key==="Enter"){const row=filtered[sel]; if(!row) return; if(e.metaKey||e.ctrlKey){const t=row.youtube||row.soundcloud||"#"; window.open(t,"_blank","noopener,noreferrer");} else {play(row); setOpen(false);}}};
   return (
-    <AnimatePresence>
+    <>
+      <AnimatePresence>
       {open && (
         <motion.div
           className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm"
@@ -45,7 +63,7 @@ export default function CommandBar({ rows, onNavigate }: { rows: Row[]; onNaviga
             <div className="grid grid-cols-1 md:grid-cols-2 divide-y md:divide-y-0 md:divide-x divide-white/10">
               <div className="max-h-[40vh] overflow-auto">
                 <div className="px-4 py-2 text-xs uppercase tracking-widest opacity-70">pages</div>
-                {[{ label: "Home", action: () => onNavigate("home") }, { label: "The list", action: () => onNavigate("list") }, { label: "Serve up a set", action: () => onNavigate("serve") }, { label: "Heatmaps", action: () => onNavigate("heatmaps") }, { label: "Suggest a set", action: () => onNavigate("suggest") }].map(it => (
+                {pageActions.map(it => (
                   <button
                     key={it.label}
                     onClick={() => { it.action(); setOpen(false); }}
@@ -86,5 +104,7 @@ export default function CommandBar({ rows, onNavigate }: { rows: Row[]; onNaviga
         </motion.div>
       )}
     </AnimatePresence>
+    <SuggestModal open={suggestOpen} onClose={()=>setSuggestOpen(false)} restoreFocusTo={inputRef.current||undefined} />
+    </>
   );
 }

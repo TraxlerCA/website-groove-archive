@@ -318,13 +318,19 @@ function Dice({ variant }: { variant: 'a' | 'b' }) {
 function SCArtwork({url, preserveRatio=false}:{url:string; preserveRatio?:boolean}) {
   const [art,setArt]=React.useState<string|null>(null);
   const [failed,setFailed]=React.useState(false);
-  React.useEffect(()=>{let ok=true;(async()=>{
-    try{
-      const res=await fetch(`/api/soundcloud-artwork?url=${encodeURIComponent(url)}`,{cache:"no-store"});
-      const json=await res.json();
-      if(ok) setArt(json?.artwork||null);
-    }catch{ if(ok) setArt(null); }
-  })(); return ()=>{ok=false};},[url]);
+  React.useEffect(()=>{let ok=true;
+    setFailed(false);
+    setArt(null);
+    if(!url){ return ()=>{ok=false;}; }
+    (async()=>{
+      try{
+        const res=await fetch(`/api/soundcloud-artwork?url=${encodeURIComponent(url)}`,{cache:"no-store"});
+        const json=await res.json();
+        if(ok) setArt(json?.artwork||null);
+      }catch{ if(ok) setArt(null); }
+    })();
+    return ()=>{ok=false;};
+  },[url]);
   if(!art||failed){
     // when preserving natural ratio, we need an in-flow placeholder
     if (preserveRatio) {
