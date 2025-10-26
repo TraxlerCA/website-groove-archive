@@ -5,10 +5,9 @@ import { usePlayer } from "@/context/PlayerProvider";
 import type { Row } from "@/lib/types";
 import { SearchIcon } from "@/components/icons";
 import { copyToClipboard } from "@/lib/utils";
-import SuggestModal from "@/components/SuggestModal";
 
 export default function CommandBar({ rows, onNavigate }: { rows: Row[]; onNavigate: (r: 'home'|'list'|'serve'|'heatmaps'|'suggest') => void }) {
-  const [open,setOpen]=useState(false); const [q,setQ]=useState(""); const inputRef=useRef<HTMLInputElement|null>(null); const [sel,setSel]=useState(0); const [suggestOpen,setSuggestOpen]=useState(false);
+  const [open,setOpen]=useState(false); const [q,setQ]=useState(""); const inputRef=useRef<HTMLInputElement|null>(null); const [sel,setSel]=useState(0);
   const { play, enqueue }=usePlayer();
   useEffect(()=>{const onKey=(e:KeyboardEvent)=>{
     const target=e.target as HTMLElement|null;
@@ -27,7 +26,7 @@ export default function CommandBar({ rows, onNavigate }: { rows: Row[]; onNaviga
     {label:"The list",action:()=>onNavigate("list")},
     {label:"Serve up a set",action:()=>onNavigate("serve")},
     {label:"Heatmaps",action:()=>onNavigate("heatmaps")},
-    {label:"Suggest a set",action:()=>setSuggestOpen(true)},
+    {label:"Suggest a set",action:()=>onNavigate("suggest")},
   ],[onNavigate]);
   const onKeyDown=(e:React.KeyboardEvent)=>{if(e.key==="ArrowDown"){setSel(i=>Math.min(i+1,filtered.length-1));e.preventDefault();} if(e.key==="ArrowUp"){setSel(i=>Math.max(i-1,0));e.preventDefault();} if(e.key==="Enter"){const row=filtered[sel]; if(!row) return; if(e.metaKey||e.ctrlKey){const t=row.youtube||row.soundcloud||"#"; window.open(t,"_blank","noopener,noreferrer");} else {play(row); setOpen(false);}}};
   return (
@@ -104,7 +103,6 @@ export default function CommandBar({ rows, onNavigate }: { rows: Row[]; onNaviga
         </motion.div>
       )}
     </AnimatePresence>
-    <SuggestModal open={suggestOpen} onClose={()=>setSuggestOpen(false)} restoreFocusTo={inputRef.current||undefined} />
     </>
   );
 }

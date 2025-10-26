@@ -10,6 +10,8 @@ import { YouTubeIcon, SCIcon } from '@/components/icons';
 import { useRows } from '@/lib/useRows';
 import { usePlayer } from '@/context/PlayerProvider';
 import type { Row } from '@/lib/useRows';
+import { useGenres } from '@/lib/useGenres';
+import { GenreTooltip } from '@/components/GenreTooltip';
 
 type Provider='youtube'|'soundcloud';
 type PickItem={row: Row; provider: Provider};
@@ -74,6 +76,7 @@ function SCArtwork({url, preserveRatio=false}:{url:string | null; preserveRatio?
 export default function ServePage(){
   const { rows }=useRows();
   const { play }=usePlayer();
+  const { byLabel } = useGenres();
   const endRef = useRef<HTMLDivElement | null>(null);
   const suggestionRef = useRef<HTMLDivElement | null>(null);
 
@@ -161,6 +164,10 @@ export default function ServePage(){
 
   const titleOf=(r: Row)=>r?.set||'Untitled set';
   const labelOf=(r: Row)=> (r?.classification||'').trim();  
+  const describeGenre = (label: string | null | undefined) => {
+    if (!label) return undefined;
+    return byLabel.get(label.toLowerCase()) || undefined;
+  };
 
   return (
     <section className="container mx-auto max-w-6xl px-6 mt-8 space-y-6">
@@ -273,11 +280,17 @@ export default function ServePage(){
             <h3 className="text-2xl font-semibold leading-tight break-words" style={{fontFamily:"'Space Grotesk',system-ui,sans-serif"}}>
               {titleOf(pick.row)}
             </h3>
-            {labelOf(pick.row) && (
-              <div className="mt-1 text-2xl font-semibold leading-tight" style={{fontFamily:"'Space Grotesk',system-ui,sans-serif"}}>
-                {labelOf(pick.row)}
-              </div>
-            )}
+            {(() => {
+              const label = labelOf(pick.row);
+              if (!label) return null;
+              return (
+                <div className="mt-1" style={{fontFamily:"'Space Grotesk',system-ui,sans-serif"}}>
+                  <GenreTooltip label={label} description={describeGenre(label)}>
+                    <span className="text-2xl font-semibold leading-tight">{label}</span>
+                  </GenreTooltip>
+                </div>
+              );
+            })()}
           </div>
         </div>
       )}

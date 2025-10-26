@@ -5,7 +5,35 @@ import type { Metadata } from 'next';
 import { PlayerProvider } from '@/context/PlayerProvider';
 import AppShell from '@/components/AppShell';
 
+const TITLE = 'The Groove Archive';
+const DESCRIPTION =
+  'Discover hand-curated DJ sets, random serves, and festival heatmaps across SoundCloud and YouTube.';
+
 export const metadata: Metadata = {
+  title: {
+    default: TITLE,
+    template: `%s | ${TITLE}`,
+  },
+  description: DESCRIPTION,
+  keywords: [
+    'The Groove Archive',
+    'DJ sets',
+    'SoundCloud mixes',
+    'YouTube mixes',
+    'festival heatmaps',
+    'dance music discovery',
+  ],
+  openGraph: {
+    title: TITLE,
+    description: DESCRIPTION,
+    siteName: TITLE,
+    type: 'website',
+  },
+  twitter: {
+    card: 'summary_large_image',
+    title: TITLE,
+    description: DESCRIPTION,
+  },
   icons: {
     icon: [{ url: '/icons/icon_list.png', type: 'image/png', sizes: 'any' }],
     shortcut: ['/icons/icon_list.png'],

@@ -3,12 +3,14 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useWindowVirtualizer } from "@tanstack/react-virtual";
-import { IconButton, PageTitle, Tag } from "@/components/ui";
+import { IconButton, PageTitle } from "@/components/ui";
 import { YouTubeIcon, SCIcon, SearchIcon, PaperPlaneOutlineIcon } from "@/components/icons";
 import { usePlayer } from "@/context/PlayerProvider";
 import { useRows } from "@/lib/useRows";
+import { useGenres } from "@/lib/useGenres";
 import SuggestModal from "@/components/SuggestModal";
 import { motion } from 'framer-motion';
+import { GenreTooltip } from '@/components/GenreTooltip';
 
 /* title | genre | links */
 /*
@@ -23,6 +25,7 @@ const ROW_COLS =
 export default function ListPage() {
   const { rows, loading } = useRows();
   const { play } = usePlayer();
+  const { byLabel } = useGenres();
 
   const [q, setQ] = useState("");
   const [genre, setGenre] = useState("any");
@@ -48,6 +51,14 @@ export default function ListPage() {
     });
   }, [rows, q, genre]);
 
+  const explanationFor = useCallback(
+    (label: string | null | undefined) => {
+      if (!label) return undefined;
+      return byLabel.get(label.toLowerCase()) || undefined;
+    },
+    [byLabel]
+  );
+
   // Keep estimate stable; recompute after mount based on width
   const [isNarrow, setIsNarrow] = useState(false);
   useEffect(() => {
@@ -69,7 +80,7 @@ export default function ListPage() {
     <section className="container mx-auto max-w-6xl px-6 mt-10 space-y-10">
       <PageTitle title="THE LIST" />
 
-      <div className="rounded-2xl border border-neutral-200 overflow-hidden bg-white">
+      <div className="rounded-2xl border border-neutral-200 bg-white overflow-visible">
         <div>
           {/* Sticky header */}
           <div className="sticky top-0 z-10 bg-white/95 backdrop-blur">
@@ -89,24 +100,26 @@ export default function ListPage() {
               </div>
 
               {/* genre dropdown */}
-              <div className="flex items-center gap-3">
-                <span className="text-xs font-medium tracking-widest text-neutral-500">Genre</span>
-                <span className="relative inline-flex items-center h-9 px-3 rounded-lg border border-neutral-300 bg-white">
-                  <select
-                    value={genre}
-                    onChange={e => setGenre(e.target.value)}
-                    className="appearance-none bg-transparent outline-none text-sm pr-5"
-                  >
-                    {genres.map(g => (
-                      <option key={g} value={g}>
-                        {g === "any" ? "Any" : g}
-                      </option>
-                    ))}
-                  </select>
-                  <svg width="16" height="16" viewBox="0 0 20 20" className="absolute right-1 pointer-events-none">
-                    <path d="M5 7l5 6 5-6" fill="none" stroke="#000" strokeWidth="1.5" />
-                  </svg>
-                </span>
+              <div className="flex items-start gap-3">
+                <span className="mt-0.5 text-xs font-medium tracking-widest text-neutral-500">Genre</span>
+                <div className="flex flex-col">
+                  <span className="relative inline-flex items-center h-9 px-3 rounded-lg border border-neutral-300 bg-white">
+                    <select
+                      value={genre}
+                      onChange={e => setGenre(e.target.value)}
+                      className="appearance-none bg-transparent outline-none text-sm pr-5"
+                    >
+                      {genres.map(g => (
+                        <option key={g} value={g}>
+                          {g === "any" ? "Any" : g}
+                        </option>
+                      ))}
+                    </select>
+                    <svg width="16" height="16" viewBox="0 0 20 20" className="absolute right-1 pointer-events-none">
+                      <path d="M5 7l5 6 5-6" fill="none" stroke="#000" strokeWidth="1.5" />
+                    </svg>
+                  </span>
+                </div>
               </div>
 
               {/* Suggest a set action */}
@@ -167,11 +180,11 @@ export default function ListPage() {
                         </div>
 
                         <div className="py-1 flex justify-center">
-                          {(r?.classification || "").trim() ? (
-                            <Tag>{(r?.classification || "").toLowerCase()}</Tag>
-                          ) : (
-                            <div className="h-6" />
-                          )}
+                          {(() => {
+                            const label = (r?.classification || "").trim();
+                            if (!label) return <div className="h-6" />;
+                            return <GenreTooltip label={label} description={explanationFor(label)} />;
+                          })()}
                         </div>
 
                         <div className="py-1">
@@ -210,13 +223,15 @@ export default function ListPage() {
                         <div className="flex items-start gap-3">
                           <div className="min-w-0 flex-1">
                             <div className="font-medium leading-snug line-clamp-2">{r?.set}</div>
-                            {(r?.classification || "").trim() ? (
-                              <div className="mt-1">
-                                <Tag>{(r?.classification || "").toLowerCase()}</Tag>
-                              </div>
-                            ) : (
-                              <div className="mt-1 h-6" />
-                            )}
+                            {(() => {
+                              const label = (r?.classification || "").trim();
+                              if (!label) return <div className="mt-1 h-6" />;
+                              return (
+                                <div className="mt-1">
+                                  <GenreTooltip label={label} description={explanationFor(label)} />
+                                </div>
+                              );
+                            })()}
                           </div>
 
                           <div className="flex shrink-0 items-center gap-2">
