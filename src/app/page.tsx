@@ -103,10 +103,10 @@ export default function Home() {
               <span className="h-px w-12 bg-neutral-300" />
             </p>
             <h1 className="text-4xl font-semibold leading-tight text-neutral-900 sm:text-5xl">
-              Spotted. Curated. Served. Played again. And again.
+              Found. Saved. Shared. Played on repeat.
             </h1>
             <p className="max-w-xl text-base text-neutral-600 sm:text-lg">
-              From deep techno to eurotrance, hit serve for instant inspiration, or browse by genre when you know the vibe.
+              This is where the best sets come to live. The ones you stumble upon at 3am and can't stop thinking about. The mixes that soundtracked your best nights and your quietest mornings.
             </p>
             <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
               <a

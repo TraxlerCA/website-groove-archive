@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useWindowVirtualizer } from "@tanstack/react-virtual";
 import { motion } from "framer-motion";
-import { IconButton, PageTitle } from "@/components/ui";
+import { IconButton } from "@/components/ui";
 import { YouTubeIcon, SCIcon, SearchIcon, PaperPlaneOutlineIcon } from "@/components/icons";
 import { usePlayer } from "@/context/PlayerProvider";
 import SuggestModal from "@/components/SuggestModal";
@@ -79,21 +79,19 @@ export default function ListPageClient({ rows, genres }: Props) {
   });
 
   return (
-    <section className="container mx-auto max-w-6xl px-6 mt-10 space-y-10">
-      <PageTitle title="THE LIST" />
-
+    <section className="container mx-auto max-w-6xl px-6 mt-8 sm:mt-10 space-y-10">
       <div className="rounded-2xl border border-neutral-200 bg-white overflow-visible">
         <div>
           <div className="sticky top-0 z-10 bg-white/95 backdrop-blur">
             <div className="flex flex-wrap items-center gap-3 px-3 py-2 border-b border-neutral-200">
-              <div className="flex items-center gap-2">
+              <div className="flex w-full items-center gap-2 sm:w-auto">
                 <span className="text-xs font-medium tracking-widest text-neutral-500">Search</span>
-                <label className="flex items-center gap-2 rounded-lg border border-neutral-300 bg-white px-2 h-9">
+                <label className="flex h-9 w-full items-center gap-2 rounded-lg border border-neutral-300 bg-white px-2 sm:w-auto">
                   <SearchIcon />
                   <input
                     value={q}
                     onChange={e => setQ(e.target.value)}
-                    className="outline-none text-[16px] sm:text-sm w-56"
+                    className="w-full outline-none text-[16px] sm:w-56 sm:text-sm"
                     placeholder="Type to filter"
                   />
                 </label>
