@@ -38,9 +38,10 @@ export default function ListPageClient({ rows, genres }: Props) {
   const filtered = useMemo(() => {
     const term = q.trim().toLowerCase();
     return rows.filter(r => {
-      if (genre !== "any" && r.classification !== genre) return false;
+      const classification = (r.classification || "").trim();
+      if (genre !== "any" && classification !== genre) return false;
       if (!term) return true;
-      const hay = `${r.set} ${(r.classification || "")} ${(r.tier || "")}`.toLowerCase();
+      const hay = `${r.set} ${classification} ${(r.tier || "")}`.toLowerCase();
       return term.split(/\s+/).filter(Boolean).every(w => hay.includes(w));
     });
   }, [rows, q, genre]);
@@ -155,8 +156,9 @@ export default function ListPageClient({ rows, genres }: Props) {
                 <div
                   key={vi.key}
                   data-index={vi.index}
+                  ref={rowVirtualizer.measureElement}
                   className="absolute left-0 right-0"
-                  style={{ transform: `translateY(${vi.start}px)`, height: `${vi.size}px` }}
+                  style={{ transform: `translateY(${vi.start}px)` }}
                 >
                   {/* desktop/tablet row */}
                   <div

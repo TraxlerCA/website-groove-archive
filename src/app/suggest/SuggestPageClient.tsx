@@ -48,7 +48,7 @@ export default function SuggestPageClient() {
           whileHover={{ y: -1, scale: 1.01 }}
           whileTap={{ y: 0, scale: 0.99 }}
         >
-          Mail Joost
+          Mail me
         </motion.a>
         <motion.a
           href={gmailHref}
@@ -65,7 +65,7 @@ export default function SuggestPageClient() {
       </div>
 
       <div className="rounded-2xl border border-neutral-200 bg-white px-5 py-4 text-sm text-neutral-600">
-        Prefer another channel? Drop Joost a line at{' '}
+        Prefer another channel? Drop me a line at{' '}
         <a href={`mailto:${SUGGEST_TO}`} className="text-neutral-900 underline">
           {SUGGEST_TO}
         </a>{' '}

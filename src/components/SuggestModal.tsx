@@ -5,7 +5,7 @@ import { motion } from 'framer-motion';
 
 export const SUGGEST_TO = 'tga.suggestions@gmail.com';
 export const SUGGEST_SUBJECT = 'Set suggestion for The Groove Archive';
-export const SUGGEST_BODY = `Hi Joost,
+export const SUGGEST_BODY = `Hi,
 
 Link to set:
 Optional note:
