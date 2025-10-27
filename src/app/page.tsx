@@ -106,7 +106,7 @@ export default function Home() {
               Found. Saved. Shared. Played on repeat.
             </h1>
             <p className="max-w-xl text-base text-neutral-600 sm:text-lg">
-              This is where the best sets come to live. The ones you stumble upon at 3am and can't stop thinking about. The mixes that soundtracked your best nights and your quietest mornings.
+              This is where the best sets come to live. The ones you stumble upon at 3am and can&rsquo;t stop thinking about. The mixes that soundtracked your best nights and your quietest mornings.
             </p>
             <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
               <a

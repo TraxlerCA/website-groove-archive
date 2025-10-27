@@ -174,9 +174,10 @@ function SoundCloudEmbed({ url }: { url: string }){
   // Initialize once
   useEffect(() => {
     let alive = true;
+    const containerNode = containerRef.current;
     const init = async () => {
       await loadScriptOnce('https://w.soundcloud.com/player/api.js', () => typeof window !== 'undefined' && !!window.SC?.Widget);
-      if (!alive || !containerRef.current) return;
+      if (!alive || !containerNode) return;
       // Create iframe dynamically so React doesn't track it
       const iframe = document.createElement('iframe');
       iframe.title = 'SoundCloud player';
@@ -185,7 +186,7 @@ function SoundCloudEmbed({ url }: { url: string }){
       iframe.tabIndex = -1;
       // Minimal base src so the widget can attach
       iframe.src = `https://w.soundcloud.com/player/?url=`;
-      try { containerRef.current.appendChild(iframe); } catch {}
+      try { containerNode.appendChild(iframe); } catch {}
       iframeElRef.current = iframe;
       const SC = window.SC!;
       const widget = SC.Widget(iframe);
@@ -223,7 +224,7 @@ function SoundCloudEmbed({ url }: { url: string }){
         if (durationPollRef.current) { clearInterval(durationPollRef.current); durationPollRef.current = undefined; }
         registerController(null);
         // Drop the iframe safely if SC mutated it (defer to avoid internal races)
-        setTimeout(() => { try { if (containerRef.current) containerRef.current.innerHTML = ''; } catch {} }, 0);
+        setTimeout(() => { try { if (containerNode) containerNode.innerHTML = ''; } catch {} }, 0);
         iframeElRef.current = null;
       } catch {}
     };
