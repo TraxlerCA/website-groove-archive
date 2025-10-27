@@ -7,12 +7,26 @@ type ParseResult<T> = import('papaparse').ParseResult<T>;
 type PapaModule = typeof import('papaparse');
 type HtmlToImageModule = typeof import('html-to-image');
 
+const isPapaModule = (value: unknown): value is PapaModule =>
+  typeof value === 'object' && value !== null && 'parse' in value;
+
 let papaPromise: Promise<PapaModule> | null = null;
 async function loadPapa(): Promise<PapaModule> {
   if (!papaPromise) {
-    papaPromise = import('papaparse').then(mod =>
-      ('parse' in mod ? mod : Object.assign(mod.default, mod)) as PapaModule,
-    );
+    papaPromise = import('papaparse').then(mod => {
+      const candidate = mod as unknown;
+
+      if (isPapaModule(candidate)) {
+        return candidate;
+      }
+
+      const fallback = (candidate as { default?: unknown }).default;
+      if (isPapaModule(fallback)) {
+        return fallback;
+      }
+
+      throw new Error('Failed to load papaparse module');
+    });
   }
   return papaPromise;
 }
