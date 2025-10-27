@@ -5,7 +5,6 @@ import { usePathname, useRouter } from 'next/navigation';
 import {
   CloseIcon,
   HeatmapOutlineIcon,
-  HomeOutlineIcon,
   ListOutlineIcon,
   MenuIcon,
   PaperPlaneOutlineIcon,
@@ -14,13 +13,12 @@ import {
 
 type Item = { label: string; href: string; icon: ReactNode };
 
-// Order: Serve up a set, The list, Heatmaps, Suggest a set, Home
+// Order: Serve a set, The list, Heatmaps, Suggest a set
 const MENU_ITEMS: Item[] = [
-  { label: 'Serve up a set', href: '/serve', icon: <PlayOutlineIcon /> },
+  { label: 'Serve a set', href: '/', icon: <PlayOutlineIcon /> },
   { label: 'The list', href: '/list', icon: <ListOutlineIcon /> },
   { label: 'Heatmaps', href: '/heatmaps', icon: <HeatmapOutlineIcon /> },
   { label: 'Suggest a set', href: '/suggest', icon: <PaperPlaneOutlineIcon /> },
-  { label: 'Home', href: '/', icon: <HomeOutlineIcon /> },
 ];
 
 function useIsDesktop(minWidth = 640) {

@@ -10,7 +10,7 @@ import PlayerModal from '@/components/PlayerModal';
 import ScrollTopFab from '@/components/ScrollTopFab';
 import { SiteDataProvider, type SiteData } from '@/context/SiteDataContext';
 
-type Route = 'home' | 'list' | 'serve' | 'heatmaps' | 'suggest';
+type Route = 'home' | 'list' | 'heatmaps' | 'suggest';
 
 export default function AppShell({ children, data }: { children: ReactNode; data: SiteData }) {
   const router = useRouter();

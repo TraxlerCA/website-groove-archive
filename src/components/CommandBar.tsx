@@ -6,7 +6,7 @@ import type { Row } from "@/lib/types";
 import { SearchIcon } from "@/components/icons";
 import { copyToClipboard } from "@/lib/utils";
 
-export default function CommandBar({ rows, onNavigate }: { rows: Row[]; onNavigate: (r: 'home'|'list'|'serve'|'heatmaps'|'suggest') => void }) {
+export default function CommandBar({ rows, onNavigate }: { rows: Row[]; onNavigate: (r: 'home'|'list'|'heatmaps'|'suggest') => void }) {
   const [open,setOpen]=useState(false); const [q,setQ]=useState(""); const inputRef=useRef<HTMLInputElement|null>(null); const [sel,setSel]=useState(0);
   const { play, enqueue }=usePlayer();
   useEffect(()=>{const onKey=(e:KeyboardEvent)=>{
@@ -22,9 +22,8 @@ export default function CommandBar({ rows, onNavigate }: { rows: Row[]; onNaviga
   useEffect(()=>{if(open) setTimeout(()=>inputRef.current?.focus(),0); else{setQ("");setSel(0);}},[open]);
   const filtered=useMemo(()=>{const term=q.toLowerCase().trim(); const base=term?rows.filter(r=>r.set.toLowerCase().includes(term)||(r.classification||"").toLowerCase().includes(term)):rows; return base.slice(0,8);},[q,rows]);
   const pageActions=useMemo(()=>[
-    {label:"Home",action:()=>onNavigate("home")},
     {label:"The list",action:()=>onNavigate("list")},
-    {label:"Serve up a set",action:()=>onNavigate("serve")},
+    {label:"Serve a set",action:()=>onNavigate("home")},
     {label:"Heatmaps",action:()=>onNavigate("heatmaps")},
     {label:"Suggest a set",action:()=>onNavigate("suggest")},
   ],[onNavigate]);
