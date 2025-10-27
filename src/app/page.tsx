@@ -16,17 +16,27 @@ type Row = {
 // ytThumbs helper removed (unused)
 
 // loader for the hero highlight (no preload on first paint)
-async function fetchSoundcloudPicks(max = 5): Promise<Row[]> {
+async function fetchSoundcloudRows(): Promise<Row[]> {
   const res = await fetch('/api/sheets?tabs=list', { cache: 'no-store' });
   const json = await res.json();
   const rows = (json?.data?.list || []) as Row[];
   const pool = rows.filter(r => r.soundcloud && r.soundcloud.includes('soundcloud.com'));
-  // random 5
-  return [...pool].sort(() => Math.random() - 0.5).slice(0, max);
+  return pool;
 }
+
+const normalize = (s: string) => s.trim().toLowerCase();
+
+const pickRandomRow = (rows: Row[]): Row | null => {
+  if (!rows.length) return null;
+  const idx = Math.floor(Math.random() * rows.length);
+  return rows[idx];
+};
 
 export default function Home() {
   const { play } = usePlayer();
+  const [rows, setRows] = React.useState<Row[]>([]);
+  const [genres, setGenres] = React.useState<string[]>([]);
+  const [selectedGenre, setSelectedGenre] = React.useState<string>('');
   const [featured, setFeatured] = React.useState<Row | null>(null);
   const [loadingFeatured, setLoadingFeatured] = React.useState(true);
 
@@ -34,8 +44,24 @@ export default function Home() {
     let mounted = true;
     (async () => {
       try {
-        const picks = await fetchSoundcloudPicks(1);
-        if (mounted) setFeatured(picks[0] ?? null);
+        const pool = await fetchSoundcloudRows();
+        if (!mounted) return;
+        setRows(pool);
+
+        const seen = new Set<string>();
+        const options: string[] = [];
+        for (const row of pool) {
+          const raw = row.classification?.trim();
+          if (!raw) continue;
+          const key = normalize(raw);
+          if (seen.has(key)) continue;
+          seen.add(key);
+          options.push(raw);
+        }
+        options.sort((a, b) => a.localeCompare(b));
+        setGenres(options);
+
+        setFeatured(pickRandomRow(pool));
       } finally {
         if (mounted) setLoadingFeatured(false);
       }
@@ -44,6 +70,21 @@ export default function Home() {
       mounted = false;
     };
   }, []);
+
+  const filteredRows = React.useMemo(() => {
+    if (!rows.length) return [];
+    if (!selectedGenre) return rows;
+    const target = normalize(selectedGenre);
+    return rows.filter(r => normalize(r.classification || '') === target);
+  }, [rows, selectedGenre]);
+
+  const serveDisabled = filteredRows.length === 0;
+
+  const handleServeClick = React.useCallback(() => {
+    if (!filteredRows.length) return;
+    const next = pickRandomRow(filteredRows);
+    if (next) setFeatured(next);
+  }, [filteredRows]);
 
   return (
     <main className="container mx-auto max-w-5xl px-6 pt-4 sm:pt-14">
@@ -69,12 +110,6 @@ export default function Home() {
             </p>
             <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
               <a
-                href="/serve"
-                className="inline-flex items-center justify-center rounded-full bg-neutral-900 px-6 py-3 text-sm font-semibold text-white shadow-lg shadow-neutral-900/15 transition hover:-translate-y-0.5 hover:bg-neutral-800 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-neutral-900/20"
-              >
-                Serve up a set
-              </a>
-              <a
                 href="/list"
                 className="inline-flex items-center justify-center rounded-full bg-neutral-900 px-6 py-3 text-sm font-semibold text-white shadow-lg shadow-neutral-900/15 transition hover:-translate-y-0.5 hover:bg-neutral-800 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-neutral-900/20"
               >
@@ -84,18 +119,52 @@ export default function Home() {
           </div>
 
           <aside className="relative isolate rounded-3xl border border-white/40 bg-white/75 p-6 shadow-[0_20px_50px_rgba(15,23,42,0.16)] backdrop-blur">
-            <div className="space-y-5">
-              <span className="inline-flex items-center gap-2 rounded-full bg-neutral-900 px-3 py-1 text-xs font-medium uppercase tracking-[0.28em] text-white">
-                Try this next
+            <div className="flex flex-col gap-5">
+              <span className="inline-flex w-fit items-center gap-2 rounded-full bg-gradient-to-r from-[#22d3ee] via-[#38bdf8] to-[#6366f1] px-3 py-1 text-xs font-semibold uppercase tracking-[0.28em] text-white shadow-sm shadow-cyan-500/30">
+                Now spinning
               </span>
 
-              <div className="relative aspect-[4/5] w-full overflow-hidden rounded-2xl">
-                {featured?.soundcloud ? (
+              <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:gap-3">
+                <label htmlFor="hero-genre" className="sr-only">
+                  Choose a genre
+                </label>
+                <select
+                  id="hero-genre"
+                  value={selectedGenre}
+                  onChange={event => setSelectedGenre(event.target.value)}
+                  className="w-full rounded-full border border-neutral-900 bg-neutral-900 px-4 py-2 text-sm font-semibold text-white shadow-lg shadow-neutral-900/20 transition focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-neutral-900/30 sm:w-auto sm:min-w-[170px]"
+                >
+                  <option value="">Any genre</option>
+                  {genres.map(genre => (
+                    <option key={genre.toLowerCase()} value={genre}>
+                      {genre}
+                    </option>
+                  ))}
+                </select>
+                <button
+                  type="button"
+                  disabled={serveDisabled}
+                  onClick={handleServeClick}
+                  className="inline-flex items-center justify-center rounded-full bg-neutral-900 px-5 py-2.5 text-sm font-semibold text-white shadow-lg shadow-neutral-900/20 transition hover:-translate-y-0.5 hover:bg-neutral-800 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-neutral-900/25 disabled:cursor-not-allowed disabled:opacity-50"
+                >
+                  Serve a set
+                </button>
+              </div>
+
+              <button
+                type="button"
+                onClick={() => {
+                  if (featured?.soundcloud) play(featured, 'soundcloud');
+                }}
+                disabled={!featured?.soundcloud}
+                className="group relative aspect-[4/5] w-full overflow-hidden rounded-2xl border border-transparent transition hover:border-neutral-900/20 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-neutral-900/25 disabled:cursor-not-allowed"
+              >
+                {featured?.soundcloud && !loadingFeatured ? (
                   <SCArtwork url={featured.soundcloud} preserveRatio />
                 ) : (
                   <div className="h-full w-full animate-pulse rounded-2xl bg-gradient-to-br from-slate-200 via-slate-100 to-slate-300" />
                 )}
-              </div>
+              </button>
 
               <div className="space-y-2">
                 {featured ? (
