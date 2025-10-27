@@ -3,9 +3,9 @@
 import { useEffect, useMemo, useRef } from 'react';
 import { motion } from 'framer-motion';
 
-const SUGGEST_TO = 'tga.suggestions@gmail.com';
-const SUGGEST_SUBJECT = 'Set suggestion for The Groove Archive';
-const SUGGEST_BODY = `Hi Joost,
+export const SUGGEST_TO = 'tga.suggestions@gmail.com';
+export const SUGGEST_SUBJECT = 'Set suggestion for The Groove Archive';
+export const SUGGEST_BODY = `Hi Joost,
 
 Link to set:
 Optional note:
@@ -13,17 +13,17 @@ My email (optional):
 
 Thanks!`;
 
-function buildMailto(to: string, subject: string, body: string) {
+export function buildMailto(to: string, subject: string, body: string) {
   const q = new URLSearchParams({ subject, body }).toString();
   return `mailto:${to}?${q}`;
 }
 
-function buildGmail(to: string, subject: string, body: string) {
+export function buildGmail(to: string, subject: string, body: string) {
   const params = new URLSearchParams({ to, su: subject, body });
   return `https://mail.google.com/mail/?view=cm&${params.toString()}`;
 }
 
-function track(event: string) {
+export function trackSuggest(event: string) {
   try { (window as unknown as { plausible?: (e: string) => void }).plausible?.(event); } catch {}
   try {
     const w = window as unknown as { va?: { track?: (name: string, props?: Record<string, unknown>) => void } };
@@ -65,7 +65,7 @@ export default function SuggestModal({ open, onClose, restoreFocusTo }: { open: 
     // initial focus
     setTimeout(() => first()?.focus(), 0);
     // analytics
-    track('suggest_open_modal');
+    trackSuggest('suggest_open_modal');
     return () => {
       document.removeEventListener('keydown', onKey);
       // restore focus
@@ -93,7 +93,7 @@ export default function SuggestModal({ open, onClose, restoreFocusTo }: { open: 
         <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
           <motion.a
             href={mailtoHref}
-            onClick={() => { track('suggest_click_mailto'); }}
+            onClick={() => { trackSuggest('suggest_click_mailto'); }}
             className="inline-flex items-center justify-center rounded-md bg-neutral-900 px-4 py-2 text-white hover:bg-neutral-800 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-black/40 w-full sm:w-auto"
             aria-label="Open your email app to send a suggestion"
             whileHover={{ y: -1, scale: 1.01 }} whileTap={{ y: 0, scale: 0.99 }}
@@ -103,7 +103,7 @@ export default function SuggestModal({ open, onClose, restoreFocusTo }: { open: 
           <motion.a
             href={gmailHref}
             target="_blank" rel="noopener noreferrer"
-            onClick={() => { track('suggest_click_gmail'); }}
+            onClick={() => { trackSuggest('suggest_click_gmail'); }}
             className="inline-flex items-center justify-center rounded-md border border-neutral-300 bg-white px-4 py-2 text-neutral-900 hover:bg-black/5 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-black/40 w-full sm:w-auto"
             aria-label="Open Gmail to send a suggestion"
             whileHover={{ y: -1, scale: 1.01 }} whileTap={{ y: 0, scale: 0.99 }}

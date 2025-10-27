@@ -87,7 +87,7 @@ export function PlayerProvider({children}:{children:ReactNode}){
   const seekTo=useCallback((seconds:number)=>{
     const sec=Math.max(0, seconds||0);
     try{ controllerRef.current?.seek(sec); }catch{}
-    setProgress(p=>{
+    setProgress(()=>{
       const total=Math.max(1, durationSec||0);
       return Math.max(0, Math.min(1, sec/total));
     });

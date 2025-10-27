@@ -3,14 +3,11 @@
 import Link from 'next/link';
 import GlobalMenu from '@/components/GlobalMenu';
 
-export function Fonts() {
+export function ResourceHints() {
   return (
     <>
-      <link rel="preconnect" href="https://fonts.googleapis.com"/>
-      <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin=""/>
       <link rel="preconnect" href="https://i.ytimg.com"/>{/* speed up thumbs */}
       <link rel="preconnect" href="https://i1.sndcdn.com"/>{/* speed up SC thumbs */}
-      <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;600;700;900&display=swap" rel="stylesheet"/>
     </>
   );
 }
@@ -28,7 +25,7 @@ export function WordmarkHeader() {
         </div>
         <div className="text-center">
           <Link href="/" className="wmk cursor-pointer select-none" aria-label="Go to home">
-            <span className="text-2xl sm:text-3xl font-semibold tracking-[0.25em] inline-block" style={{fontFamily:"'Space Grotesk',system-ui,sans-serif"}}>
+            <span className="text-2xl sm:text-3xl font-semibold tracking-[0.25em] inline-block">
               THE GROOVE ARCHIVE
             </span>
           </Link>

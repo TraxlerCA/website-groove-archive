@@ -3,30 +3,29 @@
 
 import { ReactNode } from 'react';
 import { useRouter } from 'next/navigation';
-import { Fonts, WordmarkHeader } from '@/components/Header';
+import { WordmarkHeader, ResourceHints } from '@/components/Header';
 import CommandBar from '@/components/CommandBar';
 import CompactPillPlayer from '@/components/player/CompactPillPlayer';
 import PlayerModal from '@/components/PlayerModal';
 import ScrollTopFab from '@/components/ScrollTopFab';
-import { useRows } from '@/lib/useRows';
+import { SiteDataProvider, type SiteData } from '@/context/SiteDataContext';
 
-type Route = 'home'|'list'|'serve'|'heatmaps'|'suggest';
+type Route = 'home' | 'list' | 'heatmaps' | 'suggest';
 
-export default function AppShell({ children }: { children: ReactNode }) {
+export default function AppShell({ children, data }: { children: ReactNode; data: SiteData }) {
   const router = useRouter();
-  const { rows } = useRows();
 
   const onNavigate = (r: Route) => router.push(r === 'home' ? '/' : `/${r}`);
 
   return (
-    <>
-      <Fonts />
+    <SiteDataProvider value={data}>
+      <ResourceHints />
       <WordmarkHeader />
       {children}
-      <CommandBar rows={rows} onNavigate={onNavigate} />
+      <CommandBar rows={data.rows} onNavigate={onNavigate} />
       <ScrollTopFab />
       <CompactPillPlayer />
       <PlayerModal />
-    </>
+    </SiteDataProvider>
   );
 }

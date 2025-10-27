@@ -299,42 +299,11 @@ export default function PlayerModal(){
     return h>0? `${h}:${String(m).padStart(2,'0')}:${ss}` : `${m}:${ss}`;
   };
 
-  function ProgressBar(){
-    const ref=useRef<HTMLDivElement>(null);
-    const pct = total>0? Math.max(0, Math.min(1, (progress||0))) : 0;
-    const [hoverPct,setHoverPct]=useState<number|null>(null);
-    return (
-      <div
-        ref={ref}
-        className="relative w-full bg-white/10 rounded-md"
-        style={{height:8}}
-        onPointerMove={(e)=>{
-          if(e.pointerType!=='mouse') return; if(!ref.current||!durationSec) return; const r=ref.current.getBoundingClientRect();
-          setHoverPct(Math.min(1, Math.max(0, (e.clientX - r.left)/r.width)));
-        }}
-        onPointerLeave={()=>setHoverPct(null)}
-        onClick={(e)=>{
-          if(!ref.current||!durationSec) return; const r=ref.current.getBoundingClientRect();
-          const p=(e.clientX - r.left)/r.width; seekTo(p*durationSec);
-        }}
-        role="slider" aria-valuemin={0} aria-valuemax={total} aria-valuenow={elapsedSec}
-      >
-        <div className="absolute inset-y-0 left-0 bg-white/60 rounded-md" style={{width:`${pct*100}%`}}/>
-        <div className="absolute top-1/2 h-3 w-3 -translate-y-1/2 -translate-x-1/2 rounded-full bg-white shadow" style={{left:`${pct*100}%`}}/>
-        {hoverPct!==null&& (
-          <div className="pointer-events-none absolute -top-6 -translate-x-1/2 rounded bg-black/70 px-1.5 py-0.5 text-[10px] text-white ring-1 ring-white/10" style={{left:`${hoverPct*100}%`}}>
-            {secondsToTime((hoverPct||0)*(durationSec||0))}
-          </div>
-        )}
-      </div>
-    );
-  }
-
   // Local UI atoms
   const PlayPauseButton = () => (
     <button
       onClick={toggle}
-      className="grid place-items-center rounded-full bg-white text-neutral-900 shadow ring-1 ring-black/10 hover:opacity-95"
+      className="grid place-items-center rounded-full bg-white text-neutral-900 shadow ring-1 ring-black/10 hover:opacity-95 hover-lift"
       style={{width:36,height:36}}
       aria-label={playing? 'Pause':'Play'}
     >
@@ -360,8 +329,11 @@ export default function PlayerModal(){
         }}
         onPointerLeave={()=>setHoverPct(null)}
         onClick={(e)=>{
-          if(!ref.current||!durationSec) return; const r=ref.current.getBoundingClientRect();
-          const p=(e.clientX - r.left)/r.width; seekTo(p*durationSec);
+          if(!ref.current||!durationSec) return;
+          const r=ref.current.getBoundingClientRect();
+          const raw=(e.clientX - r.left)/r.width;
+          const clamped=Math.min(1, Math.max(0, raw));
+          seekTo(clamped*durationSec);
         }}
         role="slider" aria-valuemin={0} aria-valuemax={total} aria-valuenow={elapsedSec}
       >
@@ -399,7 +371,7 @@ export default function PlayerModal(){
                     tabIndex={enabled ? 0 : -1}
                     className={[
                       'grid h-9 w-9 place-items-center rounded-full ring-1',
-                      enabled ? 'bg-white/10 text-white ring-white/20 hover:bg-white/20' : 'bg-white/5 text-white/50 ring-white/10 pointer-events-none'
+                      enabled ? 'bg-white/10 text-white ring-white/20 hover:bg-white/20 hover-lift' : 'bg-white/5 text-white/50 ring-white/10 pointer-events-none'
                     ].join(' ')}
                     aria-label="Open on source"
                     title="Open on source"
@@ -410,12 +382,15 @@ export default function PlayerModal(){
                   </a>
                 );
               })()}
-              <button type="button" onClick={()=>setOpen(false)} className="rounded-full bg-white px-3 py-1.5 text-sm font-semibold text-neutral-900 shadow ring-1 ring-black/10 hover:bg-white" aria-label="Minimize" title="Minimize">minimize</button>
+              <button type="button" onClick={()=>setOpen(false)} className="rounded-full bg-white px-3 py-1.5 text-sm font-semibold text-neutral-900 shadow ring-1 ring-black/10 hover:bg-white hover-lift" aria-label="Minimize" title="Minimize">minimize</button>
             </div>
           </div>
         
           {/* 2) media area */}
-          <div className="absolute left-0 right-0" style={{ top: '3.5rem', bottom: '6.0rem' }} tabIndex={-1}>
+          <div
+            className="absolute left-0 right-0 top-[3.5rem] bottom-[6rem] md:top-[4rem] md:bottom-[7rem]"
+            tabIndex={-1}
+          >
             {mounted && current && (current.provider==="youtube"?
               <YouTubeEmbed key="youtube" url={current.row.youtube!}/>
               : <SoundCloudEmbed key="soundcloud" url={current.row.soundcloud!}/>

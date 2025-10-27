@@ -5,23 +5,20 @@ import { usePathname, useRouter } from 'next/navigation';
 import {
   CloseIcon,
   HeatmapOutlineIcon,
-  HomeOutlineIcon,
   ListOutlineIcon,
   MenuIcon,
   PaperPlaneOutlineIcon,
   PlayOutlineIcon,
 } from '@/components/icons';
-import SuggestModal from '@/components/SuggestModal';
 
 type Item = { label: string; href: string; icon: ReactNode };
 
-// Order: Serve up a set, The list, Heatmaps, Suggest a set, Home
+// Order: Serve a set, The list, Heatmaps, Suggest a set
 const MENU_ITEMS: Item[] = [
-  { label: 'Serve up a set', href: '/serve', icon: <PlayOutlineIcon /> },
+  { label: 'Serve a set', href: '/', icon: <PlayOutlineIcon /> },
   { label: 'The list', href: '/list', icon: <ListOutlineIcon /> },
   { label: 'Heatmaps', href: '/heatmaps', icon: <HeatmapOutlineIcon /> },
   { label: 'Suggest a set', href: '/suggest', icon: <PaperPlaneOutlineIcon /> },
-  { label: 'Home', href: '/', icon: <HomeOutlineIcon /> },
 ];
 
 function useIsDesktop(minWidth = 640) {
@@ -38,7 +35,6 @@ function useIsDesktop(minWidth = 640) {
 
 export default function GlobalMenu() {
   const [open, setOpen] = useState(false);
-  const [suggestOpen, setSuggestOpen] = useState(false);
   const pathname = usePathname() || '/';
   const router = useRouter();
   const isDesktop = useIsDesktop();
@@ -159,19 +155,14 @@ export default function GlobalMenu() {
 
   const onActivate = (href: string, label: string) => {
     setOpen(false);
-    if (href === '/suggest') {
-      // Open suggest modal instead of navigating
-      setTimeout(() => setSuggestOpen(true), 0);
-      return;
-    }
     trackNav(label, href);
     router.push(href);
   };
 
   // Tinted active row, consistent for desktop/mobile
   const commonItemClass = (active: boolean) =>
-    `flex items-center gap-3 px-3 min-h-14 rounded-lg focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-black/40 ${
-      active ? 'bg-black/10 font-medium' : 'hover:bg-black/5'
+    `flex items-center gap-3 px-3 min-h-14 rounded-lg transition-transform duration-150 ease-out focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-black/40 ${
+      active ? 'bg-black/10 font-medium' : 'hover:bg-black/5 hover-lift'
     }`;
 
   return (
@@ -183,7 +174,7 @@ export default function GlobalMenu() {
         aria-expanded={open}
         aria-label={open ? 'Close menu' : 'Open menu'}
         onClick={() => (open ? handleClose() : handleOpen())}
-        className="h-10 w-10 inline-flex items-center justify-center rounded-full hover:bg-black/5 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-black/40"
+        className="h-10 w-10 inline-flex items-center justify-center rounded-full hover:bg-black/5 hover-lift focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-black/40"
       >
         <MenuIcon />
       </button>
@@ -202,7 +193,7 @@ export default function GlobalMenu() {
               aria-label="Close menu"
               onClick={handleClose}
               onKeyDown={onCloseKeyDown}
-              className="absolute right-2 top-2 inline-flex h-8 w-8 items-center justify-center rounded-md hover:bg-black/5 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-black/40"
+              className="absolute right-2 top-2 inline-flex h-8 w-8 items-center justify-center rounded-md hover:bg-black/5 hover-lift focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-black/40"
             >
               <CloseIcon />
             </button>
@@ -251,7 +242,7 @@ export default function GlobalMenu() {
               aria-label="Close menu"
               onClick={handleClose}
               onKeyDown={onCloseKeyDown}
-              className="inline-flex h-10 w-10 items-center justify-center rounded-md hover:bg-black/5 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-black/40"
+              className="inline-flex h-10 w-10 items-center justify-center rounded-md hover:bg-black/5 hover-lift focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-black/40"
             >
               <CloseIcon />
             </button>
@@ -278,7 +269,6 @@ export default function GlobalMenu() {
           </nav>
         </div>
       )}
-      <SuggestModal open={suggestOpen} onClose={() => setSuggestOpen(false)} restoreFocusTo={triggerRef.current} />
     </div>
   );
 }

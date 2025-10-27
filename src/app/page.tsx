@@ -2,8 +2,6 @@
 'use client';
 
 import React from 'react';
-import Image from 'next/image';
-import { motion } from 'framer-motion';
 import { usePlayer } from '@/context/PlayerProvider';
 
 type Row = {
@@ -17,237 +15,211 @@ type Row = {
 
 // ytThumbs helper removed (unused)
 
-// on-demand loader for Random serve (no preload on first paint)
-async function fetchSoundcloudPicks(max = 5): Promise<Row[]> {
+// loader for the hero highlight (no preload on first paint)
+async function fetchSoundcloudRows(): Promise<Row[]> {
   const res = await fetch('/api/sheets?tabs=list', { cache: 'no-store' });
   const json = await res.json();
   const rows = (json?.data?.list || []) as Row[];
   const pool = rows.filter(r => r.soundcloud && r.soundcloud.includes('soundcloud.com'));
-  // random 5
-  return [...pool].sort(() => Math.random() - 0.5).slice(0, max);
+  return pool;
 }
 
-// Icons are now images in /public/icons
+const normalize = (s: string) => s.trim().toLowerCase();
+
+const pickRandomRow = (rows: Row[]): Row | null => {
+  if (!rows.length) return null;
+  const idx = Math.floor(Math.random() * rows.length);
+  return rows[idx];
+};
 
 export default function Home() {
   const { play } = usePlayer();
-  const [serveItems, setServeItems] = React.useState<Row[]>([]);
-  const [serveNonce, setServeNonce] = React.useState(0); // force re-animate
-  const [loadingServe, setLoadingServe] = React.useState(false);
+  const [rows, setRows] = React.useState<Row[]>([]);
+  const [genres, setGenres] = React.useState<string[]>([]);
+  const [selectedGenre, setSelectedGenre] = React.useState<string>('');
+  const [featured, setFeatured] = React.useState<Row | null>(null);
+  const [loadingFeatured, setLoadingFeatured] = React.useState(true);
 
-  async function loadServe() {
-    try {
-      setLoadingServe(true);
-      const picks = await fetchSoundcloudPicks(5);
-      setServeItems(picks);
-      setServeNonce(n => n + 1);
-    } finally {
-      setLoadingServe(false);
-    }
-  }
+  React.useEffect(() => {
+    let mounted = true;
+    (async () => {
+      try {
+        const pool = await fetchSoundcloudRows();
+        if (!mounted) return;
+        setRows(pool);
 
-  // Heatmaps card removed from landing page
+        const seen = new Set<string>();
+        const options: string[] = [];
+        for (const row of pool) {
+          const raw = row.classification?.trim();
+          if (!raw) continue;
+          const key = normalize(raw);
+          if (seen.has(key)) continue;
+          seen.add(key);
+          options.push(raw);
+        }
+        options.sort((a, b) => a.localeCompare(b));
+        setGenres(options);
+
+        setFeatured(pickRandomRow(pool));
+      } finally {
+        if (mounted) setLoadingFeatured(false);
+      }
+    })();
+    return () => {
+      mounted = false;
+    };
+  }, []);
+
+  const filteredRows = React.useMemo(() => {
+    if (!rows.length) return [];
+    if (!selectedGenre) return rows;
+    const target = normalize(selectedGenre);
+    return rows.filter(r => normalize(r.classification || '') === target);
+  }, [rows, selectedGenre]);
+
+  const serveDisabled = filteredRows.length === 0;
+
+  const handleServeClick = React.useCallback(() => {
+    if (!filteredRows.length) return;
+    const next = pickRandomRow(filteredRows);
+    if (next) setFeatured(next);
+  }, [filteredRows]);
 
   return (
     <main className="container mx-auto max-w-5xl px-6 pt-4 sm:pt-14">
       {/* generous breathing room under the wordmark */}
       <div className="h-4 sm:h-14" />
 
-      <nav className="grid grid-cols-12 gap-7" role="navigation" aria-label="primary">
-        {/* neutralize blue; match card styling used by the others */}
-        <a href="/serve" aria-label="Serve up a set. Get served a tailored set"
-           className="group relative col-span-12 sm:col-span-6 block rounded-2xl border border-neutral-200/70 bg-white/70 backdrop-blur shadow-[0_10px_30px_rgb(0_0_0_/_0.06)] px-8 py-10 transform-gpu hover:-translate-y-0.5 hover:shadow-[0_18px_40px_rgb(0_0_0_/_0.10)] hover:border-black/30 active:translate-y-0 active:scale-[.99] transition focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-black/20">
-          <div className="flex items-start gap-3">
-            <Image
-              src="/icons/icon_serve.png"
-              alt=""
-              width={36}
-              height={36}
-              className="h-9 w-9 opacity-80"
-            />
-            <div>
-              <div className="text-lg font-semibold">Serve up a set</div>
-              <div className="text-xs font-medium tracking-widest mt-1 opacity-90">Get served a tailored set</div>
+      <section className="relative overflow-hidden rounded-3xl border border-white/10 bg-[radial-gradient(circle_at_top,_#fefefe,_#f3f4f6_55%,_#eef0f4)] px-6 py-12 shadow-[0_28px_60px_rgba(15,23,42,0.12)] sm:px-10 sm:py-16">
+        <div
+          aria-hidden="true"
+          className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_top_right,_rgba(59,130,246,0.12),_rgba(148,163,184,0.08)_55%,_rgba(30,41,59,0.06)_90%)] opacity-60"
+        />
+        <div className="relative grid grid-cols-1 items-start gap-12 lg:grid-cols-[minmax(0,1fr)_minmax(0,420px)] lg:items-center">
+          <div className="space-y-6">
+            <p className="inline-flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.32em] text-neutral-500">
+              Sets collected since 2019
+              <span className="h-px w-12 bg-neutral-300" />
+            </p>
+            <h1 className="text-4xl font-semibold leading-tight text-neutral-900 sm:text-5xl">
+              Spotted. Curated. Served. Played again. And again.
+            </h1>
+            <p className="max-w-xl text-base text-neutral-600 sm:text-lg">
+              From deep techno to eurotrance, hit serve for instant inspiration, or browse by genre when you know the vibe.
+            </p>
+            <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
+              <a
+                href="/list"
+                className="inline-flex items-center justify-center rounded-full bg-neutral-900 px-6 py-3 text-sm font-semibold text-white shadow-lg shadow-neutral-900/15 transition hover:-translate-y-0.5 hover:bg-neutral-800 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-neutral-900/20"
+              >
+                Browse the list
+              </a>
             </div>
           </div>
-        </a>
 
-        <a href="/list" aria-label="Show the list. Go through all hand-curated grooves"
-           className="group relative col-span-12 sm:col-span-6 block rounded-2xl border border-neutral-200/70 bg-white/70 backdrop-blur shadow-[0_10px_30px_rgb(0_0_0_/_0.06)] px-8 py-10 transform-gpu hover:-translate-y-0.5 hover:shadow-[0_18px_40px_rgb(0_0_0_/_0.10)] hover:border-black/30 active:translate-y-0 active:scale-[.99] transition focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-black/20">
-          <div className="flex items-start gap-3">
-            <Image
-              src="/icons/icon_list.png"
-              alt=""
-              width={36}
-              height={36}
-              className="h-9 w-9 opacity-80"
-            />
-            <div>
-              <div className="text-lg font-semibold text-neutral-900">Show the list</div>
-              <div className="text-xs font-medium tracking-widest text-neutral-500 mt-1">Go through all hand-curated grooves</div>
-            </div>
-          </div>
-        </a>
+          <aside className="relative isolate rounded-3xl border border-white/40 bg-white/75 p-6 shadow-[0_20px_50px_rgba(15,23,42,0.16)] backdrop-blur">
+            <div className="flex flex-col gap-5">
+              <span className="inline-flex w-fit items-center gap-2 rounded-full bg-gradient-to-r from-[#22d3ee] via-[#38bdf8] to-[#6366f1] px-3 py-1 text-xs font-semibold uppercase tracking-[0.28em] text-white shadow-sm shadow-cyan-500/30">
+                Now spinning
+              </span>
 
-        {/* Heatmaps entry intentionally removed from landing page */}
-      </nav>
+              <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:gap-3">
+                <label htmlFor="hero-genre" className="sr-only">
+                  Choose a genre
+                </label>
+                <select
+                  id="hero-genre"
+                  value={selectedGenre}
+                  onChange={event => setSelectedGenre(event.target.value)}
+                  className="w-full rounded-full border border-neutral-900 bg-neutral-900 px-4 py-2 text-sm font-semibold text-white shadow-lg shadow-neutral-900/20 transition focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-neutral-900/30 sm:w-auto sm:min-w-[170px]"
+                >
+                  <option value="">Any genre</option>
+                  {genres.map(genre => (
+                    <option key={genre.toLowerCase()} value={genre}>
+                      {genre}
+                    </option>
+                  ))}
+                </select>
+                <button
+                  type="button"
+                  disabled={serveDisabled}
+                  onClick={handleServeClick}
+                  className="inline-flex items-center justify-center rounded-full bg-neutral-900 px-5 py-2.5 text-sm font-semibold text-white shadow-lg shadow-neutral-900/20 transition hover:-translate-y-0.5 hover:bg-neutral-800 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-neutral-900/25 disabled:cursor-not-allowed disabled:opacity-50"
+                >
+                  Serve a set
+                </button>
+              </div>
 
-      {/* call-to-action: centered dice animation button */}
-      <div className="mt-10 flex justify-center">
-        <button
-          onClick={loadServe}
-          className="relative inline-flex items-center gap-3 rounded-full border border-neutral-300 bg-white px-5 py-3 text-sm font-semibold shadow-sm hover:shadow-md active:scale-[.99] transition random-serve-dice"
-        >
-          <span className="dice-wrap" aria-hidden="true">
-            <Dice variant="a" />
-            <Dice variant="b" />
-          </span>
-          Random serve
-        </button>
-      </div>
-      <style>{`
-        /* Dice toss/roll animation: 5s cycle => 4s idle, 1s roll */
-        @keyframes diceTossCycle {
-          0%, 79.999% {
-            transform: translate(0, 0) rotate(0deg) scale(1);
-            filter: drop-shadow(0 0 0 rgba(0,0,0,0));
-          }
-          /* lift-off + first spin */
-          82% {
-            transform: translate(calc(var(--x, 0px) * .3), -12px) rotate(var(--rA, 200deg)) scale(1.03);
-            filter: drop-shadow(0 10px 14px rgba(0,0,0,.18));
-          }
-          /* descend with momentum */
-          90% {
-            transform: translate(var(--x, 0px), 4px) rotate(var(--rB, 410deg)) scale(.985);
-            filter: drop-shadow(0 5px 10px rgba(0,0,0,.16));
-          }
-          /* small bounce */
-          96% {
-            transform: translate(calc(var(--x, 0px) * .6), -3px) rotate(var(--rC, 520deg)) scale(1.01);
-            filter: drop-shadow(0 6px 10px rgba(0,0,0,.12));
-          }
-          /* settle */
-          100% {
-            transform: translate(0, 0) rotate(var(--rEnd, 540deg)) scale(1);
-            filter: drop-shadow(0 0 0 rgba(0,0,0,0));
-          }
-        }
-        .random-serve-dice .dice-wrap { display: inline-flex; align-items: center; gap: 6px; }
-        .random-serve-dice .die {
-          /* default motion params for die A */
-          --x: -8px;
-          --rA: 200deg;
-          --rB: 410deg;
-          --rC: 520deg;
-          --rEnd: 540deg;
-          animation: diceTossCycle 5s ease-in-out infinite;
-          will-change: transform;
-          transform-origin: 55% 48%;
-        }
-        .random-serve-dice .die-b {
-          /* mirrored + slightly faster spin for variety */
-          --x: 8px;
-          --rA: -220deg;
-          --rB: -430deg;
-          --rC: -560deg;
-          --rEnd: -600deg;
-          animation-delay: .04s;
-          transform-origin: 45% 52%;
-        }
-        /* Only display the matching face for each die */
-        .random-serve-dice .die .face { display: none; }
-        .random-serve-dice .die[data-face='1'] .face-1 { display: block; }
-        .random-serve-dice .die[data-face='2'] .face-2 { display: block; }
-        .random-serve-dice .die[data-face='3'] .face-3 { display: block; }
-        .random-serve-dice .die[data-face='4'] .face-4 { display: block; }
-        .random-serve-dice .die[data-face='5'] .face-5 { display: block; }
-        .random-serve-dice .die[data-face='6'] .face-6 { display: block; }
-        @media (prefers-reduced-motion: reduce) {
-          .random-serve-dice .die { animation: none; }
-        }
-      `}</style>
+              <button
+                type="button"
+                onClick={() => {
+                  if (featured?.soundcloud) play(featured, 'soundcloud');
+                }}
+                disabled={!featured?.soundcloud}
+                className="group relative aspect-[4/5] w-full overflow-hidden rounded-2xl border border-transparent transition hover:border-neutral-900/20 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-neutral-900/25 disabled:cursor-not-allowed"
+              >
+                {featured?.soundcloud && !loadingFeatured ? (
+                  <SCArtwork url={featured.soundcloud} preserveRatio />
+                ) : (
+                  <div className="h-full w-full animate-pulse rounded-2xl bg-gradient-to-br from-slate-200 via-slate-100 to-slate-300" />
+                )}
+              </button>
 
-      {/* extra room above the pentagon tiles; render only after click */}
-      <section className="mt-6 min-h-[320px]">
-        {serveItems.length === 0 ? (
-          loadingServe ? (
-            <div className="mt-6 text-center text-sm text-neutral-500">
-              {'Summoning grooves…'}
-            </div>
-          ) : null
-        ) : (() => {
-          // pick 5 soundcloud rows
-          const items = serveItems.slice(0, 5);
+              <div className="space-y-2">
+                {featured ? (
+                  <>
+                    <h2 className="text-lg font-semibold text-neutral-900">{featured.set}</h2>
+                    {featured.classification ? (
+                      <p className="text-sm font-medium uppercase tracking-[0.3em] text-neutral-500">
+                        {featured.classification}
+                      </p>
+                    ) : null}
+                  </>
+                ) : (
+                  <>
+                    <div className="h-5 w-3/4 animate-pulse rounded bg-neutral-200/80" />
+                    <div className="h-4 w-1/2 animate-pulse rounded bg-neutral-200/60" />
+                  </>
+                )}
+              </div>
 
-          // base regular pentagon vertices (% of container, centered at 50/50)
-          const BASE = [
-            { left: 50.0,  top: 10.0 },   // top
-            { left: 88.04, top: 37.64 },  // upper right
-            { left: 73.51, top: 82.36 },  // lower right
-            { left: 26.49, top: 82.36 },  // lower left
-            { left: 11.96, top: 37.64 },  // upper left
-          ];
-          // shrink pentagon around center without changing tile size
-          const center = { x: 50, y: 50 };
-          const SHRINK = 0.82; // 82% radius → smaller pentagon
-          const PENTA = BASE.map(p => ({
-            left: center.x + (p.left - center.x) * SHRINK,
-            top:  center.y + (p.top  - center.y) * SHRINK,
-          }));
-          const sizePct = 28; // tile size as % of container width (unchanged)
-
-          return (
-            <div key={serveNonce} className="relative mx-auto aspect-square w-full max-w-3xl">
-              {/* outline removed as requested */}
-
-              {items.map((r, i) => {
-                const pos = PENTA[i];
-                if (!pos) return null;
-                return (
-                  <motion.button
-                    key={i}
-                    aria-label={`Play ${r.set}`}
-                    onClick={() => play(r, 'soundcloud')}
-                    className="absolute -translate-x-1/2 -translate-y-1/2 rounded-xl overflow-hidden border border-neutral-200/70 bg-white shadow-sm hover:shadow-md hover:border-black/30 transition transform-gpu active:scale-[.99]"
-                    style={{
-                      left: `${pos.left}%`,
-                      top: `${pos.top}%`,
-                      width: `${sizePct}%`,
-                      height: `${sizePct}%`,
-                    }}
-                    initial={{ opacity: 0, scale: 0.94, y: 6 }}
-                    animate={{ opacity: 1, scale: 1, y: 0 }}
-                    transition={{ duration: 0.45, ease: 'easeOut', delay: 0.08 * i }}
+              <div className="flex items-center gap-4 text-sm font-semibold">
+                <button
+                  type="button"
+                  disabled={!featured?.soundcloud}
+                  onClick={() => {
+                    if (featured?.soundcloud) play(featured, 'soundcloud');
+                  }}
+                  className="inline-flex h-11 w-11 items-center justify-center rounded-full bg-neutral-900 text-white transition hover:-translate-y-0.5 hover:bg-neutral-800 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-neutral-900/30 disabled:cursor-not-allowed disabled:opacity-40"
+                  aria-label={featured?.set ? `Play ${featured.set}` : 'Play highlight (loading)'}
+                >
+                  <svg
+                    aria-hidden="true"
+                    className="h-4 w-4 fill-current"
+                    viewBox="0 0 24 24"
                   >
-                    <SCArtwork url={r.soundcloud!} />
-                  </motion.button>
-                );
-              })}
-
-              {/* placeholders if fewer than 5 items */}
-              {Array.from({ length: Math.max(0, 5 - items.length) }).map((_, j) => {
-                const pos = PENTA[items.length + j];
-                if (!pos) return null;
-                return (
-                  <motion.div
-                    key={`ph-${j}`}
-                    className="absolute -translate-x-1/2 -translate-y-1/2 rounded-xl border border-neutral-200/60 bg-[radial-gradient(circle_at_30%_30%,#e5e7eb,#fafafa)]"
-                    style={{
-                      left: `${pos.left}%`,
-                      top: `${pos.top}%`,
-                      width: `${sizePct}%`,
-                      height: `${sizePct}%`,
-                    }}
-                    initial={{ opacity: 0, scale: 0.94, y: 6 }}
-                    animate={{ opacity: 1, scale: 1, y: 0 }}
-                    transition={{ duration: 0.45, ease: 'easeOut', delay: 0.08 * (items.length + j) }}
-                  />
-                );
-              })}
+                    <path d="M8 5v14l11-7z" />
+                  </svg>
+                </button>
+                {featured?.soundcloud ? (
+                  <a
+                    className="ml-auto text-neutral-700 underline-offset-4 transition hover:text-neutral-900 hover:underline"
+                    href={featured.soundcloud}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                  >
+                    Open on SoundCloud
+                  </a>
+                ) : (
+                  <span className="ml-auto text-sm text-neutral-400">
+                    {loadingFeatured ? 'Fetching a highlight...' : 'No highlight available right now.'}
+                  </span>
+                )}
+              </div>
             </div>
-          );
-        })()}
+          </aside>
+        </div>
       </section>
 
       <div className="h-14" />
@@ -255,74 +227,22 @@ export default function Home() {
   );
 }
 
-// CoverBackground component removed (unused)
-
-function Dice({ variant }: { variant: 'a' | 'b' }) {
-  const [face, setFace] = React.useState<number>(variant === 'a' ? 1 : 4);
-  const onIter = React.useCallback(() => {
-    setFace(f => (f % 6) + 1);
-  }, []);
-  return (
-    <svg
-      className={`die die-${variant}`}
-      viewBox="0 0 24 24"
-      width="18"
-      height="18"
-      fill="none"
-      role="img"
-      focusable="false"
-      onAnimationIteration={onIter}
-      data-face={face}
-    >
-      <rect x="2" y="2" width="20" height="20" rx="5" fill="#111" stroke="#111" strokeWidth="1.5" />
-      {/* Faces 1..6; show one at a time via CSS */}
-      <g className="face face-1">
-        <circle cx="12" cy="12" r="1.7" fill="#fff" />
-      </g>
-      <g className="face face-2">
-        <circle cx="8" cy="8" r="1.7" fill="#fff" />
-        <circle cx="16" cy="16" r="1.7" fill="#fff" />
-      </g>
-      <g className="face face-3">
-        <circle cx="8" cy="8" r="1.7" fill="#fff" />
-        <circle cx="12" cy="12" r="1.7" fill="#fff" />
-        <circle cx="16" cy="16" r="1.7" fill="#fff" />
-      </g>
-      <g className="face face-4">
-        <circle cx="8" cy="8" r="1.7" fill="#fff" />
-        <circle cx="16" cy="8" r="1.7" fill="#fff" />
-        <circle cx="8" cy="16" r="1.7" fill="#fff" />
-        <circle cx="16" cy="16" r="1.7" fill="#fff" />
-      </g>
-      <g className="face face-5">
-        <circle cx="8" cy="8" r="1.7" fill="#fff" />
-        <circle cx="16" cy="8" r="1.7" fill="#fff" />
-        <circle cx="12" cy="12" r="1.7" fill="#fff" />
-        <circle cx="8" cy="16" r="1.7" fill="#fff" />
-        <circle cx="16" cy="16" r="1.7" fill="#fff" />
-      </g>
-      <g className="face face-6">
-        <circle cx="8" cy="7.5" r="1.7" fill="#fff" />
-        <circle cx="8" cy="12" r="1.7" fill="#fff" />
-        <circle cx="8" cy="16.5" r="1.7" fill="#fff" />
-        <circle cx="16" cy="7.5" r="1.7" fill="#fff" />
-        <circle cx="16" cy="12" r="1.7" fill="#fff" />
-        <circle cx="16" cy="16.5" r="1.7" fill="#fff" />
-      </g>
-    </svg>
-  );
-}
-
 function SCArtwork({url, preserveRatio=false}:{url:string; preserveRatio?:boolean}) {
   const [art,setArt]=React.useState<string|null>(null);
   const [failed,setFailed]=React.useState(false);
-  React.useEffect(()=>{let ok=true;(async()=>{
-    try{
-      const res=await fetch(`/api/soundcloud-artwork?url=${encodeURIComponent(url)}`,{cache:"no-store"});
-      const json=await res.json();
-      if(ok) setArt(json?.artwork||null);
-    }catch{ if(ok) setArt(null); }
-  })(); return ()=>{ok=false};},[url]);
+  React.useEffect(()=>{let ok=true;
+    setFailed(false);
+    setArt(null);
+    if(!url){ return ()=>{ok=false;}; }
+    (async()=>{
+      try{
+        const res=await fetch(`/api/soundcloud-artwork?url=${encodeURIComponent(url)}`,{cache:"no-store"});
+        const json=await res.json();
+        if(ok) setArt(json?.artwork||null);
+      }catch{ if(ok) setArt(null); }
+    })();
+    return ()=>{ok=false;};
+  },[url]);
   if(!art||failed){
     // when preserving natural ratio, we need an in-flow placeholder
     if (preserveRatio) {

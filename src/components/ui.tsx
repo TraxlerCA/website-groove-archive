@@ -4,7 +4,7 @@ import type { ReactNode } from "react";
 import { motion } from 'framer-motion';
 
 export function PageTitle({title}:{title:string}) {
-  return <h2 className="text-center text-4xl sm:text-5xl font-semibold tracking-wide" style={{fontFamily:"'Space Grotesk',system-ui,sans-serif"}}>{title}</h2>;
+  return <h2 className="text-center text-4xl sm:text-5xl font-semibold tracking-wide">{title}</h2>;
 }
 
 export function IconButton({title,onClick,ariaLabel,children,variant}:{title:string;onClick?:()=>void;ariaLabel?:string;children:ReactNode;variant?:'default'|'inverted';}) {

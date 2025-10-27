@@ -34,3 +34,9 @@ video {
   outline: 2px solid rgba(0, 0, 0, 0.35);
   outline-offset: 2px;
 }
+
+@layer utilities {
+  .hover-lift {
+    @apply transition-transform ease-out duration-150 hover:-translate-y-0.5 motion-reduce:transition-none motion-reduce:hover:translate-y-0;
+  }
+}
