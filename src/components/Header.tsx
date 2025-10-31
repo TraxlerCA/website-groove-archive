@@ -66,11 +66,19 @@ export function WordmarkHeader() {
                 <Link
                   key={link.href}
                   href={link.href}
-                  className={`transition hover:text-neutral-900 ${
+                  aria-current={isActive ? 'page' : undefined}
+                  className={`group relative px-1.5 py-1 -mx-1.5 rounded-md transition text-sm hover:text-neutral-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-black/15 ${
                     isActive ? 'text-neutral-900' : 'text-neutral-600'
                   }`}
                 >
-                  {link.label}
+                  <span className="relative">
+                    {link.label}
+                    <i
+                      className={`absolute left-0 right-0 -bottom-1 h-[2px] rounded-full bg-neutral-900 transition-transform duration-200 ${
+                        isActive ? 'scale-x-100' : 'scale-x-0 group-hover:scale-x-100 origin-left'
+                      }`}
+                    />
+                  </span>
                 </Link>
               );
             })}

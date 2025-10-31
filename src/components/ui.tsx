@@ -9,14 +9,14 @@ export function PageTitle({title}:{title:string}) {
 
 export function IconButton({title,onClick,ariaLabel,children,variant}:{title:string;onClick?:()=>void;ariaLabel?:string;children:ReactNode;variant?:'default'|'inverted';}) {
   const v = variant||'default';
-  const base = 'w-11 h-11 sm:w-8 sm:h-8 grid place-items-center rounded-full border focus-visible:outline-none focus-visible:ring-2';
+  const base = 'w-12 h-12 sm:w-8 sm:h-8 grid place-items-center rounded-full border focus-visible:outline-none focus-visible:ring-2';
   const cls = v==='inverted'
     ? `${base} border-black bg-black text-white hover:brightness-110 focus-visible:ring-black/40`
     : `${base} border-neutral-300 bg-white hover:bg-neutral-50 focus-visible:ring-black/30`;
+  const prefersReduced = typeof window !== 'undefined' && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
   return (
     <motion.button title={title} aria-label={ariaLabel||title} onClick={onClick} className={cls}
-      whileHover={{ y: -1, scale: 1.01 }}
-      whileTap={{ y: 0, scale: 0.99 }}
+      {...(prefersReduced ? {} : { whileHover:{ y:-1, scale:1.01 }, whileTap:{ y:0, scale:0.99 } })}
     >
       {children}
     </motion.button>
