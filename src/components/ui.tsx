@@ -28,7 +28,7 @@ export function Pill({active,children,onClick}:{active:boolean;children:ReactNod
 }
 
 export function Tag({children}:{children:ReactNode}) {
-  return <span className="inline-flex items-center h-6 px-2 rounded-full border border-neutral-300 text-[12px] bg-white">{children}</span>;
+  return <span className="inline-flex flex-wrap items-center justify-center min-h-[1.5rem] px-2 py-1 text-center rounded-full border border-neutral-300 bg-white text-[12px] leading-tight">{children}</span>;
 }
 
 /* improved spacing and travel */
