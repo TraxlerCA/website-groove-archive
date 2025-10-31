@@ -2,6 +2,8 @@
 'use client';
 
 import React from 'react';
+import { GenreTooltip } from '@/components/GenreTooltip';
+import { Tag } from '@/components/ui';
 import { usePlayer } from '@/context/PlayerProvider';
 
 type Row = {
@@ -11,17 +13,22 @@ type Row = {
   soundcloud?: string | null;
 };
 
+type GenreRow = {
+  label: string;
+  explanation?: string | null;
+};
 // ytId helper removed (unused)
 
 // ytThumbs helper removed (unused)
 
 // loader for the hero highlight (no preload on first paint)
-async function fetchSoundcloudRows(): Promise<Row[]> {
-  const res = await fetch('/api/sheets?tabs=list', { cache: 'no-store' });
+async function fetchHomeData(): Promise<{ rows: Row[]; genres: GenreRow[] }> {
+  const res = await fetch('/api/sheets?tabs=list,genres', { cache: 'no-store' });
   const json = await res.json();
   const rows = (json?.data?.list || []) as Row[];
+  const genres = (json?.data?.genres || []) as GenreRow[];
   const pool = rows.filter(r => r.soundcloud && r.soundcloud.includes('soundcloud.com'));
-  return pool;
+  return { rows: pool, genres };
 }
 
 const normalize = (s: string) => s.trim().toLowerCase();
@@ -36,6 +43,7 @@ export default function Home() {
   const { play } = usePlayer();
   const [rows, setRows] = React.useState<Row[]>([]);
   const [genres, setGenres] = React.useState<string[]>([]);
+  const [genreTips, setGenreTips] = React.useState<Record<string, string>>({});
   const [selectedGenre, setSelectedGenre] = React.useState<string>('');
   const [featured, setFeatured] = React.useState<Row | null>(null);
   const [loadingFeatured, setLoadingFeatured] = React.useState(true);
@@ -44,9 +52,20 @@ export default function Home() {
     let mounted = true;
     (async () => {
       try {
-        const pool = await fetchSoundcloudRows();
+        const { rows: pool, genres: genreEntries } = await fetchHomeData();
         if (!mounted) return;
         setRows(pool);
+
+        const tips: Record<string, string> = {};
+        for (const entry of genreEntries) {
+          const label = entry.label?.trim();
+          if (!label) continue;
+          const key = normalize(label);
+          if (!key) continue;
+          const explanation = entry.explanation?.trim();
+          if (explanation) tips[key] = explanation;
+        }
+        setGenreTips(tips);
 
         const seen = new Set<string>();
         const options: string[] = [];
@@ -171,9 +190,16 @@ export default function Home() {
                   <>
                     <h2 className="text-lg font-semibold text-neutral-900">{featured.set}</h2>
                     {featured.classification ? (
-                      <p className="text-sm font-medium uppercase tracking-[0.3em] text-neutral-500">
-                        {featured.classification}
-                      </p>
+                      <GenreTooltip
+                        label={featured.classification}
+                        description={genreTips[normalize(featured.classification)]}
+                      >
+                        <Tag>
+                          <span className="uppercase tracking-[0.3em] text-neutral-600">
+                            {featured.classification}
+                          </span>
+                        </Tag>
+                      </GenreTooltip>
                     ) : null}
                   </>
                 ) : (
