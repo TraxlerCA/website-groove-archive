@@ -1,16 +1,18 @@
 'use client';
-import { createContext, useContext, useEffect, useState, useCallback, useRef, type ReactNode } from "react";
+import { createContext, useContext, useEffect, useState, useCallback, useRef, type ReactNode, useMemo } from "react";
 import type { Provider, Row } from "@/lib/types";
 
 type QueueItem={row:Row;provider:Provider};
 type PlayerController={ play:()=>void; pause:()=>void; seek:(seconds:number)=>void };
-type PlayerState={
+type PlayerSnapshot={
   current:QueueItem|null;
   queue:QueueItem[];
   playing:boolean;
   progress:number; // 0..1
   open:boolean;
   durationSec:number; // absolute duration in seconds (if known)
+};
+type PlayerActions={
   play:(row:Row,preferred?:Provider)=>void;
   toggle:()=>void;
   pause:()=>void;
@@ -18,21 +20,30 @@ type PlayerState={
   seekTo:(seconds:number)=>void;
   enqueue:(row:Row,preferred?:Provider)=>void;
   next:()=>void;
-  setOpen:(v:boolean)=>void;
-  // Live-sync plumbing used by provider-aware players (YouTube/SC)
+  setOpen:(value:boolean)=>void;
   registerController:(ctrl:PlayerController|null)=>void;
   setProgressAbs:(elapsedSec:number,totalSec:number)=>void;
   setPlayingState:(value:boolean)=>void;
 };
-const Ctx=createContext<PlayerState|null>(null);
-export const usePlayer=()=>{const v=useContext(Ctx); if(!v) throw new Error("Player provider missing"); return v;};
+export type PlayerState = PlayerSnapshot & PlayerActions;
+
+const StateCtx=createContext<PlayerSnapshot|null>(null);
+const ActionsCtx=createContext<PlayerActions|null>(null);
+export const usePlayerState=()=>{const v=useContext(StateCtx); if(!v) throw new Error("Player provider missing"); return v;};
+export const usePlayerActions=()=>{const v=useContext(ActionsCtx); if(!v) throw new Error("Player provider missing"); return v;};
+export const usePlayer=():PlayerState=>{
+  const state=usePlayerState();
+  const actions=usePlayerActions();
+  return useMemo(()=>({ ...state, ...actions }),[state,actions]);
+};
 
 const pick=(row:Row,preferred?:Provider):Provider=>preferred==='youtube'&&row.youtube?'youtube':preferred==='soundcloud'&&row.soundcloud?'soundcloud':row.soundcloud?'soundcloud':'youtube';
 
 export function PlayerProvider({children}:{children:ReactNode}){
-  const [current,setCurrent]=useState<QueueItem|null>(null),[queue,setQueue]=useState<QueueItem[]>([]),[playing,setPlaying]=useState(false),[progress,setProgress]=useState(0),[open,setOpen]=useState(false);
+  const [current,setCurrent]=useState<QueueItem|null>(null),[queue,setQueue]=useState<QueueItem[]>([]),[playing,setPlaying]=useState(false),[progress,setProgress]=useState(0),[open,setOpenState]=useState(false);
   // Default duration used for simulated progress + UI, overridden by live players
   const [durationSec,setDurationSec]=useState<number>(48*60 + 36);
+  const durationRef=useRef(durationSec);
   // When a live player registers, we stop simulating clock and delegate play/pause to it
   const controllerRef=useRef<PlayerController|null>(null);
   const [hasController,setHasController]=useState(false);
@@ -43,6 +54,8 @@ export function PlayerProvider({children}:{children:ReactNode}){
   const [expectingController,setExpectingController]=useState(false);
 
   // Fallback simulated clock only if no external controller is available
+  useEffect(()=>{durationRef.current=durationSec;},[durationSec]);
+
   useEffect(()=>{
     if(!playing || hasController || expectingController) return; // external clock or waiting for one
     let raf=0,last=performance.now();
@@ -62,7 +75,7 @@ export function PlayerProvider({children}:{children:ReactNode}){
     setCurrent({row,provider:pick(row,preferred)});
     // Defer flipping UI to playing until the provider reports playing
     setPlaying(false);
-    setOpen(true);
+    setOpenState(true);
   },[]);
   const toggle=useCallback(()=>{
     setPlaying(v=>{
@@ -88,10 +101,10 @@ export function PlayerProvider({children}:{children:ReactNode}){
     const sec=Math.max(0, seconds||0);
     try{ controllerRef.current?.seek(sec); }catch{}
     setProgress(()=>{
-      const total=Math.max(1, durationSec||0);
+      const total=Math.max(1, durationRef.current||0);
       return Math.max(0, Math.min(1, sec/total));
     });
-  },[durationSec]);
+  },[]);
   const enqueue=useCallback((row:Row,preferred?:Provider)=>setQueue(q=>[...q,{row,provider:pick(row,preferred)}]),[]);
   const next=useCallback(()=>setQueue(q=>{const n=q[0]; if(n){
     try{ controllerRef.current?.pause(); }catch{}
@@ -100,7 +113,7 @@ export function PlayerProvider({children}:{children:ReactNode}){
     // We intend to continue playing the next item
     autoplayNextRef.current = true;
     setTimeout(()=>setExpectingController(false), 1500);
-    setCurrent(n); setPlaying(false); setOpen(true); return q.slice(1);
+    setCurrent(n); setPlaying(false); setOpenState(true); return q.slice(1);
   } setPlaying(false); return q;}),[]);
   useEffect(()=>{document.documentElement.style.setProperty("--playPulse",playing?"1":"0");},[playing]);
   // Removed defensive reset on current change to avoid racing real provider updates
@@ -124,14 +137,22 @@ export function PlayerProvider({children}:{children:ReactNode}){
     setProgress(total>0? Math.min(1, cur/total) : 0);
   },[]);
   const setPlayingState=useCallback((value:boolean)=>{ setPlaying(value); },[]);
+  const setOpen=useCallback((value:boolean)=>{ setOpenState(value); },[]);
+
+  const stateValue:PlayerSnapshot=useMemo(()=>({
+    current,queue,playing,progress,open,durationSec
+  }),[current,queue,playing,progress,open,durationSec]);
+
+  const actionsValue=useMemo<PlayerActions>(()=>({
+    play,toggle,pause,resume,seekTo,enqueue,next,setOpen,
+    registerController,setProgressAbs,setPlayingState
+  }),[play,toggle,pause,resume,seekTo,enqueue,next,setOpen,registerController,setProgressAbs,setPlayingState]);
 
   return (
-    <Ctx.Provider value={{
-      current,queue,playing,progress,open,durationSec,
-      play,toggle,pause,resume,seekTo,enqueue,next,setOpen,
-      registerController,setProgressAbs,setPlayingState
-    }}>
-      {children}
-    </Ctx.Provider>
+    <StateCtx.Provider value={stateValue}>
+      <ActionsCtx.Provider value={actionsValue}>
+        {children}
+      </ActionsCtx.Provider>
+    </StateCtx.Provider>
   );
 }

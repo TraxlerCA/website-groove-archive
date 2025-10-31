@@ -5,7 +5,7 @@ import { useWindowVirtualizer } from "@tanstack/react-virtual";
 import { motion } from "framer-motion";
 import { IconButton } from "@/components/ui";
 import { YouTubeIcon, SCIcon, SearchIcon, PaperPlaneOutlineIcon } from "@/components/icons";
-import { usePlayer } from "@/context/PlayerProvider";
+import { usePlayerActions } from "@/context/PlayerProvider";
 import SuggestModal from "@/components/SuggestModal";
 import { GenreTooltip } from "@/components/GenreTooltip";
 import type { Genre, Row } from "@/lib/types";
@@ -19,7 +19,7 @@ type Props = {
 };
 
 export default function ListPageClient({ rows, genres }: Props) {
-  const { play } = usePlayer();
+  const { play } = usePlayerActions();
 
   const [q, setQ] = useState("");
   const [genre, setGenre] = useState("any");

@@ -4,29 +4,18 @@
 import React from 'react';
 import { GenreTooltip } from '@/components/GenreTooltip';
 import { Tag } from '@/components/ui';
-import { usePlayer } from '@/context/PlayerProvider';
-
-type Row = {
-  set: string;
-  classification?: string | null;
-  youtube?: string | null;
-  soundcloud?: string | null;
-};
-
-type GenreRow = {
-  label: string;
-  explanation?: string | null;
-};
+import { usePlayerActions } from '@/context/PlayerProvider';
+import type { Genre, Row } from '@/lib/types';
 // ytId helper removed (unused)
 
 // ytThumbs helper removed (unused)
 
 // loader for the hero highlight (no preload on first paint)
-async function fetchHomeData(): Promise<{ rows: Row[]; genres: GenreRow[] }> {
+async function fetchHomeData(): Promise<{ rows: Row[]; genres: Genre[] }> {
   const res = await fetch('/api/sheets?tabs=list,genres', { cache: 'no-store' });
   const json = await res.json();
   const rows = (json?.data?.list || []) as Row[];
-  const genres = (json?.data?.genres || []) as GenreRow[];
+  const genres = (json?.data?.genres || []) as Genre[];
   const pool = rows.filter(r => r.soundcloud && r.soundcloud.includes('soundcloud.com'));
   return { rows: pool, genres };
 }
@@ -40,7 +29,7 @@ const pickRandomRow = (rows: Row[]): Row | null => {
 };
 
 export default function Home() {
-  const { play } = usePlayer();
+  const { play } = usePlayerActions();
   const [rows, setRows] = React.useState<Row[]>([]);
   const [genres, setGenres] = React.useState<string[]>([]);
   const [genreTips, setGenreTips] = React.useState<Record<string, string>>({});

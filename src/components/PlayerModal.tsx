@@ -1,6 +1,6 @@
 'use client';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { usePlayer } from "@/context/PlayerProvider";
+import { usePlayer, usePlayerActions } from "@/context/PlayerProvider";
 import { ytid } from "@/lib/utils";
 
 // Minimal typings for the YouTube IFrame API and SoundCloud Widget API
@@ -63,10 +63,21 @@ function YouTubeEmbed({ url }: { url: string }){
   const containerRef = useRef<HTMLDivElement>(null);
   const playerRef = useRef<YTPlayer|null>(null);
   const pollRef = useRef<ReturnType<typeof setInterval>|undefined>(undefined);
-  const { registerController, setProgressAbs, setPlayingState } = usePlayer();
+  const { registerController, setProgressAbs, setPlayingState } = usePlayerActions();
   const id = ytid(url) || '';
+  const idRef = useRef(id);
+  idRef.current = id;
 
-  // Initialize once
+  const attachController = useCallback(() => {
+    const player = playerRef.current;
+    if (!player) return;
+    registerController({
+      play: () => player.playVideo(),
+      pause: () => player.pauseVideo(),
+      seek: (seconds: number) => player.seekTo(seconds, true),
+    });
+  }, [registerController]);
+
   useEffect(() => {
     let alive = true;
     const init = async () => {
@@ -76,16 +87,12 @@ function YouTubeEmbed({ url }: { url: string }){
       const origin = typeof window !== 'undefined' ? window.location.origin : '';
       await new Promise(requestAnimationFrame);
       playerRef.current = new YT.Player(containerRef.current, {
-        videoId: id,
+        videoId: idRef.current,
         playerVars: { autoplay: 1, controls: 0, disablekb: 1, rel: 0, modestbranding: 1, origin },
         events: {
           onReady: () => {
             // Bridge controls once
-            registerController({
-              play: () => playerRef.current?.playVideo(),
-              pause: () => playerRef.current?.pauseVideo(),
-              seek: (seconds: number) => playerRef.current?.seekTo(seconds, true)
-            });
+            attachController();
             // Keep iframe out of tab order
             try { const i = containerRef.current?.querySelector('iframe') as HTMLIFrameElement|null; if(i) i.tabIndex = -1; } catch {}
             // Start polling once
@@ -113,10 +120,8 @@ function YouTubeEmbed({ url }: { url: string }){
       if (pollRef.current) { clearInterval(pollRef.current); pollRef.current = undefined; }
       try { registerController(null); playerRef.current?.destroy?.(); } catch {}
     };
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [attachController, registerController, setProgressAbs, setPlayingState]);
 
-  // Load new video on URL change without recreating player
   useEffect(() => {
     const p = playerRef.current;
     if (p && id) {
@@ -124,7 +129,18 @@ function YouTubeEmbed({ url }: { url: string }){
     }
   }, [id]);
 
-  return <div ref={containerRef} className="w-full h-full" />;
+  useEffect(() => {
+    attachController();
+  }, [attachController, id]);
+
+  return (
+    <div className="flex h-full w-full items-center justify-center">
+      <div
+        ref={containerRef}
+        className="relative h-[85%] w-[85%] max-w-3xl overflow-hidden rounded-xl bg-black/85 ring-1 ring-white/10 shadow-lg"
+      />
+    </div>
+  );
 }
 
 // --- SoundCloud Embed with Widget API
@@ -138,7 +154,9 @@ function SoundCloudEmbed({ url }: { url: string }){
   const durationMsRef = useRef<number>(0);
   const lastPosMsRef = useRef<number>(0);
   const durationPollRef = useRef<ReturnType<typeof setInterval>|undefined>(undefined);
-  const { registerController, setProgressAbs, setPlayingState } = usePlayer();
+  const { registerController, setProgressAbs, setPlayingState } = usePlayerActions();
+  const urlRef = useRef(url);
+  urlRef.current = url;
 
   const onPlay = useCallback(() => setPlayingState(true), [setPlayingState]);
   const onPause = useCallback(() => setPlayingState(false), [setPlayingState]);
@@ -171,6 +189,16 @@ function SoundCloudEmbed({ url }: { url: string }){
     }, 250);
   }, [setProgressAbs]);
 
+  const attachController = useCallback(() => {
+    const widget = widgetRef.current;
+    if (!widget) return;
+    registerController({
+      play: () => widget.play(),
+      pause: () => widget.pause(),
+      seek: (seconds: number) => widget.seekTo(seconds * 1000),
+    });
+  }, [registerController]);
+
   // Initialize once
   useEffect(() => {
     let alive = true;
@@ -192,22 +220,19 @@ function SoundCloudEmbed({ url }: { url: string }){
       const widget = SC.Widget(iframe);
       widgetRef.current = widget;
       // Controller once
-      registerController({
-        play: () => widget?.play(),
-        pause: () => widget?.pause(),
-        seek: (seconds: number) => widget?.seekTo(seconds * 1000)
-      });
+      attachController();
       // Bind events once
       widget.bind(SC.Widget.Events.PLAY, onPlay);
       widget.bind(SC.Widget.Events.PAUSE, onPause);
       widget.bind(SC.Widget.Events.PLAY_PROGRESS, onProgress);
       // Load initial URL
       try {
-        widget.load(url, { auto_play: true, hide_related: true, show_comments: false, show_user: false, show_reposts: false, visual: true });
+        widget.load(urlRef.current, { auto_play: true, hide_related: true, show_comments: false, show_user: false, show_reposts: false, visual: true });
         // Nudge playback explicitly in addition to auto_play for reliability
         try { widget.play(); } catch {}
         // Begin polling duration until it becomes available
         startDurationPoll();
+        attachController();
       } catch {}
     };
     init();
@@ -228,8 +253,7 @@ function SoundCloudEmbed({ url }: { url: string }){
         iframeElRef.current = null;
       } catch {}
     };
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [attachController, onPause, onPlay, onProgress, registerController, startDurationPoll]);
 
   // Load new track on URL change
   useEffect(() => {
@@ -242,9 +266,10 @@ function SoundCloudEmbed({ url }: { url: string }){
         // Explicitly request play after load to avoid stuck states
         try { w.play(); } catch {}
         startDurationPoll();
+        attachController();
       } catch {}
     }
-  }, [url, startDurationPoll]);
+  }, [url, attachController, startDurationPoll]);
 
   return <div ref={containerRef} className="w-full h-full" />;
 }
