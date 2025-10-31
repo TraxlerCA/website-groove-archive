@@ -35,6 +35,92 @@ video {
   outline-offset: 2px;
 }
 
+/* dark cinematic tokens and utilities */
+@layer base {
+  :root[data-theme="dark"] {
+    /* palette */
+    --bg: #0b0d12;
+    --surface: #0f1218;
+    --text: #f4f6fb;
+    --muted: #9aa3b2;
+    --accent-ember: #ff7043; /* blazing */
+    --accent-cerulean: #3aa0ff; /* hot */
+    --accent-violet: #8a7bff; /* ok */
+
+    /* sizing */
+    --radius: 14px;
+    /* two-thirds of previous 192px height → 128px; use as square size */
+    --card-size: 128px;
+
+    /* motion */
+    --dur-slow: 1200ms;
+    --dur-med: 650ms;
+    --dur-fast: 220ms;
+    --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
+    --ease-in: cubic-bezier(0.7, 0, 0.84, 0);
+  }
+}
+
+@layer utilities {
+  /* Premium dark background with subtle radial vignette */
+  .bg-dark-cinema {
+    background:
+      radial-gradient(1200px 600px at 50% -10%, rgba(255,255,255,0.06), rgba(255,255,255,0) 60%),
+      radial-gradient(1000px 500px at 100% 0%, rgba(58,131,255,0.08), rgba(58,131,255,0) 55%),
+      radial-gradient(1000px 500px at 0% 0%, rgba(255,112,67,0.08), rgba(255,112,67,0) 55%),
+      #0b0d12;
+    color: var(--text);
+  }
+
+  /* Subtle vignette helper */
+  .vignette::before {
+    content: "";
+    position: absolute;
+    inset: -10%;
+    pointer-events: none;
+    background: radial-gradient(ellipse at center, rgba(0,0,0,0) 55%, rgba(0,0,0,0.45) 100%);
+    mix-blend-mode: multiply;
+  }
+
+  /* Smooth marquee keyframes used by carousels */
+  @keyframes marquee {
+    to { transform: translateX(-50%); }
+  }
+
+  .marquee-running {
+    will-change: transform;
+    animation-name: marquee;
+    animation-timing-function: linear;
+    animation-iteration-count: infinite;
+  }
+
+  /* pause marquee on hover or keyboard focus */
+  .group\/track:hover .marquee-running,
+  .group\/track:focus-within .marquee-running {
+    animation-play-state: paused;
+  }
+
+  /* Film grain pulse (shared) */
+  @keyframes grainPulse {
+    0%, 100% { transform: translate3d(0, 0, 0) scale(1.05); }
+    40% { transform: translate3d(-1.5%, -1%, 0) scale(1.06); }
+    70% { transform: translate3d(1.2%, 1%, 0) scale(1.04); }
+  }
+
+  .grain-overlay {
+    position: absolute;
+    inset: -200%;
+    background-image: url('data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAADIAAAAyCAIAAACRXR/mAAAACXBIWXMAAAsTAAALEwEAmpwYAAAAGXRFWHRDcmVhdGlvbiBUaW1lAAfLAAABWElEQVR4nO2XwW3DMAxFX20A7KAHKADugAdoAO6AB2gA7oAHKADyQ09uZSWnQ7rLaakCSZM5Ht55d4Vp0U80JwD34dAEzjkgh1H23AArxDWPRBkMtsjit97oRGmVX6cpKoAkh5hXnuOJZoJ8x4K3t3VRKSzzuI3QfgX8eUOmRhVD3dEw/e/dwkmdIHqf0EY33a32CBruWkGwkhX9pjS9BbRO1pEcbxpTWs5CUOZh2PxL5cZpSnc0Dtw1G48BGcgTeM+MnY4A5Vt1HNGz9Dn0tLFH1IYqlbEGwW6dTecH3FbdkW4/8EUN/PmFNvfv3lfAGG2bVZk5F6N5tjL8EhPFQcGmk30Ov+JDstzd+cN6aSn+UR9vcrWLUeYbP5My3Pj3N2q9vJ+M7Y3pWWulOYoSydja8f+TjYXSvkMZWN5dEhZP8p8aq2TxLpRBbXsbD1nG7O4hh7F1LLOjI2h67uJTYPd3XgvNXezqzQi/1LftSlb74VJ9WwKahJtSxtDo9GPAXvRou1vtohV9X6d8C8OAveUUBCWN7AAAAAElFTkSuQmCC');
+    mix-blend-mode: soft-light;
+    animation: grainPulse 22s steps(6, end) infinite;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .marquee-running { animation: none !important; }
+    .hover-lift { transition: none !important; }
+  }
+}
+
 @layer utilities {
   .hover-lift {
     @apply transition-transform ease-out duration-150 hover:-translate-y-0.5 motion-reduce:transition-none motion-reduce:hover:translate-y-0;

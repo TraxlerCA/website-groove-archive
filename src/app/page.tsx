@@ -2,26 +2,22 @@
 'use client';
 
 import React from 'react';
-import { usePlayer } from '@/context/PlayerProvider';
-
-type Row = {
-  set: string;
-  classification?: string | null;
-  youtube?: string | null;
-  soundcloud?: string | null;
-};
-
+import { GenreTooltip } from '@/components/GenreTooltip';
+import { Tag } from '@/components/ui';
+import { usePlayerActions } from '@/context/PlayerProvider';
+import type { Genre, Row } from '@/lib/types';
 // ytId helper removed (unused)
 
 // ytThumbs helper removed (unused)
 
 // loader for the hero highlight (no preload on first paint)
-async function fetchSoundcloudRows(): Promise<Row[]> {
-  const res = await fetch('/api/sheets?tabs=list', { cache: 'no-store' });
+async function fetchHomeData(): Promise<{ rows: Row[]; genres: Genre[] }> {
+  const res = await fetch('/api/sheets?tabs=list,genres', { cache: 'no-store' });
   const json = await res.json();
   const rows = (json?.data?.list || []) as Row[];
+  const genres = (json?.data?.genres || []) as Genre[];
   const pool = rows.filter(r => r.soundcloud && r.soundcloud.includes('soundcloud.com'));
-  return pool;
+  return { rows: pool, genres };
 }
 
 const normalize = (s: string) => s.trim().toLowerCase();
@@ -33,9 +29,10 @@ const pickRandomRow = (rows: Row[]): Row | null => {
 };
 
 export default function Home() {
-  const { play } = usePlayer();
+  const { play } = usePlayerActions();
   const [rows, setRows] = React.useState<Row[]>([]);
   const [genres, setGenres] = React.useState<string[]>([]);
+  const [genreTips, setGenreTips] = React.useState<Record<string, string>>({});
   const [selectedGenre, setSelectedGenre] = React.useState<string>('');
   const [featured, setFeatured] = React.useState<Row | null>(null);
   const [loadingFeatured, setLoadingFeatured] = React.useState(true);
@@ -44,9 +41,20 @@ export default function Home() {
     let mounted = true;
     (async () => {
       try {
-        const pool = await fetchSoundcloudRows();
+        const { rows: pool, genres: genreEntries } = await fetchHomeData();
         if (!mounted) return;
         setRows(pool);
+
+        const tips: Record<string, string> = {};
+        for (const entry of genreEntries) {
+          const label = entry.label?.trim();
+          if (!label) continue;
+          const key = normalize(label);
+          if (!key) continue;
+          const explanation = entry.explanation?.trim();
+          if (explanation) tips[key] = explanation;
+        }
+        setGenreTips(tips);
 
         const seen = new Set<string>();
         const options: string[] = [];
@@ -171,9 +179,16 @@ export default function Home() {
                   <>
                     <h2 className="text-lg font-semibold text-neutral-900">{featured.set}</h2>
                     {featured.classification ? (
-                      <p className="text-sm font-medium uppercase tracking-[0.3em] text-neutral-500">
-                        {featured.classification}
-                      </p>
+                      <GenreTooltip
+                        label={featured.classification}
+                        description={genreTips[normalize(featured.classification)]}
+                      >
+                        <Tag>
+                          <span className="uppercase tracking-[0.3em] text-neutral-600">
+                            {featured.classification}
+                          </span>
+                        </Tag>
+                      </GenreTooltip>
                     ) : null}
                   </>
                 ) : (
@@ -191,16 +206,31 @@ export default function Home() {
                   onClick={() => {
                     if (featured?.soundcloud) play(featured, 'soundcloud');
                   }}
-                  className="inline-flex h-11 w-11 items-center justify-center rounded-full bg-neutral-900 text-white transition hover:-translate-y-0.5 hover:bg-neutral-800 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-neutral-900/30 disabled:cursor-not-allowed disabled:opacity-40"
+                  data-disabled={featured?.soundcloud ? undefined : 'true'}
+                  className="group relative inline-flex h-20 w-20 items-center justify-center rounded-full text-white shadow-[0_28px_45px_rgba(15,23,42,0.35)] transition duration-300 hover:-translate-y-0.5 hover:shadow-[0_34px_52px_rgba(14,116,144,0.45)] focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-cyan-300/45 disabled:cursor-not-allowed disabled:opacity-60 disabled:shadow-none"
                   aria-label={featured?.set ? `Play ${featured.set}` : 'Play highlight (loading)'}
                 >
-                  <svg
+                  <span className="pointer-events-none absolute inset-0 rounded-full border border-white/30 opacity-80 group-data-[disabled=true]:opacity-30" />
+                  <span className="pointer-events-none absolute inset-0 rounded-full bg-[radial-gradient(circle_at_50%_28%,rgba(255,255,255,0.45),rgba(56,189,248,0.32),rgba(8,47,73,0.88))] opacity-40 group-data-[disabled=true]:opacity-10" />
+                  <span
                     aria-hidden="true"
-                    className="h-4 w-4 fill-current"
-                    viewBox="0 0 24 24"
+                    className="pointer-events-none absolute inset-0 rounded-full bg-[conic-gradient(from_90deg,#22d3ee,#6366f1,#22d3ee)] opacity-80 animate-[spin_14s_linear_infinite] group-data-[disabled=true]:opacity-30"
+                  />
+                  <span className="pointer-events-none absolute inset-[6px] rounded-full border border-white/20 bg-gradient-to-br from-[#0f172a] via-[#040a13] to-[#010103]" />
+                  <span className="pointer-events-none absolute inset-[6px] rounded-full bg-[radial-gradient(circle_at_50%_50%,rgba(248,250,252,0.22),transparent_68%)] opacity-65 mix-blend-screen" />
+                  <span className="pointer-events-none absolute inset-[22px] rounded-full border border-white/10 bg-[#010409] shadow-[inset_0_2px_6px_rgba(0,0,0,0.45)]" />
+                  <span className="pointer-events-none absolute inset-[12px] rounded-full bg-[repeating-radial-gradient(circle_at_center,#0f172a_0px,#0f172a_1px,transparent_1px,transparent_3px)] opacity-45 mix-blend-overlay" />
+                  <span
+                    aria-hidden="true"
+                    className="pointer-events-none absolute inset-[10px] overflow-hidden rounded-full group-data-[disabled=true]:opacity-40"
                   >
-                    <path d="M8 5v14l11-7z" />
-                  </svg>
+                    <span className="absolute inset-0 animate-[sweep_2.8s_ease-in-out_infinite] bg-[conic-gradient(from_0deg,transparent_0deg,rgba(226,232,240,0.7)_30deg,rgba(99,102,241,0.52)_60deg,transparent_150deg)] opacity-80" />
+                  </span>
+                  <span className="relative z-10 flex h-9 w-9 items-center justify-center rounded-full bg-[#010409] shadow-[0_0_0_1px_rgba(255,255,255,0.08),0_10px_25px_rgba(15,23,42,0.6)] group-hover:scale-[1.04] group-active:scale-95 transition">
+                    <svg aria-hidden="true" className="h-5 w-5 fill-current drop-shadow-[0_10px_18px_rgba(99,102,241,0.45)]" viewBox="0 0 24 24">
+                      <path d="M9 5v14l10-7z" />
+                    </svg>
+                  </span>
                 </button>
                 {featured?.soundcloud ? (
                   <a
@@ -223,6 +253,26 @@ export default function Home() {
       </section>
 
       <div className="h-14" />
+      <style>{`
+        @keyframes sweep {
+          0% {
+            transform: rotate(-20deg);
+            opacity: 0;
+          }
+          35%,
+          45% {
+            opacity: 0.9;
+          }
+          80% {
+            transform: rotate(180deg);
+            opacity: 0;
+          }
+          100% {
+            transform: rotate(200deg);
+            opacity: 0;
+          }
+        }
+      `}</style>
     </main>
   );
 }

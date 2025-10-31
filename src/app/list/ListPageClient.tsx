@@ -5,7 +5,7 @@ import { useWindowVirtualizer } from "@tanstack/react-virtual";
 import { motion } from "framer-motion";
 import { IconButton } from "@/components/ui";
 import { YouTubeIcon, SCIcon, SearchIcon, PaperPlaneOutlineIcon } from "@/components/icons";
-import { usePlayer } from "@/context/PlayerProvider";
+import { usePlayerActions } from "@/context/PlayerProvider";
 import SuggestModal from "@/components/SuggestModal";
 import { GenreTooltip } from "@/components/GenreTooltip";
 import type { Genre, Row } from "@/lib/types";
@@ -19,7 +19,7 @@ type Props = {
 };
 
 export default function ListPageClient({ rows, genres }: Props) {
-  const { play } = usePlayer();
+  const { play } = usePlayerActions();
 
   const [q, setQ] = useState("");
   const [genre, setGenre] = useState("any");
@@ -160,10 +160,10 @@ export default function ListPageClient({ rows, genres }: Props) {
                 >
                   {/* desktop/tablet row */}
                   <div
-                    className={`${ROW_COLS} px-4 py-3 odd:bg-white hover:bg-black/5 transition hidden sm:grid`}
+                    className={`${ROW_COLS} px-4 py-3 odd:bg-white hover:bg-black/5 transition hidden sm:grid rounded-md group focus-within:ring-2 focus-within:ring-black/10`}
                   >
                     <div className="py-2 min-w-0">
-                      <a href={r?.youtube || r?.soundcloud || "#"} className="block truncate hover:underline" title={r?.set}>
+                      <a href={r?.youtube || r?.soundcloud || "#"} className="block truncate group-hover:underline focus:underline" title={r?.set}>
                         {r?.set}
                       </a>
                     </div>

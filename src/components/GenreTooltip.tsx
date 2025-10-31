@@ -1,8 +1,21 @@
 'use client';
 
-import { ReactNode, useCallback, useEffect, useId, useRef, useState } from 'react';
+import { ReactNode, useId, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Tag } from '@/components/ui';
+import {
+  autoUpdate,
+  flip,
+  offset,
+  shift,
+  useDismiss,
+  useFloating,
+  useFocus,
+  useHover,
+  useInteractions,
+  useRole,
+  FloatingPortal,
+} from '@floating-ui/react';
 
 export function GenreTooltip({
   label,
@@ -14,8 +27,6 @@ export function GenreTooltip({
   children?: ReactNode;
 }) {
   const [open, setOpen] = useState(false);
-  const [coords, setCoords] = useState<{ top: number; left: number }>({ top: 0, left: 0 });
-  const wrapperRef = useRef<HTMLSpanElement>(null);
   const id = useId();
   const trimmed = label.trim();
   const content = (description || '').trim();
@@ -24,69 +35,60 @@ export function GenreTooltip({
   const safeLabel = trimmed.toLowerCase();
   const body = children ?? <Tag>{safeLabel}</Tag>;
 
-  const updatePosition = useCallback(() => {
-    const node = wrapperRef.current;
-    if (!node) return;
-    const rect = node.getBoundingClientRect();
-    setCoords({
-      top: rect.top + window.scrollY + rect.height / 2,
-      left: rect.left + window.scrollX,
-    });
-  }, []);
+  const { refs, floatingStyles, context, x, y } = useFloating({
+    open,
+    onOpenChange: setOpen,
+    placement: 'top',
+    whileElementsMounted: autoUpdate,
+    middleware: [offset(8), flip({ padding: 8 }), shift({ padding: 8 })],
+    strategy: 'fixed',
+    transform: false,
+  });
 
-  useEffect(() => {
-    if (!open) return;
-    const update = () => {
-      updatePosition();
-    };
-
-    update();
-    window.addEventListener('scroll', update, true);
-    window.addEventListener('resize', update);
-    return () => {
-      window.removeEventListener('scroll', update, true);
-      window.removeEventListener('resize', update);
-    };
-  }, [open, updatePosition]);
+  const hover = useHover(context, { move: false, restMs: 30 });
+  const focus = useFocus(context);
+  const dismiss = useDismiss(context);
+  const role = useRole(context, { role: 'tooltip' });
+  const { getReferenceProps, getFloatingProps } = useInteractions([
+    hover,
+    focus,
+    dismiss,
+    role,
+  ]);
 
   return (
-    <span
-      ref={wrapperRef}
-      className="relative inline-flex"
-      onMouseEnter={() => { updatePosition(); setOpen(true); }}
-      onMouseLeave={() => setOpen(false)}
-    >
+    <span className="relative inline-flex">
       <button
         type="button"
         className="inline-flex items-center bg-transparent p-0 text-inherit focus-visible:outline-none border-0 cursor-help"
-        onFocus={() => { updatePosition(); setOpen(true); }}
-        onBlur={() => setOpen(false)}
+        ref={refs.setReference}
         aria-describedby={showTip ? id : undefined}
+        {...getReferenceProps()}
       >
         {body}
       </button>
       {showTip && (
-        <AnimatePresence>
-          {open && (
-            <motion.div
-              key="tooltip"
-              initial={{ opacity: 0, x: 6, y: -4 }}
-              animate={{ opacity: 1, x: 0, y: 0 }}
-              exit={{ opacity: 0, x: 6, y: -4 }}
-              transition={{ duration: 0.18, ease: 'easeOut' }}
-              className="pointer-events-none fixed z-[100] max-w-xs rounded-xl border border-white/20 bg-black/80 px-4 py-3 text-left text-xs leading-snug text-white shadow-[0_18px_36px_rgba(0,0,0,0.32)] backdrop-blur-sm"
-              role="tooltip"
-              id={id}
-              style={{
-                top: coords.top,
-                left: coords.left,
-                transform: 'translate(calc(-100% - 12px), -50%)',
-              }}
-            >
-              {content}
-            </motion.div>
-          )}
-        </AnimatePresence>
+        <FloatingPortal>
+          <AnimatePresence>
+            {open && x != null && y != null && (
+              <motion.div
+                key="tooltip"
+                ref={refs.setFloating}
+                style={floatingStyles}
+                {...getFloatingProps()}
+                initial={{ opacity: 0, y: 4 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: 4 }}
+                transition={{ duration: 0.16, ease: 'easeOut' }}
+                className="pointer-events-none z-[100] max-w-[260px] rounded-xl border border-neutral-200 bg-neutral-100 px-4 py-3 text-left text-xs leading-snug text-neutral-900 shadow-[0_18px_36px_rgba(15,23,42,0.16)] backdrop-blur-sm"
+                role="tooltip"
+                id={id}
+              >
+                {content}
+              </motion.div>
+            )}
+          </AnimatePresence>
+        </FloatingPortal>
       )}
     </span>
   );

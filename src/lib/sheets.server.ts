@@ -1,20 +1,8 @@
 import 'server-only';
 import { cache } from 'react';
+import type { Genre, Row } from '@/lib/types';
 
-export type ListRow = {
-  set: string;
-  classification: string | null;
-  soundcloud: string | null;
-  youtube: string | null;
-  tier: string | null;
-};
-
-export type GenreRow = {
-  label: string;
-  explanation: string;
-};
-
-export type SheetsData = { list?: ListRow[]; genres?: GenreRow[] } & Record<string, unknown>;
+export type SheetsData = { list?: Row[]; genres?: Genre[] } & Record<string, unknown>;
 export type SheetsPayload = { ok: true; updatedAt: string; data: SheetsData };
 
 const TABS = [
@@ -177,29 +165,28 @@ async function fetchTab(url: string) {
 }
 
 // map "list" to your current Row shape so UI does not change
-function map_list(headers: string[], body: string[][]): ListRow[] {
+function map_list(headers: string[], body: string[][]): Row[] {
   const iSet = idx(headers, ['set', 'dj set', 'mix', 'title', 'titel', 'naam']);
   const iGen = idx(headers, ['classification', 'genre', 'label', 'stijl', 'genre label']);
   const iSc = idx(headers, ['soundcloud', 'sc', 'soundcloud url', 'soundcloud link', 'soundcloud_link']);
   const iYt = idx(headers, ['youtube', 'yt', 'youtube url', 'youtube link', 'youtube_link']);
   const iTier = idx(headers, ['tier', 'rating', 'rank', 'grade', 's', 'score']);
 
-  return body
-    .map(cells => {
-      const set = pick(cells, iSet);
-      if (!set) return null;
-      const classification = pick(cells, iGen) || null;
-      const soundcloud = pick(cells, iSc) || null;
-      const youtube = pick(cells, iYt) || null;
-      const tier = pick(cells, iTier) || null;
-
-      return { set, classification, soundcloud, youtube, tier };
-    })
-    .filter((r): r is ListRow => Boolean(r));
+  const out: Row[] = [];
+  for (const cells of body) {
+    const set = pick(cells, iSet);
+    if (!set) continue;
+    const classification = pick(cells, iGen) || null;
+    const soundcloud = pick(cells, iSc) || null;
+    const youtube = pick(cells, iYt) || null;
+    const tier = pick(cells, iTier) || null;
+    out.push({ set, classification, soundcloud, youtube, tier });
+  }
+  return out;
 }
 
 // map "genres" dim table to { label, explanation }
-function map_genres(headers: string[], body: string[][]): GenreRow[] {
+function map_genres(headers: string[], body: string[][]): Genre[] {
   const iLbl = idx(headers, ['label', 'genre', 'classification', 'naam', 'code']);
   const iExp = idx(headers, [
     'explanation',
@@ -252,7 +239,7 @@ async function loadSheets(tabs?: string[] | null): Promise<SheetsPayload> {
   const entries = await Promise.all(
     wanted.map(async t => {
       const { headers, rows } = await fetchTab(t.url);
-      let data: ListRow[] | GenreRow[] | Record<string, string>[];
+      let data: Row[] | Genre[] | Record<string, string>[];
       if (t.map === 'list') data = map_list(headers, rows);
       else if (t.map === 'genres') data = map_genres(headers, rows);
       else data = map_raw(headers, rows);

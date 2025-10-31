@@ -1,14 +1,14 @@
 'use client';
 import { useEffect, useMemo, useRef, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
-import { usePlayer } from "@/context/PlayerProvider";
+import { usePlayerActions } from "@/context/PlayerProvider";
 import type { Row } from "@/lib/types";
 import { SearchIcon } from "@/components/icons";
 import { copyToClipboard } from "@/lib/utils";
 
 export default function CommandBar({ rows, onNavigate }: { rows: Row[]; onNavigate: (r: 'home'|'list'|'heatmaps'|'suggest') => void }) {
   const [open,setOpen]=useState(false); const [q,setQ]=useState(""); const inputRef=useRef<HTMLInputElement|null>(null); const [sel,setSel]=useState(0);
-  const { play, enqueue }=usePlayer();
+  const { play, enqueue }=usePlayerActions();
   useEffect(()=>{const onKey=(e:KeyboardEvent)=>{
     const target=e.target as HTMLElement|null;
     const typing=!!(target&&(target.isContentEditable||["INPUT","TEXTAREA","SELECT"].includes(target.tagName)||target.getAttribute("role")==="textbox"));

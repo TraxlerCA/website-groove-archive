@@ -9,6 +9,7 @@
     "lint": "next lint"
   },
   "dependencies": {
+    "@floating-ui/react": "^0.26.17",
     "@tanstack/react-virtual": "^3.13.12",
     "framer-motion": "^12.23.12",
     "html-to-image": "^1.11.13",

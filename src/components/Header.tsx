@@ -18,11 +18,24 @@ export function WordmarkHeader() {
   const [hideSecondary, setHideSecondary] = useState(false);
 
   useEffect(() => {
-    const onScroll = () => {
-      const shouldHide = window.scrollY > 64;
-      setHideSecondary(prev => (prev === shouldHide ? prev : shouldHide));
+    let ticking = false;
+    const evaluate = () => {
+      const y = window.scrollY;
+      setHideSecondary(prev => {
+        if (prev) {
+          return y < 32 ? false : prev;
+        }
+        return y > 96 ? true : prev;
+      });
+      ticking = false;
     };
-    onScroll();
+    const onScroll = () => {
+      if (!ticking) {
+        ticking = true;
+        requestAnimationFrame(evaluate);
+      }
+    };
+    evaluate();
     window.addEventListener('scroll', onScroll, { passive: true });
     return () => window.removeEventListener('scroll', onScroll);
   }, []);
@@ -66,17 +79,31 @@ export function WordmarkHeader() {
                 <Link
                   key={link.href}
                   href={link.href}
-                  className={`transition hover:text-neutral-900 ${
+                  aria-current={isActive ? 'page' : undefined}
+                  className={`group relative px-1.5 py-1 -mx-1.5 rounded-md transition text-sm hover:text-neutral-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-black/15 ${
                     isActive ? 'text-neutral-900' : 'text-neutral-600'
                   }`}
                 >
-                  {link.label}
+                  <span className="relative">
+                    {link.label}
+                    <i
+                      className={`absolute left-0 right-0 -bottom-1 h-[2px] rounded-full bg-neutral-900 transition-transform duration-200 ${
+                        isActive ? 'scale-x-100' : 'scale-x-0 group-hover:scale-x-100 origin-left'
+                      }`}
+                    />
+                  </span>
                 </Link>
               );
             })}
+            <Link
+              href="/suggest"
+              className="inline-flex items-center rounded-full border border-neutral-200 bg-white/70 px-3 py-1 text-xs font-semibold text-neutral-700 shadow-sm shadow-black/10 transition hover:-translate-y-0.5 hover:bg-white hover:text-neutral-900 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-black/15 sm:hidden"
+            >
+              Suggest
+            </Link>
           </nav>
 
-          <div className="sm:ml-auto w-full sm:w-auto">
+          <div className="hidden w-full sm:ml-auto sm:block sm:w-auto">
             <Link
               href="/suggest"
               className="inline-flex w-full items-center justify-center rounded-full border border-neutral-200 bg-white/80 px-4 py-2 text-sm font-semibold text-neutral-900 shadow-sm shadow-black/10 transition hover:-translate-y-0.5 hover:bg-white focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-black/15"
