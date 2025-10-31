@@ -1,5 +1,6 @@
 'use client';
 
+import Image from 'next/image';
 import React from 'react';
 
 type Artist = {
@@ -260,13 +261,13 @@ function ArtistCard({ artist }: { artist: Artist }) {
       <div className="absolute inset-0 bg-[radial-gradient(circle_at_top,rgba(255,255,255,0.08),transparent_55%)] opacity-70" />
       <div className="relative h-[var(--card-size)] w-[var(--card-size)] overflow-hidden rounded-xl">
         <div className="absolute inset-0 origin-bottom animate-[cardFloat_11s_ease-in-out_infinite]" />
-        <img
+        <Image
           src={artist.image}
           alt={artist.name}
-          className="h-full w-full object-cover transition duration-500 group-hover:scale-[1.04]"
-          loading="lazy"
-          decoding="async"
+          fill
+          className="object-cover transition duration-500 group-hover:scale-[1.04]"
           sizes="(max-width: 640px) 70vw, (max-width: 1024px) 33vw, 128px"
+          loading="lazy"
         />
         <div className="pointer-events-none absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/60 via-black/20 to-transparent p-2">
           <div className="text-[11px] font-semibold uppercase tracking-[0.22em] text-white/90 drop-shadow">
