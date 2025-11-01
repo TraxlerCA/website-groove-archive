@@ -9,6 +9,7 @@ import { usePlayerActions } from "@/context/PlayerProvider";
 import SuggestModal from "@/components/SuggestModal";
 import { GenreTooltip } from "@/components/GenreTooltip";
 import type { Genre, Row } from "@/lib/types";
+import { useSearchParams } from "next/navigation";
 
 const ROW_COLS =
   "grid grid-cols-[minmax(0,1fr)_clamp(7rem,28vw,220px)_clamp(5rem,18vw,88px)] items-center gap-3";
@@ -20,11 +21,17 @@ type Props = {
 
 export default function ListPageClient({ rows, genres }: Props) {
   const { play } = usePlayerActions();
+  const searchParams = useSearchParams();
 
-  const [q, setQ] = useState("");
+  const [q, setQ] = useState(() => searchParams.get("q") ?? "");
   const [genre, setGenre] = useState("any");
   const [suggestOpen, setSuggestOpen] = useState(false);
   const suggestBtnRef = useRef<HTMLButtonElement | null>(null);
+
+  useEffect(() => {
+    const next = searchParams.get("q") ?? "";
+    setQ(prev => (prev === next ? prev : next));
+  }, [searchParams]);
 
   const genreOptions = useMemo(() => {
     const s = new Set<string>();

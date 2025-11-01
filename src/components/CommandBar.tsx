@@ -6,7 +6,7 @@ import type { Row } from "@/lib/types";
 import { SearchIcon } from "@/components/icons";
 import { copyToClipboard } from "@/lib/utils";
 
-export default function CommandBar({ rows, onNavigate }: { rows: Row[]; onNavigate: (r: 'home'|'list'|'heatmaps'|'suggest') => void }) {
+export default function CommandBar({ rows, onNavigate }: { rows: Row[]; onNavigate: (r: 'home'|'list'|'artists'|'heatmaps'|'suggest') => void }) {
   const [open,setOpen]=useState(false); const [q,setQ]=useState(""); const inputRef=useRef<HTMLInputElement|null>(null); const [sel,setSel]=useState(0);
   const { play, enqueue }=usePlayerActions();
   useEffect(()=>{const onKey=(e:KeyboardEvent)=>{
@@ -24,6 +24,7 @@ export default function CommandBar({ rows, onNavigate }: { rows: Row[]; onNaviga
   const pageActions=useMemo(()=>[
     {label:"The list",action:()=>onNavigate("list")},
     {label:"Serve a set",action:()=>onNavigate("home")},
+    {label:"Artists",action:()=>onNavigate("artists")},
     {label:"Heatmaps",action:()=>onNavigate("heatmaps")},
     {label:"Suggest a set",action:()=>onNavigate("suggest")},
   ],[onNavigate]);

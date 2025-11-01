@@ -1,8 +1,8 @@
 import 'server-only';
 import { cache } from 'react';
-import type { Genre, Row } from '@/lib/types';
+import type { Artist, Genre, Row } from '@/lib/types';
 
-export type SheetsData = { list?: Row[]; genres?: Genre[] } & Record<string, unknown>;
+export type SheetsData = { list?: Row[]; genres?: Genre[]; artists?: Artist[] } & Record<string, unknown>;
 export type SheetsPayload = { ok: true; updatedAt: string; data: SheetsData };
 
 const TABS = [
@@ -15,6 +15,11 @@ const TABS = [
     key: 'genres',
     url: 'https://docs.google.com/spreadsheets/d/e/2PACX-1vRexqa-1vfj-JdFSSFUjWycho-00d5rLdS76eBgvCbruyvtcVIIom-VM52SvfuhLg-CeHLRp2I6k5B2/pub?gid=1479050239&single=true&output=csv',
     map: 'genres' as const,
+  },
+  {
+    key: 'artists',
+    url: 'https://docs.google.com/spreadsheets/d/e/2PACX-1vRexqa-1vfj-JdFSSFUjWycho-00d5rLdS76eBgvCbruyvtcVIIom-VM52SvfuhLg-CeHLRp2I6k5B2/pub?gid=211605494&single=true&output=csv',
+    map: 'artists' as const,
   },
 ];
 
@@ -211,6 +216,28 @@ function map_raw(headers: string[], body: string[][]) {
   return body.map(cells => Object.fromEntries(keys.map((k, i) => [k, norm(cells[i] || '')])));
 }
 
+function map_artists(headers: string[], body: string[][]): Artist[] {
+  const iName = idx(headers, ['artist', 'name', 'dj']);
+  const iTier = idx(headers, ['rating', 'tier', 'grade', 'classification']);
+
+  const toRating = (value: string): Artist['rating'] | null => {
+    const normalized = lower(value);
+    if (normalized === 'blazing') return 'blazing';
+    if (normalized === 'hot') return 'hot';
+    if (normalized === 'ok') return 'ok';
+    return null;
+  };
+
+  const out: Artist[] = [];
+  for (const cells of body) {
+    const name = pick(cells, iName);
+    const rating = toRating(pick(cells, iTier));
+    if (!name || !rating) continue;
+    out.push({ name, rating });
+  }
+  return out;
+}
+
 type CacheVal = { ts: number; payload: SheetsPayload };
 const TTL = 5 * 60 * 1000;
 
@@ -239,9 +266,10 @@ async function loadSheets(tabs?: string[] | null): Promise<SheetsPayload> {
   const entries = await Promise.all(
     wanted.map(async t => {
       const { headers, rows } = await fetchTab(t.url);
-      let data: Row[] | Genre[] | Record<string, string>[];
+      let data: Row[] | Genre[] | Artist[] | Record<string, string>[];
       if (t.map === 'list') data = map_list(headers, rows);
       else if (t.map === 'genres') data = map_genres(headers, rows);
+      else if (t.map === 'artists') data = map_artists(headers, rows);
       else data = map_raw(headers, rows);
       return [t.key, data] as const;
     }),
@@ -272,4 +300,9 @@ export const getListRows = cache(async () => {
 export const getGenres = cache(async () => {
   const payload = await getSheets(['genres']);
   return payload.data.genres ?? [];
+});
+
+export const getArtists = cache(async () => {
+  const payload = await getSheets(['artists']);
+  return payload.data.artists ?? [];
 });

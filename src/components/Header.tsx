@@ -43,6 +43,7 @@ export function WordmarkHeader() {
   const navLinks = [
     { href: '/', label: 'Home' },
     { href: '/list', label: 'List' },
+    { href: '/artists', label: 'Artists' },
     { href: '/heatmaps', label: 'Heatmaps' },
   ];
 
