@@ -1,12 +1,10 @@
 'use client';
 
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { useWindowVirtualizer } from "@tanstack/react-virtual";
-import { motion } from "framer-motion";
 import { IconButton } from "@/components/ui";
-import { YouTubeIcon, SCIcon, SearchIcon, PaperPlaneOutlineIcon } from "@/components/icons";
+import { YouTubeIcon, SCIcon, SearchIcon } from "@/components/icons";
 import { usePlayerActions } from "@/context/PlayerProvider";
-import SuggestModal from "@/components/SuggestModal";
 import { GenreTooltip } from "@/components/GenreTooltip";
 import type { Genre, Row } from "@/lib/types";
 import { useSearchParams } from "next/navigation";
@@ -25,9 +23,6 @@ export default function ListPageClient({ rows, genres }: Props) {
 
   const [q, setQ] = useState(() => searchParams.get("q") ?? "");
   const [genre, setGenre] = useState("any");
-  const [suggestOpen, setSuggestOpen] = useState(false);
-  const suggestBtnRef = useRef<HTMLButtonElement | null>(null);
-
   useEffect(() => {
     const next = searchParams.get("q") ?? "";
     setQ(prev => (prev === next ? prev : next));
@@ -126,22 +121,6 @@ export default function ListPageClient({ rows, genres }: Props) {
                 </div>
               </div>
 
-              <div className="ml-auto">
-                <motion.button
-                  ref={suggestBtnRef}
-                  type="button"
-                  onClick={() => setSuggestOpen(true)}
-                  className="inline-flex h-9 items-center gap-2 rounded-md bg-neutral-900 px-4 text-xs font-semibold uppercase tracking-[0.22em] text-white hover:bg-neutral-800 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-black/40"
-                  aria-label="Open the suggest a set modal"
-                  whileHover={{ y: -1, scale: 1.01 }}
-                  whileTap={{ y: 0, scale: 0.99 }}
-                >
-                  <span className="-ml-1">
-                    <PaperPlaneOutlineIcon />
-                  </span>
-                  <span>Suggest a set</span>
-                </motion.button>
-              </div>
             </div>
 
             <div
@@ -267,7 +246,6 @@ export default function ListPageClient({ rows, genres }: Props) {
           </div>
         </div>
       </div>
-      <SuggestModal open={suggestOpen} onClose={() => setSuggestOpen(false)} restoreFocusTo={suggestBtnRef.current} />
     </section>
   );
 }

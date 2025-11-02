@@ -59,7 +59,6 @@ export function WordmarkHeader() {
             The Groove Archive
           </Link>
         </div>
-        <div className="pointer-events-none mx-auto mb-2 h-[1.5px] w-[min(320px,72vw)] rounded-full bg-[linear-gradient(90deg,var(--accent)_0%,rgba(0,0,0,0.18)_55%,transparent_100%)] opacity-80" />
       </div>
 
       <div
