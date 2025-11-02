@@ -68,7 +68,7 @@ export default function ArtistsPageClient({ artistsByRating }: ArtistsPageClient
   );
 
   return (
-    <main className="relative min-h-screen overflow-hidden px-5 pb-24 pt-16 text-slate-100 sm:px-10" style={{ background: '#101114' }}>
+    <main className="relative min-h-screen overflow-hidden bg-neutral-50 px-5 pb-24 pt-16 text-neutral-900 sm:px-10">
       <section className="relative mx-auto flex max-w-6xl flex-col gap-16">
         <div className="flex flex-col gap-16">
           {grouped.map(({ rating, entries, label }) =>
@@ -115,26 +115,13 @@ export default function ArtistsPageClient({ artistsByRating }: ArtistsPageClient
           pointer-events: none;
           z-index: 10;
         }
-        .rail-track::before {
-          left: 0;
-          background: linear-gradient(to right, #101114 0%, rgba(16,17,20,0.75) 45%, transparent 100%);
-        }
-        .rail-track::after {
-          right: 0;
-          background: linear-gradient(to left, #101114 0%, rgba(16,17,20,0.75) 45%, transparent 100%);
-        }
+        .rail-track::before { left: 0; background: transparent; }
+        .rail-track::after { right: 0; background: transparent; }
         @media (prefers-reduced-motion: reduce) {
           .rail-marquee { animation: none !important; }
         }
       `}</style>
 
-      <button
-        type="button"
-        className="fixed bottom-4 right-4 rounded-full bg-slate-200 px-4 py-2 text-xs font-semibold text-slate-900 shadow-lg focus:outline-none focus:ring focus:ring-slate-400"
-        onClick={() => setDebugExpanded(prev => !prev)}
-      >
-        {debugExpanded ? 'Collapse Lists' : 'Expand Lists'}
-      </button>
     </main>
   );
 }
@@ -230,14 +217,7 @@ function TierRail({
       [
         'rail-track',
         'relative',
-        shouldAnimate
-          ? 'overflow-hidden'
-          : debugExpanded
-            ? 'overflow-visible'
-            : 'overflow-x-auto',
-        'rounded-[20px]',
-        'px-5',
-        'py-5',
+        shouldAnimate ? 'overflow-hidden' : debugExpanded ? 'overflow-visible' : 'overflow-x-auto',
       ]
         .filter(Boolean)
         .join(' '),
@@ -261,19 +241,19 @@ function TierRail({
       data-debug-rating={rating}
       data-debug-count={debugCount}
     >
-      <header className="flex items-center text-[0.68rem] uppercase tracking-[0.28em] text-slate-500/70">
-        <span className="inline-flex items-center px-2 py-1 font-medium text-slate-200">{label}</span>
-        <span className="ml-3 text-[0.62rem] font-mono uppercase tracking-[0.18em] text-slate-500">
+      <header className="flex items-center text-[0.68rem] uppercase tracking-[0.28em] text-neutral-500/80">
+        <span className="inline-flex items-center px-2 py-1 font-medium text-neutral-700">{label}</span>
+        <span className="ml-3 text-[0.62rem] font-mono uppercase tracking-[0.18em] text-neutral-400">
           {debugCount} artist{debugCount === 1 ? '' : 's'}
         </span>
         {prefersReducedMotion ? (
-          <span className="ml-3 text-[0.62rem] font-semibold uppercase tracking-[0.18em] text-slate-400">
+          <span className="ml-3 text-[0.62rem] font-semibold uppercase tracking-[0.18em] text-neutral-500">
             reduced motion
           </span>
         ) : null}
       </header>
 
-      <div ref={trackRef} className={trackClassName} style={{ background: '#101114' }}>
+      <div ref={trackRef} className={trackClassName}>
         <div
           ref={marqueeRef}
           className="rail-marquee flex w-max flex-nowrap items-center gap-12 will-change-transform"
@@ -285,12 +265,12 @@ function TierRail({
         </div>
       </div>
       {debugExpanded ? (
-        <div className="mt-3 rounded-md border border-slate-700/60 bg-slate-800/70 p-3 text-xs text-slate-200">
+        <div className="mt-3 rounded-md border border-neutral-200 bg-neutral-100/90 p-3 text-xs text-neutral-700">
           <ul className="grid grid-cols-1 gap-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4">
             {entries.map(artist => (
               <li
                 key={`${rating}-debug-${artist.name}`}
-                className="font-mono uppercase tracking-wide text-slate-300"
+                className="font-mono uppercase tracking-wide text-neutral-500"
               >
                 {artist.name.toUpperCase()}
               </li>
@@ -312,7 +292,7 @@ function RailItem({ artist, rating, onSelect }: RailItemProps) {
   return (
     <button
       onClick={() => onSelect(rating, artist.name)}
-      className="group relative inline-flex min-w-[18ch] max-w-[22ch] items-center justify-center px-4 text-center text-lg font-semibold tracking-[0.24em] text-slate-300 transition duration-300 hover:text-white sm:text-[1.6rem]"
+      className="group relative inline-flex min-w-[18ch] max-w-[22ch] items-center justify-center px-4 text-center text-lg font-semibold tracking-[0.24em] text-neutral-700 transition duration-300 hover:text-neutral-900 sm:text-[1.6rem]"
     >
       <span
         className="relative whitespace-pre-line break-words leading-[1.05] uppercase"
