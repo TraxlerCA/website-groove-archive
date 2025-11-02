@@ -4,7 +4,7 @@ import type { ReactNode } from 'react';
 import type { Metadata } from 'next';
 import { PlayerProvider } from '@/context/PlayerProvider';
 import AppShell from '@/components/AppShell';
-import { Space_Grotesk } from 'next/font/google';
+import { Urbanist } from 'next/font/google';
 import { getSheets } from '@/lib/sheets.server';
 import type { Genre, Row } from '@/lib/types';
 import type { SiteData } from '@/context/SiteDataContext';
@@ -45,11 +45,11 @@ export const metadata: Metadata = {
   },
 };
 
-const spaceGrotesk = Space_Grotesk({
+const urbanist = Urbanist({
   subsets: ['latin'],
-  weight: ['400', '600', '700'],
+  weight: ['400', '500', '600', '700'],
   display: 'swap',
-  variable: '--font-space-grotesk',
+  variable: '--font-urbanist',
 });
 
 export default async function RootLayout({ children }: { children: ReactNode }) {
@@ -61,8 +61,8 @@ export default async function RootLayout({ children }: { children: ReactNode }) 
   };
 
   return (
-    <html lang="en">
-      <body className={`${spaceGrotesk.className} min-h-screen bg-neutral-50 text-neutral-800 font-sans relative overflow-x-hidden`}>
+    <html lang="en" className={urbanist.variable}>
+      <body className={`${urbanist.className} min-h-screen bg-neutral-50 text-neutral-800 relative overflow-x-hidden`}>
         {/* light theme variables for any legacy components that still reference them */}
         <style>{`:root{--accent:#000000;--label:#737373;--radius:0.75rem;--sodium:#000000}`}</style>
         <PlayerProvider>

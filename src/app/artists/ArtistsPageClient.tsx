@@ -261,13 +261,15 @@ function TierRail({
       data-debug-rating={rating}
       data-debug-count={debugCount}
     >
-      <header className="flex items-center text-[11px] uppercase tracking-[0.42em] text-slate-500/70">
-        <span className="inline-flex items-center px-2 py-1 font-semibold text-slate-300">{label}</span>
-        <span className="ml-3 text-[10px] font-mono text-slate-500">
+      <header className="flex items-center text-[0.68rem] uppercase tracking-[0.28em] text-slate-500/70">
+        <span className="inline-flex items-center px-2 py-1 font-medium text-slate-200">{label}</span>
+        <span className="ml-3 text-[0.62rem] font-mono uppercase tracking-[0.18em] text-slate-500">
           {debugCount} artist{debugCount === 1 ? '' : 's'}
         </span>
         {prefersReducedMotion ? (
-          <span className="ml-3 text-[10px] font-semibold text-slate-400">reduced motion</span>
+          <span className="ml-3 text-[0.62rem] font-semibold uppercase tracking-[0.18em] text-slate-400">
+            reduced motion
+          </span>
         ) : null}
       </header>
 
@@ -310,10 +312,10 @@ function RailItem({ artist, rating, onSelect }: RailItemProps) {
   return (
     <button
       onClick={() => onSelect(rating, artist.name)}
-      className="group relative inline-flex min-w-[18ch] max-w-[22ch] items-center justify-center px-4 text-center text-lg font-semibold tracking-[0.35em] text-slate-300 transition duration-300 hover:text-white sm:text-[1.55rem]"
+      className="group relative inline-flex min-w-[18ch] max-w-[22ch] items-center justify-center px-4 text-center text-lg font-semibold tracking-[0.24em] text-slate-300 transition duration-300 hover:text-white sm:text-[1.6rem]"
     >
       <span
-        className="relative whitespace-pre-line break-words leading-tight uppercase"
+        className="relative whitespace-pre-line break-words leading-[1.05] uppercase"
         style={{ hyphens: 'auto' }}
       >
         {artist.display}

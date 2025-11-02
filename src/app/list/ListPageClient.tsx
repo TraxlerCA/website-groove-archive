@@ -92,26 +92,26 @@ export default function ListPageClient({ rows, genres }: Props) {
           <div className="sticky top-0 z-10 bg-white/95 backdrop-blur">
             <div className="flex flex-wrap items-center gap-3 px-3 py-2 border-b border-neutral-200">
               <div className="flex w-full items-center gap-2 sm:w-auto">
-                <span className="text-xs font-medium tracking-widest text-neutral-500">Search</span>
+                <span className="text-[0.7rem] font-medium uppercase tracking-[0.2em] text-neutral-500/80">Search</span>
                 <label className="flex h-9 w-full items-center gap-2 rounded-lg border border-neutral-300 bg-white px-2 sm:w-auto">
                   <SearchIcon />
                   <input
                     value={q}
                     onChange={e => setQ(e.target.value)}
-                    className="w-full outline-none text-[16px] sm:w-56 sm:text-sm"
+                    className="w-full bg-transparent text-base font-medium text-neutral-900 outline-none placeholder:text-neutral-400 sm:w-56 sm:text-sm sm:font-normal"
                     placeholder="Type to filter"
                   />
                 </label>
               </div>
 
               <div className="flex items-start gap-3">
-                <span className="mt-0.5 text-xs font-medium tracking-widest text-neutral-500">Genre</span>
+                <span className="mt-0.5 text-[0.7rem] font-medium uppercase tracking-[0.2em] text-neutral-500/80">Genre</span>
                 <div className="flex flex-col">
                   <span className="relative inline-flex items-center h-9 px-3 rounded-lg border border-neutral-300 bg-white">
                     <select
                       value={genre}
                       onChange={e => setGenre(e.target.value)}
-                      className="appearance-none bg-transparent outline-none text-sm pr-5"
+                      className="appearance-none bg-transparent pr-5 text-sm font-medium text-neutral-900 outline-none"
                     >
                       {genreOptions.map(g => (
                         <option key={g} value={g}>
@@ -131,7 +131,7 @@ export default function ListPageClient({ rows, genres }: Props) {
                   ref={suggestBtnRef}
                   type="button"
                   onClick={() => setSuggestOpen(true)}
-                  className="inline-flex items-center gap-2 rounded-md bg-neutral-900 px-4 h-9 text-white hover:bg-neutral-800 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-black/40"
+                  className="inline-flex h-9 items-center gap-2 rounded-md bg-neutral-900 px-4 text-xs font-semibold uppercase tracking-[0.22em] text-white hover:bg-neutral-800 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-black/40"
                   aria-label="Open the suggest a set modal"
                   whileHover={{ y: -1, scale: 1.01 }}
                   whileTap={{ y: 0, scale: 0.99 }}
@@ -145,11 +145,11 @@ export default function ListPageClient({ rows, genres }: Props) {
             </div>
 
             <div
-              className={`${ROW_COLS} text-xs font-medium text-neutral-500 px-4 py-1.5 border-b border-neutral-200 hidden sm:grid`}
+              className={`${ROW_COLS} hidden border-b border-neutral-200 px-4 py-1.5 text-[0.7rem] font-medium uppercase tracking-[0.22em] text-neutral-500 sm:grid`}
             >
-              <div className="uppercase tracking-widest">title</div>
-              <div className="uppercase tracking-widest text-center">genre</div>
-              <div className="uppercase tracking-widest text-center">links</div>
+              <div>title</div>
+              <div className="text-center">genre</div>
+              <div className="text-center">links</div>
             </div>
           </div>
 
@@ -174,7 +174,7 @@ export default function ListPageClient({ rows, genres }: Props) {
                     <div className="py-2 min-w-0">
                       <a
                         href={primaryLink || "#"}
-                        className="block truncate group-hover:underline focus:underline"
+                        className="block truncate text-[0.98rem] font-medium text-neutral-900 transition-colors group-hover:text-neutral-700 group-hover:underline focus:text-neutral-700 focus:underline"
                         title={r?.set}
                         aria-disabled={disabledLink || undefined}
                         tabIndex={disabledLink ? -1 : undefined}
@@ -225,7 +225,7 @@ export default function ListPageClient({ rows, genres }: Props) {
                   <article className="sm:hidden border-b border-neutral-200 px-3 pt-3 pb-4">
                     <div className="flex items-start gap-3">
                       <div className="min-w-0 flex-1">
-                        <div className="font-medium leading-snug line-clamp-2">{r?.set}</div>
+                        <div className="font-semibold leading-snug line-clamp-2 text-neutral-900">{r?.set}</div>
                         {(() => {
                           const label = (r?.classification || "").trim();
                           if (!label) return <div className="mt-1 h-6" />;
