@@ -156,6 +156,8 @@ export default function ListPageClient({ rows, genres }: Props) {
           <div style={{ height: rowVirtualizer.getTotalSize(), position: "relative" }}>
             {rowVirtualizer.getVirtualItems().map(vi => {
               const r = filtered[vi.index];
+              const primaryLink = r?.youtube ?? r?.soundcloud ?? null;
+              const disabledLink = !primaryLink;
 
               return (
                 <div
@@ -170,7 +172,13 @@ export default function ListPageClient({ rows, genres }: Props) {
                     className={`${ROW_COLS} px-4 py-3 odd:bg-white hover:bg-black/5 transition hidden sm:grid rounded-md group focus-within:ring-2 focus-within:ring-black/10`}
                   >
                     <div className="py-2 min-w-0">
-                      <a href={r?.youtube || r?.soundcloud || "#"} className="block truncate group-hover:underline focus:underline" title={r?.set}>
+                      <a
+                        href={primaryLink || "#"}
+                        className="block truncate group-hover:underline focus:underline"
+                        title={r?.set}
+                        aria-disabled={disabledLink || undefined}
+                        tabIndex={disabledLink ? -1 : undefined}
+                      >
                         {r?.set}
                       </a>
                     </div>

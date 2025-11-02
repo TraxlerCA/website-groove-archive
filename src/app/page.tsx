@@ -16,7 +16,7 @@ async function fetchHomeData(): Promise<{ rows: Row[]; genres: Genre[] }> {
   const json = await res.json();
   const rows = (json?.data?.list || []) as Row[];
   const genres = (json?.data?.genres || []) as Genre[];
-  const pool = rows.filter(r => r.soundcloud && r.soundcloud.includes('soundcloud.com'));
+  const pool = rows.filter(r => Boolean(r.soundcloud));
   return { rows: pool, genres };
 }
 

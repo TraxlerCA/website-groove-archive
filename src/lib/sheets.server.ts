@@ -1,6 +1,7 @@
 import 'server-only';
 import { cache } from 'react';
 import type { Artist, Genre, Row } from '@/lib/types';
+import { sanitizeMediaUrl } from '@/lib/sanitize';
 
 export type SheetsData = { list?: Row[]; genres?: Genre[]; artists?: Artist[] } & Record<string, unknown>;
 export type SheetsPayload = { ok: true; updatedAt: string; data: SheetsData };
@@ -182,8 +183,8 @@ function map_list(headers: string[], body: string[][]): Row[] {
     const set = pick(cells, iSet);
     if (!set) continue;
     const classification = pick(cells, iGen) || null;
-    const soundcloud = pick(cells, iSc) || null;
-    const youtube = pick(cells, iYt) || null;
+    const soundcloud = sanitizeMediaUrl(pick(cells, iSc)) || null;
+    const youtube = sanitizeMediaUrl(pick(cells, iYt)) || null;
     const tier = pick(cells, iTier) || null;
     out.push({ set, classification, soundcloud, youtube, tier });
   }

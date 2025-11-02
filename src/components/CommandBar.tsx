@@ -28,7 +28,22 @@ export default function CommandBar({ rows, onNavigate }: { rows: Row[]; onNaviga
     {label:"Heatmaps",action:()=>onNavigate("heatmaps")},
     {label:"Suggest a set",action:()=>onNavigate("suggest")},
   ],[onNavigate]);
-  const onKeyDown=(e:React.KeyboardEvent)=>{if(e.key==="ArrowDown"){setSel(i=>Math.min(i+1,filtered.length-1));e.preventDefault();} if(e.key==="ArrowUp"){setSel(i=>Math.max(i-1,0));e.preventDefault();} if(e.key==="Enter"){const row=filtered[sel]; if(!row) return; if(e.metaKey||e.ctrlKey){const t=row.youtube||row.soundcloud||"#"; window.open(t,"_blank","noopener,noreferrer");} else {play(row); setOpen(false);}}};
+  const onKeyDown=(e:React.KeyboardEvent)=>{
+    if(e.key==="ArrowDown"){setSel(i=>Math.min(i+1,filtered.length-1));e.preventDefault();}
+    if(e.key==="ArrowUp"){setSel(i=>Math.max(i-1,0));e.preventDefault();}
+    if(e.key==="Enter"){
+      const row=filtered[sel];
+      if(!row) return;
+      const dest=row.youtube ?? row.soundcloud ?? null;
+      if(e.metaKey||e.ctrlKey){
+        if(dest) window.open(dest,"_blank","noopener,noreferrer");
+        return;
+      }
+      if(!dest) return;
+      play(row);
+      setOpen(false);
+    }
+  };
   return (
     <>
       <AnimatePresence>
@@ -86,12 +101,35 @@ export default function CommandBar({ rows, onNavigate }: { rows: Row[]; onNaviga
                         <div className="text-xs opacity-70 capitalize truncate">{(r.classification || "").toLowerCase() || "unknown"}</div>
                       </div>
                       <div className="flex items-center gap-2 shrink-0">
-                        <button className="btn-secondary hover-lift" onClick={() => enqueue(r)}>queue</button>
-                        <button className="btn-secondary hover-lift" onClick={() => copyToClipboard(r.youtube || r.soundcloud || "")}>copy</button>
-                        <button className="btn-secondary hover-lift" onClick={() => {
-                          const t = r.youtube || r.soundcloud || "#";
-                          window.open(t, "_blank", "noopener,noreferrer");
-                        }}>open</button>
+                        {(() => {
+                          const primary = r.youtube ?? r.soundcloud ?? null;
+                          const hasLink = !!primary;
+                          return (
+                            <>
+                              <button
+                                className="btn-secondary hover-lift disabled:pointer-events-none disabled:opacity-40"
+                                onClick={() => { if (hasLink) enqueue(r); }}
+                                disabled={!hasLink}
+                              >
+                                queue
+                              </button>
+                              <button
+                                className="btn-secondary hover-lift disabled:pointer-events-none disabled:opacity-40"
+                                onClick={() => { if (primary) copyToClipboard(primary); }}
+                                disabled={!hasLink}
+                              >
+                                copy
+                              </button>
+                              <button
+                                className="btn-secondary hover-lift disabled:pointer-events-none disabled:opacity-40"
+                                onClick={() => { if (primary) window.open(primary, "_blank", "noopener,noreferrer"); }}
+                                disabled={!hasLink}
+                              >
+                                open
+                              </button>
+                            </>
+                          );
+                        })()}
                       </div>
                     </div>
                   </div>

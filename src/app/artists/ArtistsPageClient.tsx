@@ -46,15 +46,15 @@ export default function ArtistsPageClient({ artistsByRating }: ArtistsPageClient
     const counts = Object.fromEntries(
       ORDER.map(rating => [rating, artistsByRating[rating]?.length ?? 0])
     );
-    // eslint-disable-next-line no-console
-    console.debug('[ArtistsPage] artist counts by rating', counts, {
-      prefersReducedMotion,
-      debugExpanded,
-    });
-    for (const rating of ORDER) {
-      const names = (artistsByRating[rating] || []).slice(0, 10).map(a => a.name);
-      // eslint-disable-next-line no-console
-      console.debug(`[ArtistsPage] sample (${rating})`, names);
+    if (process.env.NODE_ENV !== 'production') {
+      console.debug('[ArtistsPage] artist counts by rating', counts, {
+        prefersReducedMotion,
+        debugExpanded,
+      });
+      for (const rating of ORDER) {
+        const names = (artistsByRating[rating] || []).slice(0, 10).map(a => a.name);
+        console.debug(`[ArtistsPage] sample (${rating})`, names);
+      }
     }
   }, [artistsByRating, prefersReducedMotion, debugExpanded]);
 
@@ -158,8 +158,8 @@ function TierRail({
   prefersReducedMotion,
   onSelect,
 }: TierRailProps) {
-  const marqueeRef = React.useRef<HTMLDivElement | null>(null);
-  const trackRef = React.useRef<HTMLDivElement | null>(null);
+  const marqueeRef = React.useRef<HTMLDivElement>(null);
+  const trackRef = React.useRef<HTMLDivElement>(null);
   const [{ marqueeWidth, trackWidth }, setDimensions] = React.useState<{ marqueeWidth: number; trackWidth: number }>({
     marqueeWidth: 0,
     trackWidth: 0,
@@ -246,6 +246,15 @@ function TierRail({
 
   const displayEntries = shouldAnimate ? marquee : entries;
 
+  const marqueeStyle = React.useMemo<MarqueeStyle>(() => {
+    const base: MarqueeStyle = {
+      animationDuration: shouldAnimate ? duration : undefined,
+      animationName: shouldAnimate ? 'marquee-right' : undefined,
+    };
+    if (shouldAnimate) base['--loop-distance'] = loopDistance;
+    return base;
+  }, [shouldAnimate, duration, loopDistance]);
+
   return (
     <div
       className="relative flex flex-col gap-3"
@@ -266,11 +275,7 @@ function TierRail({
         <div
           ref={marqueeRef}
           className="rail-marquee flex w-max flex-nowrap items-center gap-12 will-change-transform"
-          style={{
-            animationDuration: shouldAnimate ? duration : undefined,
-            animationName: shouldAnimate ? 'marquee-right' : undefined,
-            ['--loop-distance' as const]: shouldAnimate ? loopDistance : undefined,
-          }}
+          style={marqueeStyle}
         >
           {displayEntries.map((artist, i) => (
             <RailItem key={`${rating}-${artist.display}-${i}`} artist={artist} rating={rating} onSelect={onSelect} />
@@ -353,9 +358,10 @@ function formatDisplayName(name: string) {
 }
 
 type ResizeSize = { width: number; height: number };
+type MarqueeStyle = React.CSSProperties & { ['--loop-distance']?: string };
 
-function useResizeObserver<T extends Element>(
-  ref: React.RefObject<T>,
+function useResizeObserver(
+  ref: React.MutableRefObject<Element | null>,
   onResize: (size: ResizeSize) => void
 ) {
   React.useEffect(() => {
@@ -379,8 +385,10 @@ function useResizeObserver<T extends Element>(
       if (!entry) return;
       cancelAnimationFrame(frame);
       frame = requestAnimationFrame(() => {
-        const box = entry.contentBoxSize?.[0] ?? entry.contentRect;
-        onResize({ width: box.width, height: box.height });
+        const primary = Array.isArray(entry.contentBoxSize) ? entry.contentBoxSize[0] : entry.contentBoxSize;
+        const width = primary?.inlineSize ?? entry.contentRect.width;
+        const height = primary?.blockSize ?? entry.contentRect.height;
+        onResize({ width, height });
       });
     });
 
