@@ -9,3 +9,7 @@ export type Row = {
 
 export type Genre = { label: string; explanation: string };
 export type Provider = "youtube" | "soundcloud";
+export type Artist = {
+  name: string;
+  rating: 'blazing' | 'hot' | 'ok';
+};

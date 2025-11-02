@@ -43,6 +43,7 @@ export function WordmarkHeader() {
   const navLinks = [
     { href: '/', label: 'Home' },
     { href: '/list', label: 'List' },
+    { href: '/artists', label: 'Artists' },
     { href: '/heatmaps', label: 'Heatmaps' },
   ];
 
@@ -52,13 +53,12 @@ export function WordmarkHeader() {
         <div className="container mx-auto flex max-w-6xl items-center justify-center px-6 pt-6 pb-5 sm:pt-7 sm:pb-5">
           <Link
             href="/"
-            className="cursor-pointer select-none text-[19px] font-semibold uppercase tracking-[0.28em] text-neutral-900 transition-colors hover:text-neutral-600 sm:text-[21px]"
+            className="cursor-pointer select-none text-[20px] font-semibold uppercase tracking-[0.22em] text-neutral-900 transition-colors hover:text-neutral-600 sm:text-[22px]"
             aria-label="Go to home"
           >
             The Groove Archive
           </Link>
         </div>
-        <div className="pointer-events-none mx-auto mb-2 h-[1.5px] w-[min(320px,72vw)] rounded-full bg-[linear-gradient(90deg,var(--accent)_0%,rgba(0,0,0,0.18)_55%,transparent_100%)] opacity-80" />
       </div>
 
       <div
@@ -80,7 +80,7 @@ export function WordmarkHeader() {
                   key={link.href}
                   href={link.href}
                   aria-current={isActive ? 'page' : undefined}
-                  className={`group relative px-1.5 py-1 -mx-1.5 rounded-md transition text-sm hover:text-neutral-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-black/15 ${
+                  className={`group relative px-1.5 py-1 -mx-1.5 rounded-md transition text-[0.75rem] tracking-[0.16em] hover:text-neutral-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-black/15 sm:text-[0.85rem] ${
                     isActive ? 'text-neutral-900' : 'text-neutral-600'
                   }`}
                 >
@@ -97,7 +97,7 @@ export function WordmarkHeader() {
             })}
             <Link
               href="/suggest"
-              className="inline-flex items-center rounded-full border border-neutral-200 bg-white/70 px-3 py-1 text-xs font-semibold text-neutral-700 shadow-sm shadow-black/10 transition hover:-translate-y-0.5 hover:bg-white hover:text-neutral-900 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-black/15 sm:hidden"
+              className="inline-flex items-center rounded-full border border-neutral-200 bg-white/70 px-3 py-1 text-[0.7rem] font-medium uppercase tracking-[0.24em] text-neutral-700 shadow-sm shadow-black/10 transition hover:-translate-y-0.5 hover:bg-white hover:text-neutral-900 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-black/15 sm:hidden"
             >
               Suggest
             </Link>
@@ -106,7 +106,7 @@ export function WordmarkHeader() {
           <div className="hidden w-full sm:ml-auto sm:block sm:w-auto">
             <Link
               href="/suggest"
-              className="inline-flex w-full items-center justify-center rounded-full border border-neutral-200 bg-white/80 px-4 py-2 text-sm font-semibold text-neutral-900 shadow-sm shadow-black/10 transition hover:-translate-y-0.5 hover:bg-white focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-black/15"
+              className="inline-flex w-full items-center justify-center rounded-full border border-neutral-200 bg-white/80 px-4 py-2 text-[0.8rem] font-medium uppercase tracking-[0.22em] text-neutral-900 shadow-sm shadow-black/10 transition hover:-translate-y-0.5 hover:bg-white focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-black/15"
             >
               Suggest
             </Link>

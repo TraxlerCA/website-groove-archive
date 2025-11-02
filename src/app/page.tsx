@@ -16,7 +16,7 @@ async function fetchHomeData(): Promise<{ rows: Row[]; genres: Genre[] }> {
   const json = await res.json();
   const rows = (json?.data?.list || []) as Row[];
   const genres = (json?.data?.genres || []) as Genre[];
-  const pool = rows.filter(r => r.soundcloud && r.soundcloud.includes('soundcloud.com'));
+  const pool = rows.filter(r => Boolean(r.soundcloud));
   return { rows: pool, genres };
 }
 
@@ -106,20 +106,20 @@ export default function Home() {
         />
         <div className="relative grid grid-cols-1 items-start gap-12 lg:grid-cols-[minmax(0,1fr)_minmax(0,420px)] lg:items-center">
           <div className="space-y-6">
-            <p className="inline-flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.32em] text-neutral-500">
+            <p className="inline-flex items-center gap-2 text-[0.75rem] font-medium uppercase tracking-[0.22em] text-neutral-500/80">
               Sets collected since 2019
               <span className="h-px w-12 bg-neutral-300" />
             </p>
-            <h1 className="text-4xl font-semibold leading-tight text-neutral-900 sm:text-5xl">
+            <h1 className="text-4xl font-semibold tracking-[-0.01em] text-neutral-900 sm:text-5xl sm:leading-[1.1] lg:text-[3.75rem] lg:leading-[1.05]">
               Found. Saved. Shared. Played on repeat.
             </h1>
-            <p className="max-w-xl text-base text-neutral-600 sm:text-lg">
+            <p className="max-w-xl text-base leading-relaxed text-neutral-600 sm:text-lg sm:leading-[1.7]">
               This is where the best sets come to live. The ones you stumble upon at 3am and can&rsquo;t stop thinking about. The mixes that soundtracked your best nights and your quietest mornings.
             </p>
             <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
               <a
                 href="/list"
-                className="inline-flex items-center justify-center rounded-full bg-neutral-900 px-6 py-3 text-sm font-semibold text-white shadow-lg shadow-neutral-900/15 transition hover:-translate-y-0.5 hover:bg-neutral-800 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-neutral-900/20"
+                className="inline-flex items-center justify-center rounded-full bg-neutral-900 px-6 py-3 text-sm font-bold text-white shadow-lg shadow-neutral-900/15 transition hover:-translate-y-0.5 hover:bg-neutral-800 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-neutral-900/20"
               >
                 Browse the list
               </a>
@@ -128,7 +128,7 @@ export default function Home() {
 
           <aside className="relative isolate rounded-3xl border border-white/40 bg-white/75 p-6 shadow-[0_20px_50px_rgba(15,23,42,0.16)] backdrop-blur">
             <div className="flex flex-col gap-5">
-              <span className="inline-flex w-fit items-center gap-2 rounded-full bg-gradient-to-r from-[#22d3ee] via-[#38bdf8] to-[#6366f1] px-3 py-1 text-xs font-semibold uppercase tracking-[0.28em] text-white shadow-sm shadow-cyan-500/30">
+              <span className="inline-flex w-fit items-center gap-2 rounded-full bg-gradient-to-r from-[#22d3ee] via-[#38bdf8] to-[#6366f1] px-3 py-1 text-xs font-semibold uppercase tracking-[0.22em] text-white shadow-sm shadow-cyan-500/30">
                 Now spinning
               </span>
 
@@ -140,7 +140,7 @@ export default function Home() {
                   id="hero-genre"
                   value={selectedGenre}
                   onChange={event => setSelectedGenre(event.target.value)}
-                  className="w-full rounded-full border border-neutral-900 bg-neutral-900 px-4 py-2 text-sm font-semibold text-white shadow-lg shadow-neutral-900/20 transition focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-neutral-900/30 sm:w-auto sm:min-w-[170px]"
+                  className="w-full rounded-full border border-neutral-900 bg-neutral-900 px-4 py-2 text-sm font-medium text-white shadow-lg shadow-neutral-900/20 transition focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-neutral-900/30 sm:w-auto sm:min-w-[170px]"
                 >
                   <option value="">Any genre</option>
                   {genres.map(genre => (
@@ -153,7 +153,7 @@ export default function Home() {
                   type="button"
                   disabled={serveDisabled}
                   onClick={handleServeClick}
-                  className="inline-flex items-center justify-center rounded-full bg-neutral-900 px-5 py-2.5 text-sm font-semibold text-white shadow-lg shadow-neutral-900/20 transition hover:-translate-y-0.5 hover:bg-neutral-800 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-neutral-900/25 disabled:cursor-not-allowed disabled:opacity-50"
+                  className="inline-flex items-center justify-center rounded-full bg-neutral-900 px-5 py-2.5 text-sm font-bold text-white shadow-lg shadow-neutral-900/20 transition hover:-translate-y-0.5 hover:bg-neutral-800 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-neutral-900/25 disabled:cursor-not-allowed disabled:opacity-50"
                 >
                   Serve a set
                 </button>
