@@ -28,7 +28,7 @@ export const getArtists = cache(async (): Promise<Artist[]> => {
     return [];
   }
 
-  return (data || []).map((a: any) => ({
+  return (data || []).map((a: { artist: string; rating: Artist['rating'] }) => ({
     name: a.artist,
     rating: a.rating,
   })) as unknown as Artist[];
@@ -50,13 +50,25 @@ export const getListRows = cache(async (): Promise<Row[]> => {
     return [];
   }
 
-  return (data || []).map((item: any) => ({
-    set: item.title,
-    classification: item.genres?.label ?? null,
-    soundcloud: item.soundcloud_url,
-    youtube: item.youtube_url,
-    tier: item.rating,
-  }));
+  // Define a type for the raw Supabase response
+  type SetRow = {
+    title: string;
+    rating: string;
+    soundcloud_url: string | null;
+    youtube_url: string | null;
+    genres: { label: string } | null;
+  };
+
+  return (data || []).map((item: unknown) => {
+    const row = item as SetRow;
+    return {
+      set: row.title,
+      classification: row.genres?.label ?? null,
+      soundcloud: row.soundcloud_url,
+      youtube: row.youtube_url,
+      tier: row.rating,
+    };
+  });
 });
 
 // New function for heatmaps
