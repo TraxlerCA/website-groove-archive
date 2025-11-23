@@ -1,309 +1,102 @@
 import 'server-only';
 import { cache } from 'react';
+import { supabase } from '@/lib/supabase';
 import type { Artist, Genre, Row } from '@/lib/types';
-import { sanitizeMediaUrl } from '@/lib/sanitize';
+
+// Re-export types for compatibility
+export type { Artist, Genre, Row };
+
+export const getGenres = cache(async (): Promise<Genre[]> => {
+  const { data, error } = await supabase
+    .from('genres')
+    .select('label, explanation');
+
+  if (error) {
+    console.error('Error fetching genres:', error);
+    return [];
+  }
+  return data || [];
+});
+
+export const getArtists = cache(async (): Promise<Artist[]> => {
+  const { data, error } = await supabase
+    .from('artists')
+    .select('artist, rating');
+
+  if (error) {
+    console.error('Error fetching artists:', JSON.stringify(error, null, 2));
+    return [];
+  }
+
+  return (data || []).map((a: any) => ({
+    name: a.artist,
+    rating: a.rating,
+  })) as unknown as Artist[];
+});
+
+export const getListRows = cache(async (): Promise<Row[]> => {
+  const { data, error } = await supabase
+    .from('sets')
+    .select(`
+      title,
+      rating,
+      soundcloud_url,
+      youtube_url,
+      genres ( label )
+    `);
+
+  if (error) {
+    console.error('Error fetching sets:', error);
+    return [];
+  }
+
+  return (data || []).map((item: any) => ({
+    set: item.title,
+    classification: item.genres?.label ?? null,
+    soundcloud: item.soundcloud_url,
+    youtube: item.youtube_url,
+    tier: item.rating,
+  }));
+});
+
+// New function for heatmaps
+export const getFestivalSets = cache(async () => {
+  const { data, error } = await supabase
+    .from('festival_sets')
+    .select('*')
+    .order('date', { ascending: false });
+
+  if (error) {
+    console.error('Error fetching festival sets:', error);
+    return [];
+  }
+  return data || [];
+});
+
+// Deprecated/Compatibility exports
+// Some components might still call getSheets(['list']) etc.
+// We'll map them to the new functions.
 
 export type SheetsData = { list?: Row[]; genres?: Genre[]; artists?: Artist[] } & Record<string, unknown>;
 export type SheetsPayload = { ok: true; updatedAt: string; data: SheetsData };
 
-const TABS = [
-  {
-    key: 'list',
-    url: 'https://docs.google.com/spreadsheets/d/e/2PACX-1vRexqa-1vfj-JdFSSFUjWycho-00d5rLdS76eBgvCbruyvtcVIIom-VM52SvfuhLg-CeHLRp2I6k5B2/pub?gid=950522831&single=true&output=csv',
-    map: 'list' as const,
-  },
-  {
-    key: 'genres',
-    url: 'https://docs.google.com/spreadsheets/d/e/2PACX-1vRexqa-1vfj-JdFSSFUjWycho-00d5rLdS76eBgvCbruyvtcVIIom-VM52SvfuhLg-CeHLRp2I6k5B2/pub?gid=1479050239&single=true&output=csv',
-    map: 'genres' as const,
-  },
-  {
-    key: 'artists',
-    url: 'https://docs.google.com/spreadsheets/d/e/2PACX-1vRexqa-1vfj-JdFSSFUjWycho-00d5rLdS76eBgvCbruyvtcVIIom-VM52SvfuhLg-CeHLRp2I6k5B2/pub?gid=211605494&single=true&output=csv',
-    map: 'artists' as const,
-  },
-];
+export const getSheets = cache(async (tabs?: string[]): Promise<SheetsPayload> => {
+  const wanted = tabs && tabs.length ? tabs : ['list', 'genres', 'artists'];
+  const data: SheetsData = {};
 
-/** Trim, lowercase, and strip BOM if present. */
-const norm = (s: string) => (s || '').replace(/^\uFEFF/, '').trim();
-const lower = (s: string) => norm(s).toLowerCase();
-/** Aggressive header normalization: lowercase, remove BOM, collapse non-alphanumerics */
-const normHeader = (s: string) => lower(s).replace(/[^a-z0-9]+/g, ' ').trim();
-
-/** Find a header index by any of the provided normalized names. */
-const idx = (hdrs: string[], names: string[]) => {
-  const H = hdrs.map(normHeader);
-  const targets = names.map(normHeader);
-  for (const n of targets) {
-    const i = H.indexOf(n);
-    if (i >= 0) return i;
+  if (wanted.includes('list')) {
+    data.list = await getListRows();
   }
-  return -1;
-};
-const pick = (cells: string[], i: number) => (i >= 0 ? norm(cells[i] || '') : '');
-
-/** Detect delimiter by scanning the first non-empty logical line, ignoring quoted text. */
-function sniffDelimiter(t: string): ',' | ';' | '\t' {
-  let i = 0;
-  while (i < t.length && (t[i] === '\n' || t[i] === '\r')) i++;
-  // Look at the first 2 non-empty lines to be safer
-  const lines: string[] = [];
-  let line = '';
-  let q = false;
-  for (; i < t.length; i++) {
-    const ch = t[i];
-    if (q) {
-      if (ch === '"' && t[i + 1] === '"') {
-        i++;
-        line += '"';
-      } else if (ch === '"') q = false;
-      else line += ch;
-    } else {
-      if (ch === '"') q = true;
-      else if (ch === '\n' || ch === '\r') {
-        if (line.trim()) lines.push(line);
-        line = '';
-        if (lines.length >= 2) break;
-      } else {
-        line += ch;
-      }
-    }
+  if (wanted.includes('genres')) {
+    data.genres = await getGenres();
   }
-  if (line.trim() && lines.length < 2) lines.push(line);
-
-  const targets: Array<',' | ';' | '\t'> = [',', ';', '\t'];
-  const score = (s: string, d: string) => {
-    // count delimiters not inside quotes (we already removed quoted context)
-    return (s.match(new RegExp(`\\${d}`, 'g')) || []).length;
-  };
-
-  // Pick the delimiter with the highest consistent count across sampled lines
-  let best: ',' | ';' | '\t' = ',';
-  let bestSum = -1;
-  for (const d of targets) {
-    const total = lines.reduce((acc, ln) => acc + score(ln, d), 0);
-    if (total > bestSum) {
-      bestSum = total;
-      best = d;
-    }
-  }
-  return best;
-}
-
-/** CSV/TSV parser with auto delimiter, double-quote escaping, CRLF handling, and BOM removal. */
-function parseCSV(t: string) {
-  if (!t) return [] as string[][];
-  // strip BOM if present
-  if (t.charCodeAt(0) === 0xfeff) t = t.slice(1);
-
-  const delim = sniffDelimiter(t);
-  const out: string[][] = [];
-  let row: string[] = [];
-  let cell = '';
-  let q = false;
-
-  for (let i = 0; i < t.length; i++) {
-    const ch = t[i];
-    const nx = t[i + 1];
-
-    if (q) {
-      if (ch === '"' && nx === '"') {
-        cell += '"';
-        i++;
-      } else if (ch === '"') {
-        q = false;
-      } else {
-        cell += ch;
-      }
-      continue;
-    }
-
-    if (ch === '"') {
-      q = true;
-      continue;
-    }
-    if (ch === delim) {
-      row.push(cell);
-      cell = '';
-      continue;
-    }
-    if (ch === '\n') {
-      row.push(cell);
-      out.push(row);
-      row = [];
-      cell = '';
-      continue;
-    }
-    if (ch === '\r') {
-      continue;
-    }
-
-    cell += ch;
-  }
-  if (cell.length || row.length) {
-    row.push(cell);
-    out.push(row);
+  if (wanted.includes('artists')) {
+    data.artists = await getArtists();
   }
 
-  // drop fully empty rows
-  return out.filter(r => r.some(x => norm(x).length));
-}
-
-// fetch one tab
-async function fetchTab(url: string) {
-  const res = await fetch(url, {
-    redirect: 'follow',
-    cache: 'no-store',
-    headers: { accept: 'text/csv,*/*' },
-  });
-  if (!res.ok) throw new Error(`fetch failed ${res.status}`);
-  let text = await res.text();
-  // defensive BOM strip (again)
-  if (text.charCodeAt(0) === 0xfeff) text = text.slice(1);
-
-  const mat = parseCSV(text);
-  if (!mat.length) return { headers: [] as string[], rows: [] as string[][] };
-
-  // first non-empty row is the header
-  const headers = mat[0].map(s => norm(s));
-  const body = mat.slice(1);
-  return { headers, rows: body };
-}
-
-// map "list" to your current Row shape so UI does not change
-function map_list(headers: string[], body: string[][]): Row[] {
-  const iSet = idx(headers, ['set', 'dj set', 'mix', 'title', 'titel', 'naam']);
-  const iGen = idx(headers, ['classification', 'genre', 'label', 'stijl', 'genre label']);
-  const iSc = idx(headers, ['soundcloud', 'sc', 'soundcloud url', 'soundcloud link', 'soundcloud_link']);
-  const iYt = idx(headers, ['youtube', 'yt', 'youtube url', 'youtube link', 'youtube_link']);
-  const iTier = idx(headers, ['tier', 'rating', 'rank', 'grade', 's', 'score']);
-
-  const out: Row[] = [];
-  for (const cells of body) {
-    const set = pick(cells, iSet);
-    if (!set) continue;
-    const classification = pick(cells, iGen) || null;
-    const soundcloud = sanitizeMediaUrl(pick(cells, iSc)) || null;
-    const youtube = sanitizeMediaUrl(pick(cells, iYt)) || null;
-    const tier = pick(cells, iTier) || null;
-    out.push({ set, classification, soundcloud, youtube, tier });
-  }
-  return out;
-}
-
-// map "genres" dim table to { label, explanation }
-function map_genres(headers: string[], body: string[][]): Genre[] {
-  const iLbl = idx(headers, ['label', 'genre', 'classification', 'naam', 'code']);
-  const iExp = idx(headers, [
-    'explanation',
-    'description',
-    'beschrijving',
-    'omschrijving',
-    'uitleg',
-    'notes',
-    'note',
-  ]);
-  return body
-    .map(cells => ({
-      label: pick(cells, iLbl),
-      explanation: pick(cells, iExp),
-    }))
-    .filter(r => r.label);
-}
-
-// generic object map if you ever add more dims
-function map_raw(headers: string[], body: string[][]) {
-  const keys = headers.map(norm);
-  return body.map(cells => Object.fromEntries(keys.map((k, i) => [k, norm(cells[i] || '')])));
-}
-
-function map_artists(headers: string[], body: string[][]): Artist[] {
-  const iName = idx(headers, ['artist', 'name', 'dj']);
-  const iTier = idx(headers, ['rating', 'tier', 'grade', 'classification']);
-
-  const toRating = (value: string): Artist['rating'] | null => {
-    const normalized = lower(value);
-    if (normalized === 'blazing') return 'blazing';
-    if (normalized === 'hot') return 'hot';
-    if (normalized === 'ok') return 'ok';
-    return null;
-  };
-
-  const out: Artist[] = [];
-  for (const cells of body) {
-    const name = pick(cells, iName);
-    const rating = toRating(pick(cells, iTier));
-    if (!name || !rating) continue;
-    out.push({ name, rating });
-  }
-  return out;
-}
-
-type CacheVal = { ts: number; payload: SheetsPayload };
-const TTL = 5 * 60 * 1000;
-
-declare global {
-  var __sheetCache: Map<string, CacheVal> | undefined;
-}
-globalThis.__sheetCache = globalThis.__sheetCache ?? new Map<string, CacheVal>();
-
-const getCache = (k: string) => {
-  const v = globalThis.__sheetCache!.get(k);
-  return v && Date.now() - v.ts < TTL ? v.payload : null;
-};
-const setCache = (k: string, payload: SheetsPayload) => globalThis.__sheetCache!.set(k, { ts: Date.now(), payload });
-
-const normalizeTabs = (tabs?: string[]) =>
-  (tabs && tabs.length ? tabs.map(s => s.trim()).filter(Boolean).sort() : null) ?? null;
-
-async function loadSheets(tabs?: string[] | null): Promise<SheetsPayload> {
-  const only = tabs ?? [];
-  const wanted = only.length ? TABS.filter(t => only.includes(t.key)) : TABS;
-
-  const cacheKey = `tabs:${wanted.map(t => t.key).sort().join(',')}`;
-  const cached = getCache(cacheKey);
-  if (cached) return cached;
-
-  const entries = await Promise.all(
-    wanted.map(async t => {
-      const { headers, rows } = await fetchTab(t.url);
-      let data: Row[] | Genre[] | Artist[] | Record<string, string>[];
-      if (t.map === 'list') data = map_list(headers, rows);
-      else if (t.map === 'genres') data = map_genres(headers, rows);
-      else if (t.map === 'artists') data = map_artists(headers, rows);
-      else data = map_raw(headers, rows);
-      return [t.key, data] as const;
-    }),
-  );
-
-  const payload: SheetsPayload = {
+  return {
     ok: true,
     updatedAt: new Date().toISOString(),
-    data: Object.fromEntries(entries) as SheetsData,
+    data,
   };
-
-  setCache(cacheKey, payload);
-  return payload;
-}
-
-const getSheetsCached = cache((key: string) => loadSheets(key === '__all__' ? null : key.split(',')));
-
-export const getSheets = (tabs?: string[]) => {
-  const key = normalizeTabs(tabs);
-  return getSheetsCached(key?.join(',') ?? '__all__');
-};
-
-export const getListRows = cache(async () => {
-  const payload = await getSheets(['list']);
-  return payload.data.list ?? [];
-});
-
-export const getGenres = cache(async () => {
-  const payload = await getSheets(['genres']);
-  return payload.data.genres ?? [];
-});
-
-export const getArtists = cache(async () => {
-  const payload = await getSheets(['artists']);
-  return payload.data.artists ?? [];
 });

@@ -26,11 +26,11 @@ export default async function ArtistsPage() {
     if (grouped[artist.rating]) grouped[artist.rating].push(artist);
   }
 
-  const shuffled = {
-    blazing: shuffle(grouped.blazing),
-    hot: shuffle(grouped.hot),
-    ok: shuffle(grouped.ok),
+  const sorted = {
+    blazing: grouped.blazing.sort((a, b) => a.name.localeCompare(b.name)),
+    hot: grouped.hot.sort((a, b) => a.name.localeCompare(b.name)),
+    ok: grouped.ok.sort((a, b) => a.name.localeCompare(b.name)),
   } as Record<Artist['rating'], Artist[]>;
 
-  return <ArtistsPageClient artistsByRating={shuffled} />;
+  return <ArtistsPageClient artistsByRating={sorted} />;
 }
