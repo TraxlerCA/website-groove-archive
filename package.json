@@ -10,14 +10,15 @@
   },
   "dependencies": {
     "@floating-ui/react": "^0.26.17",
+    "@supabase/supabase-js": "^2.84.0",
     "@tanstack/react-virtual": "^3.13.12",
     "framer-motion": "^12.23.12",
     "html-to-image": "^1.11.13",
     "next": "15.4.6",
     "papaparse": "^5.5.3",
-    "xlsx": "^0.18.5",
     "react": "19.1.0",
-    "react-dom": "19.1.0"
+    "react-dom": "19.1.0",
+    "xlsx": "^0.18.5"
   },
   "devDependencies": {
     "@eslint/eslintrc": "^3",
