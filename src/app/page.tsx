@@ -37,8 +37,8 @@ export default function Home() {
   const [featured, setFeatured] = React.useState<Row | null>(null);
   const [loadingFeatured, setLoadingFeatured] = React.useState(true);
   const heroSectionRef = React.useRef<HTMLElement | null>(null);
-  const serveButtonRef = React.useRef<HTMLButtonElement | null>(null);
   const serveEffectRef = React.useRef<ServeLaunchHandle | null>(null);
+  const headsRef = React.useRef<LaserHeadsHandle | null>(null);
 
   React.useEffect(() => {
     let mounted = true;
@@ -96,6 +96,7 @@ export default function Home() {
     const next = pickRandomRow(filteredRows);
     if (next) setFeatured(next);
     serveEffectRef.current?.blast();
+    headsRef.current?.animate();
   }, [filteredRows]);
 
   return (
@@ -114,9 +115,9 @@ export default function Home() {
         <ServeLaunchEffect
           ref={serveEffectRef}
           containerRef={heroSectionRef}
-          sourceRef={serveButtonRef}
           className="z-30"
         />
+        <LaserHeads ref={headsRef} containerRef={heroSectionRef} className="z-40" />
         <div className="relative z-20 grid grid-cols-1 items-start gap-12 lg:grid-cols-[minmax(0,1fr)_minmax(0,420px)] lg:items-center">
           <div className="space-y-6">
             <p className="inline-flex items-center gap-2 text-[0.75rem] font-medium uppercase tracking-[0.22em] text-neutral-500/80">
@@ -166,7 +167,6 @@ export default function Home() {
                   type="button"
                   disabled={serveDisabled}
                   onClick={handleServeClick}
-                  ref={serveButtonRef}
                   className="relative z-40 inline-flex items-center justify-center rounded-full bg-neutral-900 px-5 py-2.5 text-sm font-bold text-white shadow-lg shadow-neutral-900/20 transition hover:-translate-y-0.5 hover:bg-neutral-800 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-neutral-900/25 disabled:cursor-not-allowed disabled:opacity-50"
                 >
                   Serve a set
@@ -295,6 +295,10 @@ type ServeLaunchHandle = {
   blast: () => void;
 };
 
+type LaserHeadsHandle = {
+  animate: () => void;
+};
+
 type Burst = {
   start: number;
   duration: number;
@@ -303,6 +307,8 @@ type Burst = {
   rays: Ray[];
   sparks: Spark[];
   trails: Trail[];
+  ribbons: Ribbon[];
+  scans: Scan[];
   glowShift: number;
   hueBase: number;
 };
@@ -311,6 +317,9 @@ type Ring = { scale: number; width: number; hue: number; wobble: number; opacity
 type Ray = { angle: number; length: number; width: number; hue: number; drift: number };
 type Spark = { angle: number; distance: number; size: number; hue: number; wobble: number; spin: number };
 type Trail = { angle: number; length: number; width: number; hue: number; sway: number; offset: number };
+type Ribbon = { angle: number; length: number; width: number; hue: number; amplitude: number; phase: number; speed: number; opacity: number };
+type Scan = { baseAngle: number; sweep: number; length: number; width: number; hue: number; speed: number; phase: number; opacity: number };
+type HeadState = { angle: number; hue: number; length: number; width: number; pulse: number };
 
 const easeOutExpo = (t: number) => (t === 1 ? 1 : 1 - Math.pow(2, -7 * t));
 const easeOutCubic = (t: number) => 1 - Math.pow(1 - t, 3);
@@ -319,8 +328,8 @@ const wrapHue = (h: number) => ((h % 360) + 360) % 360;
 
 const ServeLaunchEffect = React.forwardRef<
   ServeLaunchHandle,
-  { containerRef: React.RefObject<HTMLElement | null>; sourceRef?: React.RefObject<HTMLElement | null>; className?: string }
->(({ containerRef, sourceRef, className }, ref) => {
+  { containerRef: React.RefObject<HTMLElement | null>; className?: string }
+>(({ containerRef, className }, ref) => {
     const canvasRef = React.useRef<HTMLCanvasElement | null>(null);
     const burstsRef = React.useRef<Burst[]>([]);
     const lastSize = React.useRef<{ w: number; h: number }>({ w: 0, h: 0 });
@@ -366,6 +375,25 @@ const ServeLaunchEffect = React.forwardRef<
           const baseHue = burst.hueBase;
           const life = Math.min((time - burst.start) / burst.duration, 1);
           const eased = easeOutCubic(life);
+
+          // global flash overlay for extra punch
+          const flash = Math.max(0, 0.55 - life * 0.5);
+          if (flash > 0.01) {
+            const flashRadius = maxSpan * (0.55 + flash * 0.45);
+            const flashGrad = ctx.createRadialGradient(
+              burst.origin.x,
+              burst.origin.y,
+              0,
+              burst.origin.x,
+              burst.origin.y,
+              flashRadius
+            );
+            flashGrad.addColorStop(0, `hsla(${wrapHue(baseHue + 12)}, 96%, 78%, ${0.22 * flash})`);
+            flashGrad.addColorStop(0.4, `hsla(${wrapHue(baseHue - 18)}, 92%, 72%, ${0.18 * flash})`);
+            flashGrad.addColorStop(1, 'rgba(255,255,255,0)');
+            ctx.fillStyle = flashGrad;
+            ctx.fillRect(0, 0, w, h);
+          }
 
           const glowRadius = 46 + eased * maxSpan * 0.42;
           const g = ctx.createRadialGradient(burst.origin.x, burst.origin.y, 0, burst.origin.x, burst.origin.y, glowRadius);
@@ -417,6 +445,35 @@ const ServeLaunchEffect = React.forwardRef<
           }
           ctx.restore();
 
+          // scanning lasers from the corners
+          ctx.save();
+          ctx.lineCap = 'round';
+          for (const scan of burst.scans) {
+            const power = Math.min(1, Math.max(0, (life - 0.04) * 2));
+            const fade = Math.max(0, 1.05 - life * 0.7) * scan.opacity * power;
+            if (fade < 0.02) continue;
+            const angle = scan.baseAngle + Math.sin(life * scan.speed + scan.phase) * scan.sweep;
+            const len = scan.length * (0.55 + power * 0.65);
+            const wobble = Math.sin(life * 7 + scan.phase) * 10;
+            const endX = burst.origin.x + Math.cos(angle) * (len + wobble);
+            const endY = burst.origin.y + Math.sin(angle) * (len + wobble);
+            const width = scan.width * (0.55 + power * 0.8);
+            ctx.lineWidth = width;
+            const grad = ctx.createLinearGradient(burst.origin.x, burst.origin.y, endX, endY);
+            grad.addColorStop(0, `hsla(${wrapHue(baseHue + scan.hue - 14)}, 98%, 78%, ${0.22 * fade})`);
+            grad.addColorStop(0.25, `hsla(${wrapHue(baseHue + scan.hue)}, 98%, 68%, ${0.72 * fade})`);
+            grad.addColorStop(0.6, `hsla(${wrapHue(baseHue + scan.hue + 18)}, 94%, 70%, ${0.4 * fade})`);
+            grad.addColorStop(1, 'transparent');
+            ctx.strokeStyle = grad;
+            ctx.shadowBlur = 34;
+            ctx.shadowColor = `hsla(${wrapHue(baseHue + scan.hue)}, 94%, 68%, ${0.42 * fade})`;
+            ctx.beginPath();
+            ctx.moveTo(burst.origin.x, burst.origin.y);
+            ctx.lineTo(endX, endY);
+            ctx.stroke();
+          }
+          ctx.restore();
+
           // long arcs that sweep across the entire hero for a bombastic flare
           ctx.save();
           for (const trail of burst.trails) {
@@ -447,6 +504,48 @@ const ServeLaunchEffect = React.forwardRef<
             ctx.beginPath();
             ctx.moveTo(startX, startY);
             ctx.quadraticCurveTo(ctrlX, ctrlY, endX, endY);
+            ctx.stroke();
+          }
+          ctx.restore();
+
+          // flowing ribbons for extra motion
+          ctx.save();
+          ctx.lineCap = 'round';
+          for (const ribbon of burst.ribbons) {
+            const ribbonLife = easeOutExpo(life);
+            const fade = Math.max(0, 0.95 - life * 0.8) * ribbon.opacity;
+            if (fade < 0.02) continue;
+            const span = ribbon.length * maxSpan * (0.45 + ribbonLife);
+            const dirX = Math.cos(ribbon.angle);
+            const dirY = Math.sin(ribbon.angle);
+            const perpX = -dirY;
+            const perpY = dirX;
+            const steps = 22;
+            const amp = ribbon.amplitude * (1 - life * 0.35);
+            ctx.beginPath();
+            for (let i = 0; i <= steps; i++) {
+              const t = i / steps;
+              const wave = Math.sin(t * Math.PI * 2 + ribbon.phase + life * ribbon.speed) * amp;
+              const x = burst.origin.x + dirX * span * t + perpX * wave;
+              const y = burst.origin.y + dirY * span * t + perpY * wave;
+              if (i === 0) ctx.moveTo(x, y);
+              else ctx.lineTo(x, y);
+            }
+            const strokeWidth = ribbon.width * (1 + ribbonLife * 0.6);
+            ctx.lineWidth = strokeWidth;
+            const grad = ctx.createLinearGradient(
+              burst.origin.x - perpX * amp,
+              burst.origin.y - perpY * amp,
+              burst.origin.x + dirX * span + perpX * amp,
+              burst.origin.y + dirY * span + perpY * amp
+            );
+            grad.addColorStop(0, `hsla(${wrapHue(baseHue + ribbon.hue - 20)}, 92%, 75%, ${0.05 * fade})`);
+            grad.addColorStop(0.25, `hsla(${wrapHue(baseHue + ribbon.hue)}, 96%, 72%, ${0.32 * fade})`);
+            grad.addColorStop(0.6, `hsla(${wrapHue(baseHue + ribbon.hue + 20)}, 92%, 70%, ${0.22 * fade})`);
+            grad.addColorStop(1, 'transparent');
+            ctx.strokeStyle = grad;
+            ctx.shadowBlur = 26;
+            ctx.shadowColor = `hsla(${wrapHue(baseHue + ribbon.hue)}, 96%, 68%, ${0.35 * fade})`;
             ctx.stroke();
           }
           ctx.restore();
@@ -484,15 +583,27 @@ const ServeLaunchEffect = React.forwardRef<
     }, [resize]);
 
     const createBurst = React.useCallback(
-      (origin: { x: number; y: number }, now: number) => {
+      (origin: { x: number; y: number }, size: { w: number; h: number }, now: number) => {
         const hueShift = randomBetween(-22, 26);
         const hueBase = Math.random() * 360;
+        const diag = Math.hypot(size.w, size.h);
+        const aimCenter = Math.atan2(size.h * 0.55 - origin.y, size.w * 0.5 - origin.x);
         return {
           start: now,
           duration: 1480 + Math.random() * 360,
           origin,
           glowShift: hueShift,
           hueBase,
+          scans: Array.from({ length: 4 }, () => ({
+            baseAngle: aimCenter + randomBetween(-0.42, 0.42),
+            sweep: randomBetween(0.5, 1.05),
+            length: diag * (0.55 + Math.random() * 0.25),
+            width: 3.8 + Math.random() * 2.8,
+            hue: hueShift + randomBetween(-16, 20),
+            speed: randomBetween(6.5, 11),
+            phase: Math.random() * Math.PI * 2,
+            opacity: 0.65 + Math.random() * 0.2,
+          })),
           rings: Array.from({ length: 3 }, (_, idx) => ({
             scale: 0.18 + idx * 0.12 + Math.random() * 0.08,
             width: 3 + Math.random() * 3,
@@ -515,7 +626,17 @@ const ServeLaunchEffect = React.forwardRef<
             sway: randomBetween(-2, 2),
             offset: randomBetween(-0.32, 0.32),
           })),
-          sparks: Array.from({ length: 38 }, () => ({
+          ribbons: Array.from({ length: 5 }, () => ({
+            angle: Math.random() * Math.PI * 2,
+            length: 0.6 + Math.random() * 0.45,
+            width: 3.2 + Math.random() * 3.4,
+            hue: hueShift + randomBetween(-24, 28),
+            amplitude: randomBetween(32, 90),
+            phase: Math.random() * Math.PI * 2,
+            speed: randomBetween(5, 10),
+            opacity: 0.6 + Math.random() * 0.35,
+          })),
+          sparks: Array.from({ length: 44 }, () => ({
             angle: Math.random() * Math.PI * 2,
             distance: 0.2 + Math.random() * 0.7,
             size: 2.3 + Math.random() * 4.3,
@@ -536,27 +657,143 @@ const ServeLaunchEffect = React.forwardRef<
           const canvas = canvasRef.current;
           if (!host || !canvas) return;
           const hostRect = host.getBoundingClientRect();
-          const sourceRect = sourceRef?.current?.getBoundingClientRect();
-          const origin = sourceRect
-            ? {
-                x: sourceRect.left + sourceRect.width / 2 - hostRect.left,
-                y: sourceRect.top + sourceRect.height / 2 - hostRect.top,
-              }
-            : { x: hostRect.width / 2, y: hostRect.height * 0.62 };
-          const burst = createBurst(origin, performance.now());
-          burstsRef.current.push(burst);
-          if (burstsRef.current.length > 5) {
-            burstsRef.current.shift();
+          const size = { w: hostRect.width, h: hostRect.height };
+          const corners = [
+            { x: hostRect.width * 0.04, y: hostRect.height * 0.06 },
+            { x: hostRect.width * 0.96, y: hostRect.height * 0.06 },
+          ];
+          const now = performance.now();
+          corners.forEach(corner => {
+            burstsRef.current.push(createBurst(corner, size, now));
+          });
+          if (burstsRef.current.length > 8) {
+            burstsRef.current.splice(0, burstsRef.current.length - 8);
           }
         },
       }),
-      [containerRef, createBurst, sourceRef]
+      [containerRef, createBurst]
     );
 
     return <canvas ref={canvasRef} className={`pointer-events-none absolute inset-0 select-none ${className || ''}`} aria-hidden="true" />;
   }
 );
 ServeLaunchEffect.displayName = 'ServeLaunchEffect';
+
+const LaserHeads = React.forwardRef<
+  LaserHeadsHandle,
+  { containerRef: React.RefObject<HTMLElement | null>; className?: string }
+>(({ containerRef: _containerRef, className }, ref) => {
+  const [heads, setHeads] = React.useState<HeadState[]>(() => [
+    { angle: 42, hue: 210, length: 260, width: 14, pulse: 0 },
+    { angle: -42, hue: 320, length: 260, width: 14, pulse: 0 },
+  ]);
+  const [active, setActive] = React.useState(false);
+  const timerRef = React.useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const randomHead = React.useCallback((side: 'left' | 'right'): HeadState => {
+    const baseAngle = side === 'left' ? randomBetween(28, 68) : randomBetween(-68, -28);
+    return {
+      angle: baseAngle,
+      hue: Math.random() * 360,
+      length: randomBetween(220, 360),
+      width: randomBetween(12, 18),
+      pulse: performance.now(),
+    };
+  }, []);
+
+  React.useImperativeHandle(ref, () => ({
+    animate: () => {
+      if (timerRef.current) clearTimeout(timerRef.current);
+      setActive(true);
+      setHeads([randomHead('left'), randomHead('right')]);
+      timerRef.current = setTimeout(() => setActive(false), 1900);
+    },
+  }));
+
+  React.useEffect(() => {
+    return () => {
+      if (timerRef.current) clearTimeout(timerRef.current);
+    };
+  }, []);
+
+  return (
+    <div className={`pointer-events-none absolute inset-0 ${className || ''}`} aria-hidden="true">
+      {heads.map((head, idx) => {
+        const isLeft = idx === 0;
+        const posStyle: React.CSSProperties = isLeft
+          ? { left: '10px', top: '10px' }
+          : { right: '10px', top: '10px' };
+        const hue = wrapHue(head.hue);
+        const beamColor = `hsla(${hue}, 100%, 72%, ${active ? 0.78 : 0})`;
+        const headColor = `linear-gradient(145deg, #1c1f25, #0e1118)`;
+        const accentColor = active ? `hsl(${wrapHue(hue + 18)}, 95%, 68%)` : '#1c1f25';
+        const pulse = head.pulse;
+        return (
+          <div key={idx} className="absolute" style={posStyle}>
+            <div
+              className="relative"
+              style={{
+                width: 44,
+                height: 44,
+                borderRadius: 14,
+                background: headColor,
+                border: '1px solid rgba(255,255,255,0.06)',
+                boxShadow: '0 16px 30px rgba(0,0,0,0.35), 0 0 0 1px rgba(255,255,255,0.06)',
+                overflow: 'visible',
+              }}
+            >
+              <div
+                className="absolute left-1/2 top-2 -translate-x-1/2"
+                style={{
+                  width: head.width,
+                  height: head.length,
+                  transformOrigin: 'top center',
+                  transform: `translateX(-50%) rotate(${head.angle}deg)`,
+                  background: `linear-gradient(180deg, ${beamColor} 0%, ${beamColor.replace('0.78', '0.36')} 30%, transparent 82%)`,
+                  filter: 'blur(0.2px)',
+                  opacity: active ? 1 : 0,
+                  transition: 'opacity 220ms ease, height 180ms ease',
+                }}
+              />
+              <div
+                className="absolute left-1/2 top-1 -translate-x-1/2"
+                style={{
+                  width: 22,
+                  height: 22,
+                  borderRadius: '50%',
+                  background: 'linear-gradient(145deg, #20242c, #11141c)',
+                  boxShadow: active
+                    ? `0 0 14px ${accentColor}, 0 0 26px hsla(${hue}, 90%, 60%, 0.35)`
+                    : '0 0 8px rgba(0,0,0,0.45)',
+                  transform: `translate(-50%, -50%) scale(${1 + (active && (performance.now() - pulse) < 260 ? 0.08 : 0)})`,
+                  transition: 'transform 180ms ease, box-shadow 220ms ease',
+                }}
+              >
+                <div
+                  className="absolute inset-[5px] rounded-full"
+                  style={{
+                    background: active
+                      ? `radial-gradient(circle at 50% 40%, ${accentColor}, hsl(${wrapHue(hue - 40)},85%,35%))`
+                      : 'radial-gradient(circle at 50% 40%, #2a2f38, #0b0d12)',
+                    boxShadow: active ? `0 0 10px hsla(${hue},100%,75%,0.4) inset` : 'none',
+                  }}
+                />
+              </div>
+              <div
+                className="absolute left-1/2 bottom-[-10px] h-10 w-[16px] -translate-x-1/2 rounded-b-lg"
+                style={{
+                  background: 'linear-gradient(180deg, rgba(10,12,18,0.9), rgba(10,12,18,0.4))',
+                  boxShadow: '0 8px 16px rgba(0,0,0,0.35)',
+                }}
+              />
+            </div>
+          </div>
+        );
+      })}
+    </div>
+  );
+});
+LaserHeads.displayName = 'LaserHeads';
 
 function SCArtwork({url, preserveRatio=false}:{url:string; preserveRatio?:boolean}) {
   const [art,setArt]=React.useState<string|null>(null);
