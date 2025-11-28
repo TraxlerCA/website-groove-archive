@@ -119,7 +119,7 @@ export default function Home() {
         />
         <LaserHeads ref={headsRef} containerRef={heroSectionRef} className="z-40" />
         <div className="relative z-20 grid grid-cols-1 items-start gap-12 lg:grid-cols-[minmax(0,1fr)_minmax(0,420px)] lg:items-center">
-          <div className="space-y-6">
+          <div className="order-2 space-y-6 lg:order-1">
             <p className="inline-flex items-center gap-2 text-[0.75rem] font-medium uppercase tracking-[0.22em] text-neutral-500/80">
               Sets collected since 2019
               <span className="h-px w-12 bg-neutral-300" />
@@ -140,7 +140,7 @@ export default function Home() {
             </div>
           </div>
 
-          <aside className="relative isolate overflow-hidden rounded-3xl border border-white/40 bg-white/75 p-6 shadow-[0_20px_50px_rgba(15,23,42,0.16)] backdrop-blur">
+          <aside className="order-1 relative isolate overflow-hidden rounded-3xl border border-white/40 bg-white/75 p-6 shadow-[0_20px_50px_rgba(15,23,42,0.16)] backdrop-blur lg:order-2">
             <div className="flex flex-col gap-5">
               <span className="inline-flex w-fit items-center gap-2 rounded-full bg-gradient-to-r from-[#22d3ee] via-[#38bdf8] to-[#6366f1] px-3 py-1 text-xs font-semibold uppercase tracking-[0.22em] text-white shadow-sm shadow-cyan-500/30">
                 Now spinning
@@ -658,9 +658,11 @@ const ServeLaunchEffect = React.forwardRef<
           if (!host || !canvas) return;
           const hostRect = host.getBoundingClientRect();
           const size = { w: hostRect.width, h: hostRect.height };
+          const offsetX = Math.max(16, Math.min(34, hostRect.width * 0.06));
+          const offsetY = Math.max(38, Math.min(62, hostRect.height * 0.08 + 30));
           const corners = [
-            { x: hostRect.width * 0.04, y: hostRect.height * 0.06 },
-            { x: hostRect.width * 0.96, y: hostRect.height * 0.06 },
+            { x: offsetX, y: offsetY },
+            { x: hostRect.width - offsetX, y: offsetY },
           ];
           const now = performance.now();
           corners.forEach(corner => {
@@ -725,9 +727,7 @@ const LaserHeads = React.forwardRef<
           : { right: '10px', top: '10px' };
         const hue = wrapHue(head.hue);
         const beamColor = `hsla(${hue}, 100%, 72%, ${active ? 0.78 : 0})`;
-        const headColor = `linear-gradient(145deg, #1c1f25, #0e1118)`;
-        const accentColor = active ? `hsl(${wrapHue(hue + 18)}, 95%, 68%)` : '#1c1f25';
-        const pulse = head.pulse;
+        const headColor = `linear-gradient(145deg, #171b23, #0c0f16)`;
         return (
           <div key={idx} className="absolute" style={posStyle}>
             <div
@@ -743,7 +743,7 @@ const LaserHeads = React.forwardRef<
               }}
             >
               <div
-                className="absolute left-1/2 top-2 -translate-x-1/2"
+                className="absolute left-1/2 bottom-[6px] -translate-x-1/2"
                 style={{
                   width: head.width,
                   height: head.length,
@@ -756,29 +756,18 @@ const LaserHeads = React.forwardRef<
                 }}
               />
               <div
-                className="absolute left-1/2 top-1 -translate-x-1/2"
+                className="absolute left-1/2 top-[54%] -translate-x-1/2"
                 style={{
-                  width: 22,
-                  height: 22,
-                  borderRadius: '50%',
-                  background: 'linear-gradient(145deg, #20242c, #11141c)',
+                  width: 18,
+                  height: 12,
+                  borderRadius: 6,
+                  background: 'linear-gradient(180deg,#0f1219,#07090f)',
                   boxShadow: active
-                    ? `0 0 14px ${accentColor}, 0 0 26px hsla(${hue}, 90%, 60%, 0.35)`
-                    : '0 0 8px rgba(0,0,0,0.45)',
-                  transform: `translate(-50%, -50%) scale(${1 + (active && (performance.now() - pulse) < 260 ? 0.08 : 0)})`,
-                  transition: 'transform 180ms ease, box-shadow 220ms ease',
+                    ? `0 4px 12px rgba(0,0,0,0.35), 0 0 12px hsla(${hue},90%,60%,0.3)`
+                    : '0 4px 12px rgba(0,0,0,0.35)',
+                  transform: 'translate(-50%,-50%)',
                 }}
-              >
-                <div
-                  className="absolute inset-[5px] rounded-full"
-                  style={{
-                    background: active
-                      ? `radial-gradient(circle at 50% 40%, ${accentColor}, hsl(${wrapHue(hue - 40)},85%,35%))`
-                      : 'radial-gradient(circle at 50% 40%, #2a2f38, #0b0d12)',
-                    boxShadow: active ? `0 0 10px hsla(${hue},100%,75%,0.4) inset` : 'none',
-                  }}
-                />
-              </div>
+              />
               <div
                 className="absolute left-1/2 bottom-[-10px] h-10 w-[16px] -translate-x-1/2 rounded-b-lg"
                 style={{
