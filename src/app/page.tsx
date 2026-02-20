@@ -696,7 +696,8 @@ ServeLaunchEffect.displayName = 'ServeLaunchEffect';
 const LaserHeads = React.forwardRef<
   LaserHeadsHandle,
   { containerRef: React.RefObject<HTMLElement | null>; className?: string }
->(({ containerRef: _containerRef, className }, ref) => {
+>((props, ref) => {
+  const { className } = props;
   const [heads, setHeads] = React.useState<HeadState[]>(() => [
     { angle: 42, hue: 210, length: 260, width: 14, pulse: 0 },
     { angle: -42, hue: 320, length: 260, width: 14, pulse: 0 },
