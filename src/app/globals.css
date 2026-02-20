@@ -135,4 +135,20 @@ video {
   .hover-lift {
     @apply transition-transform ease-out duration-150 hover:-translate-y-0.5 motion-reduce:transition-none motion-reduce:hover:translate-y-0;
   }
+
+  .btn-secondary {
+    @apply inline-flex items-center justify-center rounded-md border border-white/20 bg-white/10 px-2.5 py-1.5 text-[11px] font-semibold uppercase tracking-wide text-white transition-colors duration-150;
+  }
+
+  .btn-secondary:hover:not(:disabled) {
+    @apply border-white/35 bg-white/20;
+  }
+
+  .btn-secondary:focus-visible {
+    @apply outline-none ring-2 ring-white/70 ring-offset-2 ring-offset-black;
+  }
+
+  .btn-secondary:disabled {
+    @apply cursor-not-allowed opacity-40;
+  }
 }

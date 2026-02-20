@@ -58,7 +58,7 @@ export default function CommandBar({ rows, onNavigate }: { rows: Row[]; onNaviga
           onClick={() => setOpen(false)}
         >
           <motion.div
-            className="mx-auto mt-24 w-[92vw] max-w-2xl rounded-2xl border border-white/10 bg-[var(--ash)]/60 backdrop-blur-xl overflow-hidden"
+            className="mx-auto mt-24 w-[92vw] max-w-2xl rounded-2xl border border-white/10 bg-black/75 backdrop-blur-xl overflow-hidden"
             initial={{ y: 10, opacity: 0 }}
             animate={{ y: 0, opacity: 1 }}
             exit={{ y: 10, opacity: 0 }}
