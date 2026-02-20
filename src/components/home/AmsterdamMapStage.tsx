@@ -44,6 +44,8 @@ type AmsterdamMapStageProps = {
 const VIEWBOX_WIDTH = 1000;
 const VIEWBOX_HEIGHT = 740;
 const VIEWBOX_PADDING = 34;
+const HEATMAP_OK = '#FEF0B8';
+const HEATMAP_HOT = '#FF9D2E';
 function forEachPoint(geometry: Geometry, callback: (point: Point) => void): void {
   if (geometry.type === 'Polygon') {
     geometry.coordinates.forEach(ring => ring.forEach(callback));
@@ -202,13 +204,7 @@ export default function AmsterdamMapStage({
               const interactive = feature.active && Boolean(zone);
               const active = interactive && zoneId === activeZoneId;
               const isRandomZone = zoneId === 'amstel_rush';
-              const fill = isRandomZone
-                ? active
-                  ? 'rgba(138,192,255,0.92)'
-                  : 'rgba(138,192,255,0.58)'
-                : active
-                  ? 'rgba(15,15,15,0.88)'
-                  : 'rgba(22,22,22,0.2)';
+              const fill = active ? HEATMAP_HOT : isRandomZone ? HEATMAP_OK : 'rgba(22,22,22,0.2)';
               return (
                 <path
                   key={`${feature.code}-fill`}
@@ -220,7 +216,9 @@ export default function AmsterdamMapStage({
                   style={
                     isRandomZone
                       ? {
-                          filter: 'drop-shadow(0 0 14px rgba(130,190,255,0.58))',
+                          filter: active
+                            ? 'drop-shadow(0 0 16px rgba(255,157,46,0.52))'
+                            : 'drop-shadow(0 0 12px rgba(254,240,184,0.62))',
                         }
                       : undefined
                   }
@@ -239,7 +237,7 @@ export default function AmsterdamMapStage({
                       key={`${feature.code}-highlight`}
                       d={feature.path}
                       fill="none"
-                      stroke="rgba(255,255,255,0.95)"
+                      stroke={HEATMAP_HOT}
                       strokeWidth={2.2}
                       vectorEffect="non-scaling-stroke"
                       opacity={1}
@@ -262,10 +260,10 @@ export default function AmsterdamMapStage({
                   stroke={
                     isRandomZone
                       ? active
-                        ? 'rgba(255,255,255,0.96)'
-                        : 'rgba(93,146,214,0.92)'
+                        ? HEATMAP_HOT
+                        : 'rgba(196,169,87,0.95)'
                       : active
-                      ? 'rgba(255,255,255,0.95)'
+                      ? HEATMAP_HOT
                       : 'rgba(0,0,0,0.82)'
                   }
                   strokeWidth={active ? 1.7 : 1.2}
