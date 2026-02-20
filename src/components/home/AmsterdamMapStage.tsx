@@ -237,7 +237,7 @@ export default function AmsterdamMapStage({
             })}
           </g>
           {activeZoneId ? (
-            <g aria-hidden="true">
+            <g aria-hidden="true" className="pointer-events-none">
               {mapData.features
                 .filter(feature => feature.active && feature.zoneId === activeZoneId)
                 .map(feature => {
