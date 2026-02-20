@@ -37,6 +37,7 @@ type ProjectedFeature = {
 type AmsterdamMapStageProps = {
   zones: MapZoneConfig[];
   activeZoneId: MapZoneId | null;
+  hoveredZoneId: MapZoneId | null;
   onSelect: (zoneId: MapZoneId) => void;
   onHover: (zoneId: MapZoneId | null) => void;
 };
@@ -82,6 +83,7 @@ function geometryToPath(
 export default function AmsterdamMapStage({
   zones,
   activeZoneId,
+  hoveredZoneId,
   onSelect,
   onHover,
 }: AmsterdamMapStageProps) {
@@ -194,7 +196,15 @@ export default function AmsterdamMapStage({
           className="absolute inset-0 h-full w-full"
           aria-label="Amsterdam map with interactive music zones"
           role="img"
-          onMouseLeave={() => onHover(null)}
+          onMouseLeave={event => {
+            const related = event.relatedTarget as HTMLElement | null;
+            if (related?.dataset?.hoverPill === 'true') return;
+            onHover(null);
+          }}
+          onMouseMove={event => {
+            const target = event.target as Element;
+            if (target.tagName.toLowerCase() === 'svg') onHover(null);
+          }}
         >
           <g>
             {mapData.features.map(feature => {
@@ -273,6 +283,33 @@ export default function AmsterdamMapStage({
             })}
           </g>
         </svg>
+
+        <div className="pointer-events-none absolute inset-0">
+          {hoveredZoneId ? (
+            (() => {
+              const point = mapData.zoneLabelPoints[hoveredZoneId];
+              const zone = zonesById[hoveredZoneId];
+              if (!point || !zone) return null;
+              return (
+                <button
+                  data-hover-pill="true"
+                  type="button"
+                  onClick={() => onSelect(hoveredZoneId)}
+                  onMouseEnter={() => onHover(hoveredZoneId)}
+                  onMouseLeave={() => onHover(null)}
+                  className="pointer-events-auto absolute -translate-x-1/2 -translate-y-1/2 rounded-full border border-black/70 px-3 py-1 text-[0.68rem] font-semibold tracking-[0.02em] text-neutral-900 shadow-[0_10px_20px_rgba(0,0,0,0.22)] focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-black/20"
+                  style={{
+                    left: `${(point.x / VIEWBOX_WIDTH) * 100}%`,
+                    top: `${(point.y / VIEWBOX_HEIGHT) * 100}%`,
+                    backgroundColor: zone.accent,
+                  }}
+                >
+                  {zone.genreLabel}
+                </button>
+              );
+            })()
+          ) : null}
+        </div>
 
       </div>
     </section>

@@ -1,10 +1,11 @@
 'use client';
 
-import { useCallback, useMemo, useState } from 'react';
+import { useCallback, useMemo, useRef, useState } from 'react';
 import ActiveSetCard from '@/components/home/ActiveSetCard';
 import AmsterdamMapStage from '@/components/home/AmsterdamMapStage';
 import {
   getRowsForZone,
+  pickRandomRow,
   getSoundcloudEligibleRows,
   normalizeLabel,
 } from '@/components/home/homeMap.logic';
@@ -21,7 +22,9 @@ export default function AmsterdamMapHome() {
   const siteData = useSiteData();
   const { play } = usePlayerActions();
   const [selectedZoneId, setSelectedZoneId] = useState<MapZoneId | null>(null);
+  const [selectedRowSet, setSelectedRowSet] = useState<string | null>(null);
   const [hoveredZoneId, setHoveredZoneId] = useState<MapZoneId | null>(null);
+  const lastSetByZoneRef = useRef<Partial<Record<MapZoneId, string>>>({});
 
   const zonesById = useMemo(
     () =>
@@ -33,48 +36,59 @@ export default function AmsterdamMapHome() {
   );
 
   const rows = useMemo(() => getSoundcloudEligibleRows(siteData.rows), [siteData.rows]);
-  const activeZoneId = hoveredZoneId || selectedZoneId;
-  const activeZone = activeZoneId ? zonesById[activeZoneId] : null;
+  const selectedZone = selectedZoneId ? zonesById[selectedZoneId] : null;
 
-  const activeRow = useMemo(() => {
-    if (!activeZone) return null;
-    const pool = getRowsForZone(rows, activeZone, MAP_ZONES);
-    if (pool.length === 0) return null;
-    const sorted = [...pool].sort((a, b) => a.set.localeCompare(b.set));
-    const seed = parseInt(stableHash(activeZone.id), 16) || 0;
-    return sorted[seed % sorted.length];
-  }, [activeZone, rows]);
+  const selectedRow = useMemo(() => {
+    if (!selectedRowSet) return null;
+    return rows.find(row => row.set === selectedRowSet) || null;
+  }, [rows, selectedRowSet]);
 
   const genreDescription = useMemo(() => {
-    if (!activeZone) return undefined;
-    const target = normalizeLabel(activeZone.genreLabel);
+    if (!selectedZone) return undefined;
+    const target = normalizeLabel(selectedZone.genreLabel);
     return siteData.genres.find(genre => normalizeLabel(genre.label) === target)?.explanation;
-  }, [activeZone, siteData.genres]);
+  }, [selectedZone, siteData.genres]);
 
   const handleSelectZone = useCallback((zoneId: MapZoneId) => {
-    const zone = MAP_ZONES.find(entry => entry.id === zoneId);
+    const zone = zonesById[zoneId];
     if (!zone) return;
 
+    const pool = getRowsForZone(rows, zone, MAP_ZONES);
+    const previousSet = lastSetByZoneRef.current[zoneId] || null;
+    const nextRow = pickRandomRow(pool, previousSet);
+
     setSelectedZoneId(zoneId);
+    setSelectedRowSet(nextRow?.set || null);
+    if (nextRow) {
+      lastSetByZoneRef.current[zoneId] = nextRow.set;
+    }
+
     trackEvent(HomeEventName.ZoneSelected, {
       zone_id: zone.id,
       genre: zone.genreLabel,
     });
-  }, []);
+    if (nextRow) {
+      trackEvent(HomeEventName.SetRevealed, {
+        zone_id: zone.id,
+        set_hash: stableHash(nextRow.set),
+        genre: zone.genreLabel,
+      });
+    }
+  }, [rows, zonesById]);
 
   const handlePlay = useCallback(() => {
-    if (!activeRow || !activeZone) return;
-    play(activeRow, 'soundcloud');
+    if (!selectedRow || !selectedZone) return;
+    play(selectedRow, 'soundcloud');
     trackEvent(HomeEventName.PlayClicked, {
-      zone_id: activeZone.id,
-      set_hash: stableHash(activeRow.set),
-      genre: activeZone.genreLabel,
+      zone_id: selectedZone.id,
+      set_hash: stableHash(selectedRow.set),
+      genre: selectedZone.genreLabel,
     });
-  }, [activeRow, activeZone, play]);
+  }, [selectedRow, selectedZone, play]);
 
   const handleOutboundClick = useCallback(
     (href: string) => {
-      if (!activeRow || !activeZone) return;
+      if (!selectedRow || !selectedZone) return;
       let domain = 'unknown';
       try {
         domain = new URL(href).hostname;
@@ -82,35 +96,36 @@ export default function AmsterdamMapHome() {
         // no-op
       }
       trackEvent(HomeEventName.OutboundClicked, {
-        zone_id: activeZone.id,
-        set_hash: stableHash(activeRow.set),
+        zone_id: selectedZone.id,
+        set_hash: stableHash(selectedRow.set),
         domain,
       });
     },
-    [activeRow, activeZone],
+    [selectedRow, selectedZone],
   );
 
   return (
     <main className="relative h-[calc(100svh-9.5rem)] w-full px-2 py-2 sm:h-[calc(100svh-10.5rem)] sm:px-4 sm:py-4">
       <AmsterdamMapStage
         zones={MAP_ZONES}
-        activeZoneId={activeZoneId}
+        activeZoneId={selectedZoneId}
+        hoveredZoneId={hoveredZoneId}
         onSelect={handleSelectZone}
         onHover={setHoveredZoneId}
       />
-      {activeZone ? (
+      {selectedZone ? (
         <div
           className={[
             'pointer-events-none absolute inset-x-4 bottom-4 sm:inset-x-auto sm:bottom-8 sm:w-[22rem]',
-            activeZone.anchorDesktop.x >= 50
+            selectedZone.anchorDesktop.x >= 50
               ? 'sm:left-8 sm:right-auto'
               : 'sm:right-8 sm:left-auto',
           ].join(' ')}
         >
           <div className="pointer-events-auto">
             <ActiveSetCard
-              zone={activeZone}
-              row={activeRow}
+              zone={selectedZone}
+              row={selectedRow}
               genreDescription={genreDescription}
               onPlay={handlePlay}
               onOutboundClick={handleOutboundClick}
