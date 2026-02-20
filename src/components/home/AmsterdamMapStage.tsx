@@ -256,9 +256,11 @@ export default function AmsterdamMapStage({
                       d={feature.path}
                       fill="none"
                       stroke={HEATMAP_HOT}
-                      strokeWidth={2.2}
+                      strokeWidth={2.4}
+                      strokeLinejoin="round"
+                      strokeLinecap="round"
                       vectorEffect="non-scaling-stroke"
-                      opacity={1}
+                      opacity={0.88}
                     />
                   );
                 })}
@@ -276,15 +278,11 @@ export default function AmsterdamMapStage({
                   d={feature.path}
                   fill="none"
                   stroke={
-                    isRandomZone
-                      ? active
-                        ? HEATMAP_HOT
-                        : 'rgba(196,169,87,0.95)'
-                      : active
-                      ? HEATMAP_HOT
-                      : 'rgba(0,0,0,0.82)'
+                    isRandomZone && !active ? 'rgba(196,169,87,0.95)' : 'rgba(0,0,0,0.82)'
                   }
-                  strokeWidth={active ? 1.7 : 1.2}
+                  strokeWidth={active ? 1.35 : 1.2}
+                  strokeLinejoin="round"
+                  strokeLinecap="round"
                   vectorEffect="non-scaling-stroke"
                 />
               );
