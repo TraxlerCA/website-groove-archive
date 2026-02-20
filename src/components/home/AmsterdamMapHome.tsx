@@ -99,7 +99,14 @@ export default function AmsterdamMapHome() {
         onHover={setHoveredZoneId}
       />
       {activeZone ? (
-        <div className="pointer-events-none absolute inset-x-4 bottom-4 sm:inset-x-auto sm:right-8 sm:bottom-8 sm:w-[22rem]">
+        <div
+          className={[
+            'pointer-events-none absolute inset-x-4 bottom-4 sm:inset-x-auto sm:bottom-8 sm:w-[22rem]',
+            activeZone.anchorDesktop.x >= 50
+              ? 'sm:left-8 sm:right-auto'
+              : 'sm:right-8 sm:left-auto',
+          ].join(' ')}
+        >
           <div className="pointer-events-auto">
             <ActiveSetCard
               zone={activeZone}
