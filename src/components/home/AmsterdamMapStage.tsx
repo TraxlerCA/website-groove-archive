@@ -201,7 +201,7 @@ export default function AmsterdamMapStage({
               const zone = zoneId ? zonesById[zoneId] : null;
               const interactive = feature.active && Boolean(zone);
               const active = interactive && zoneId === activeZoneId;
-              const isRandomZone = zoneId === 'nacht_ferry';
+              const isRandomZone = zoneId === 'amstel_rush';
               const fill = isRandomZone
                 ? active
                   ? 'rgba(138,192,255,0.92)'
@@ -253,7 +253,7 @@ export default function AmsterdamMapStage({
               if (!feature.active || !feature.zoneId) return null;
               const interactive = Boolean(zonesById[feature.zoneId]);
               const active = interactive && feature.zoneId === activeZoneId;
-              const isRandomZone = feature.zoneId === 'nacht_ferry';
+              const isRandomZone = feature.zoneId === 'amstel_rush';
               return (
                 <path
                   key={`${feature.code}-boundary`}

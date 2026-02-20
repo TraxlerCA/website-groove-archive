@@ -1,6 +1,6 @@
 import { describe, expect, it, vi, afterEach } from 'vitest';
 import { getRowsForZone, getSoundcloudEligibleRows, pickRandomRow } from '@/components/home/homeMap.logic';
-import { MAP_ZONES } from '@/components/home/mapZones';
+import { MAP_ZONES, WILDCARD_ZONE_ID } from '@/components/home/mapZones';
 import type { Row } from '@/lib/types';
 
 const baseRows: Row[] = [
@@ -44,7 +44,7 @@ describe('homeMap.logic', () => {
 
   it('uses non-core rows for wildcard zone and falls back to full pool when needed', () => {
     const eligible = getSoundcloudEligibleRows(baseRows);
-    const wildcardZone = MAP_ZONES.find(item => item.id === 'nacht_ferry');
+    const wildcardZone = MAP_ZONES.find(item => item.id === WILDCARD_ZONE_ID);
     if (!wildcardZone) throw new Error('missing wildcard zone');
 
     const wildcardPool = getRowsForZone(eligible, wildcardZone, MAP_ZONES);
@@ -77,4 +77,3 @@ describe('homeMap.logic', () => {
     expect(picked?.set).toBe('Set B');
   });
 });
-

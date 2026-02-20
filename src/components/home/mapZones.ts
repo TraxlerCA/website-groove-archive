@@ -36,7 +36,7 @@ export enum HomeEventName {
   OutboundClicked = 'home_map_outbound_clicked',
 }
 
-export const WILDCARD_ZONE_ID: MapZoneId = 'nacht_ferry';
+export const WILDCARD_ZONE_ID: MapZoneId = 'amstel_rush';
 const ZONE_AREAS_BY_ID = zoneAreasById as Record<MapZoneId, string[]>;
 
 export const MAP_ZONES: MapZoneConfig[] = [
@@ -69,9 +69,9 @@ export const MAP_ZONES: MapZoneConfig[] = [
   },
   {
     id: 'amstel_rush',
-    displayName: 'Trance & High Energy Rave',
-    genreLabel: 'Trance & High Energy Rave',
-    accent: '#ff5ea8',
+    displayName: '<Random genre>',
+    genreLabel: '<Random genre>',
+    accent: '#7f9cff',
     areas: ZONE_AREAS_BY_ID.amstel_rush,
     anchorDesktop: { x: 62, y: 41, align: 'left' },
     anchorMobile: { x: 50, y: 88, align: 'center' },
@@ -132,9 +132,9 @@ export const MAP_ZONES: MapZoneConfig[] = [
   },
   {
     id: 'nacht_ferry',
-    displayName: '<Random genre>',
-    genreLabel: '<Random genre>',
-    accent: '#7f9cff',
+    displayName: 'Trance & High Energy Rave',
+    genreLabel: 'Trance & High Energy Rave',
+    accent: '#ff5ea8',
     areas: ZONE_AREAS_BY_ID.nacht_ferry,
     anchorDesktop: { x: 84, y: 79, align: 'right' },
     anchorMobile: { x: 50, y: 88, align: 'center' },
