@@ -24,7 +24,7 @@ export default function AmsterdamMapHome() {
   }, []);
 
   return (
-    <main className="container mx-auto max-w-6xl px-6 pt-7 pb-12 sm:pt-12">
+    <main className="h-[calc(100svh-9.5rem)] w-full px-2 py-2 sm:h-[calc(100svh-10.5rem)] sm:px-4 sm:py-4">
       <AmsterdamMapStage
         zones={MAP_ZONES}
         activeZoneId={selectedZoneId}

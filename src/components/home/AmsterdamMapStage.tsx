@@ -180,8 +180,8 @@ export default function AmsterdamMapStage({
   }, [geometry.features]);
 
   return (
-    <section className="relative">
-      <div className="relative aspect-[16/10] min-h-[390px] overflow-hidden rounded-[2rem] border border-black/80 bg-[#f6f6f6] shadow-[0_20px_50px_rgba(0,0,0,0.18)]">
+    <section className="relative h-full">
+      <div className="relative h-full overflow-hidden rounded-[1.5rem] border border-black/80 bg-[#f6f6f6] shadow-[0_20px_50px_rgba(0,0,0,0.18)] sm:rounded-[2rem]">
         <div className="pointer-events-none absolute inset-0 bg-[linear-gradient(175deg,#fafafa_0%,#f3f3f3_100%)]" />
         <div className="pointer-events-none absolute inset-0 opacity-35">
           <svg viewBox={`0 0 ${VIEWBOX_WIDTH} ${VIEWBOX_HEIGHT}`} className="h-full w-full" aria-hidden="true">
