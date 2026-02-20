@@ -46,7 +46,7 @@ type AmsterdamMapStageProps = {
 const VIEWBOX_WIDTH = 1000;
 const VIEWBOX_HEIGHT = 740;
 const VIEWBOX_PADDING = 34;
-const HEATMAP_OK = '#FEF0B8';
+const RANDOM_ZONE_IDLE_FILL = 'rgba(22,22,22,0.28)';
 const HEATMAP_HOT = '#FF9D2E';
 function forEachPoint(geometry: Geometry, callback: (point: Point) => void): void {
   if (geometry.type === 'Polygon') {
@@ -222,7 +222,11 @@ export default function AmsterdamMapStage({
               const interactive = feature.active && Boolean(zone);
               const active = interactive && zoneId === activeZoneId;
               const isRandomZone = zoneId === 'amstel_rush';
-              const fill = active ? HEATMAP_HOT : isRandomZone ? HEATMAP_OK : 'rgba(22,22,22,0.2)';
+              const fill = active
+                ? HEATMAP_HOT
+                : isRandomZone
+                ? RANDOM_ZONE_IDLE_FILL
+                : 'rgba(22,22,22,0.2)';
               return (
                 <path
                   key={`${feature.code}-fill`}
@@ -236,7 +240,7 @@ export default function AmsterdamMapStage({
                       ? {
                           filter: active
                             ? 'drop-shadow(0 0 16px rgba(255,157,46,0.52))'
-                            : 'drop-shadow(0 0 12px rgba(254,240,184,0.62))',
+                            : 'drop-shadow(0 0 9px rgba(0,0,0,0.28))',
                         }
                       : undefined
                   }
@@ -278,7 +282,7 @@ export default function AmsterdamMapStage({
                   d={feature.path}
                   fill="none"
                   stroke={
-                    isRandomZone && !active ? 'rgba(196,169,87,0.95)' : 'rgba(0,0,0,0.82)'
+                    isRandomZone && !active ? 'rgba(0,0,0,0.9)' : 'rgba(0,0,0,0.82)'
                   }
                   strokeWidth={active ? 1.35 : 1.2}
                   strokeLinejoin="round"
