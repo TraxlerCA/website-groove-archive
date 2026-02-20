@@ -2,18 +2,22 @@
 import { NextResponse } from "next/server";
 
 type CacheVal = { ts: number; val: string | null };
-const TTL = 10 * 60 * 1000;
+type CacheRead = { hit: false } | { hit: true; val: string | null };
+const CACHE_TTL_MS = 10 * 60 * 1000;
 
 declare global {
   var __scArtCache: Map<string, CacheVal> | undefined;
 }
 globalThis.__scArtCache = globalThis.__scArtCache ?? new Map<string, CacheVal>();
 
-function getCached(key: string) {
+function getCached(key: string): CacheRead {
   const hit = globalThis.__scArtCache!.get(key);
-  if (!hit) return null;
-  if (Date.now() - hit.ts > TTL) return null;
-  return hit.val;
+  if (!hit) return { hit: false } as const;
+  if (Date.now() - hit.ts > CACHE_TTL_MS) {
+    globalThis.__scArtCache!.delete(key);
+    return { hit: false } as const;
+  }
+  return { hit: true, val: hit.val } as const;
 }
 function setCached(key: string, val: string | null) {
   globalThis.__scArtCache!.set(key, { ts: Date.now(), val });
@@ -30,8 +34,8 @@ export async function GET(req: Request) {
 
     const key = trackUrl;
     const cached = getCached(key);
-    if (cached !== null) {
-      return NextResponse.json({ artwork: cached }, { headers: { "Cache-Control": "no-store" } });
+    if (cached.hit) {
+      return NextResponse.json({ artwork: cached.val }, { headers: { "Cache-Control": "no-store" } });
     }
 
     const res = await fetch(
