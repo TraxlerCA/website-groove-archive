@@ -5,6 +5,7 @@ import geojson from '@/data/amsterdam-ggw-zones.json';
 import {
   CONTEXT_LANDMARKS,
   CONTEXT_ROAD_LINES,
+  CONTEXT_WATER_AREAS,
   CONTEXT_WATER_LINES,
 } from '@/components/home/mapContext';
 import type { MapZoneConfig, MapZoneId } from '@/components/home/mapZones';
@@ -42,8 +43,12 @@ type ProjectedFeature = {
 
 type ProjectedLine = {
   id: string;
-  family: string;
   label?: string;
+  path: string;
+};
+
+type ProjectedArea = {
+  id: string;
   path: string;
 };
 
@@ -83,14 +88,19 @@ type MapVariantTheme = {
   boundaryStroke: string;
   randomBoundaryStroke: string;
   highlightStroke: string;
-  visibleWaterFamilies: string[];
+  showWaterAreas: boolean;
+  waterAreaFill: string;
+  waterAreaOpacity: number;
+  showWaterLines: boolean;
   waterLineStroke: string;
   waterLineWidth: number;
   waterLineOpacity: number;
+  showRoadLines: boolean;
   roadStroke: string;
   roadWidth: number;
   roadOpacity: number;
-  roadDashArray: string;
+  roadDashArray?: string;
+  roadGlow?: string;
   showLandmarks: boolean;
   showLandmarkLabels: boolean;
   landmarkDotFill: string;
@@ -99,54 +109,105 @@ type MapVariantTheme = {
   landmarkLabelHalo: string;
 };
 
-const BASE_THEME: Omit<
-  MapVariantTheme,
-  'visibleWaterFamilies' | 'showLandmarks' | 'showLandmarkLabels'
-> = {
-  baseBackground: '#f6f6f6',
-  frameBorder: 'rgba(0,0,0,0.8)',
-  shadow: '0 20px 50px rgba(0,0,0,0.18)',
-  surfaceGradient: 'linear-gradient(175deg,#fafafa 0%,#f2f2f2 100%)',
-  gridStroke: 'rgba(0,0,0,0.06)',
-  gridOpacity: 0.35,
-  inactiveFill: 'rgba(22,22,22,0.2)',
-  randomIdleFill: 'rgba(22,22,22,0.28)',
-  randomIdleShadow: 'drop-shadow(0 0 9px rgba(0,0,0,0.28))',
-  randomActiveShadow: 'drop-shadow(0 0 16px rgba(255,157,46,0.52))',
-  boundaryStroke: 'rgba(0,0,0,0.82)',
-  randomBoundaryStroke: 'rgba(0,0,0,0.9)',
-  highlightStroke: HEATMAP_HOT,
-  waterLineStroke: '#4d7897',
-  waterLineWidth: 1.7,
-  waterLineOpacity: 0.64,
-  roadStroke: '#3e4656',
-  roadWidth: 2.1,
-  roadOpacity: 0.48,
-  roadDashArray: '10 7',
-  landmarkDotFill: '#111111',
-  landmarkDotStroke: '#ffffff',
-  landmarkLabelColor: '#1f2937',
-  landmarkLabelHalo: 'rgba(255,255,255,0.9)',
-};
-
 const MAP_VARIANT_THEMES: Record<MapVisualVariant, MapVariantTheme> = {
   civic_context: {
-    ...BASE_THEME,
-    visibleWaterFamilies: ['ij', 'amstel'],
+    baseBackground: '#f6f6f6',
+    frameBorder: 'rgba(0,0,0,0.8)',
+    shadow: '0 20px 50px rgba(0,0,0,0.18)',
+    surfaceGradient: 'linear-gradient(175deg,#fafafa 0%,#f2f2f2 100%)',
+    gridStroke: 'rgba(0,0,0,0.06)',
+    gridOpacity: 0.35,
+    inactiveFill: 'rgba(22,22,22,0.2)',
+    randomIdleFill: 'rgba(22,22,22,0.28)',
+    randomIdleShadow: 'drop-shadow(0 0 9px rgba(0,0,0,0.28))',
+    randomActiveShadow: 'drop-shadow(0 0 16px rgba(255,157,46,0.52))',
+    boundaryStroke: 'rgba(0,0,0,0.82)',
+    randomBoundaryStroke: 'rgba(0,0,0,0.9)',
+    highlightStroke: HEATMAP_HOT,
+    showWaterAreas: true,
+    waterAreaFill: '#8ab8d2',
+    waterAreaOpacity: 0.26,
+    showWaterLines: true,
+    waterLineStroke: '#51789a',
+    waterLineWidth: 1.7,
+    waterLineOpacity: 0.62,
+    showRoadLines: true,
+    roadStroke: '#3e4656',
+    roadWidth: 2.1,
+    roadOpacity: 0.44,
+    roadDashArray: '11 8',
     showLandmarks: false,
     showLandmarkLabels: false,
+    landmarkDotFill: '#111111',
+    landmarkDotStroke: '#ffffff',
+    landmarkLabelColor: '#1f2937',
+    landmarkLabelHalo: 'rgba(255,255,255,0.9)',
   },
   transit_glow: {
-    ...BASE_THEME,
-    visibleWaterFamilies: ['ij', 'amstel', 'singel', 'herengracht', 'keizersgracht', 'prinsengracht'],
-    showLandmarks: false,
+    baseBackground: '#0f172a',
+    frameBorder: 'rgba(131,154,196,0.65)',
+    shadow: '0 25px 56px rgba(2,6,23,0.65)',
+    surfaceGradient: 'linear-gradient(175deg,#0f1a2f 0%,#0a1223 100%)',
+    gridStroke: 'rgba(104,166,232,0.24)',
+    gridOpacity: 0.44,
+    inactiveFill: 'rgba(203,216,236,0.18)',
+    randomIdleFill: 'rgba(236,174,108,0.24)',
+    randomIdleShadow: 'drop-shadow(0 0 10px rgba(255,160,88,0.35))',
+    randomActiveShadow: 'drop-shadow(0 0 18px rgba(255,157,46,0.78))',
+    boundaryStroke: 'rgba(224,236,255,0.76)',
+    randomBoundaryStroke: 'rgba(255,203,145,0.96)',
+    highlightStroke: HEATMAP_HOT,
+    showWaterAreas: true,
+    waterAreaFill: '#1f4c73',
+    waterAreaOpacity: 0.33,
+    showWaterLines: true,
+    waterLineStroke: '#77c7ff',
+    waterLineWidth: 2.1,
+    waterLineOpacity: 0.84,
+    showRoadLines: true,
+    roadStroke: '#ffbc70',
+    roadWidth: 2.5,
+    roadOpacity: 0.94,
+    roadGlow: 'drop-shadow(0 0 9px rgba(255,175,87,0.66))',
+    showLandmarks: true,
     showLandmarkLabels: false,
+    landmarkDotFill: '#ffd09a',
+    landmarkDotStroke: '#10182a',
+    landmarkLabelColor: '#f8fafc',
+    landmarkLabelHalo: 'rgba(15,23,42,0.95)',
   },
   landmark_postcard: {
-    ...BASE_THEME,
-    visibleWaterFamilies: ['ij', 'amstel', 'singel', 'herengracht', 'keizersgracht', 'prinsengracht'],
+    baseBackground: '#f5efe3',
+    frameBorder: 'rgba(54,45,30,0.78)',
+    shadow: '0 20px 45px rgba(70,53,30,0.24)',
+    surfaceGradient: 'linear-gradient(175deg,#f6f1e8 0%,#ede3d3 100%)',
+    gridStroke: 'rgba(72,53,30,0.1)',
+    gridOpacity: 0.33,
+    inactiveFill: 'rgba(44,35,23,0.14)',
+    randomIdleFill: 'rgba(44,35,23,0.22)',
+    randomIdleShadow: 'drop-shadow(0 0 7px rgba(84,54,23,0.25))',
+    randomActiveShadow: 'drop-shadow(0 0 15px rgba(255,157,46,0.52))',
+    boundaryStroke: 'rgba(45,36,23,0.74)',
+    randomBoundaryStroke: 'rgba(45,36,23,0.88)',
+    highlightStroke: '#d97706',
+    showWaterAreas: true,
+    waterAreaFill: '#9bc4df',
+    waterAreaOpacity: 0.28,
+    showWaterLines: true,
+    waterLineStroke: '#4e7a95',
+    waterLineWidth: 1.8,
+    waterLineOpacity: 0.7,
+    showRoadLines: true,
+    roadStroke: '#b98850',
+    roadWidth: 2,
+    roadOpacity: 0.5,
+    roadDashArray: '8 7',
     showLandmarks: true,
     showLandmarkLabels: true,
+    landmarkDotFill: '#6a4b20',
+    landmarkDotStroke: '#f7f3ea',
+    landmarkLabelColor: '#33210b',
+    landmarkLabelHalo: 'rgba(247,241,228,0.95)',
   },
 };
 
@@ -205,10 +266,6 @@ function lineToPath(
     .join(' ');
 }
 
-function familyFromLineId(id: string): string {
-  return id.replace(/_\d+$/, '');
-}
-
 export default function AmsterdamMapStage({
   zones,
   activeZoneId,
@@ -232,10 +289,6 @@ export default function AmsterdamMapStage({
         return acc;
       }, {} as Record<MapZoneId, MapZoneConfig>),
     [zones],
-  );
-  const visibleWaterFamilySet = useMemo(
-    () => new Set(theme.visibleWaterFamilies),
-    [theme.visibleWaterFamilies],
   );
 
   const mapData = useMemo(() => {
@@ -311,16 +364,19 @@ export default function AmsterdamMapStage({
       };
     });
 
+    const projectedWaterAreas: ProjectedArea[] = CONTEXT_WATER_AREAS.map(area => ({
+      id: area.id,
+      path: ringToPath(area.points, project),
+    }));
+
     const projectedWaterLines: ProjectedLine[] = CONTEXT_WATER_LINES.map(line => ({
       id: line.id,
-      family: familyFromLineId(line.id),
       label: line.label,
       path: lineToPath(line.points, project),
     }));
 
     const projectedRoadLines: ProjectedLine[] = CONTEXT_ROAD_LINES.map(line => ({
       id: line.id,
-      family: familyFromLineId(line.id),
       label: line.label,
       path: lineToPath(line.points, project),
     }));
@@ -338,6 +394,7 @@ export default function AmsterdamMapStage({
     return {
       features: projectedFeatures,
       zoneLabelPoints,
+      waterAreas: projectedWaterAreas,
       waterLines: projectedWaterLines,
       roadLines: projectedRoadLines,
       landmarks: projectedLandmarks,
@@ -390,10 +447,21 @@ export default function AmsterdamMapStage({
             if (target.tagName.toLowerCase() === 'svg') onHover(null);
           }}
         >
-          <g aria-hidden="true" className="pointer-events-none">
-            {mapData.waterLines
-              .filter(line => visibleWaterFamilySet.has(line.family))
-              .map(line => (
+          {theme.showWaterAreas ? (
+            <g aria-hidden="true" className="pointer-events-none">
+              {mapData.waterAreas.map(area => (
+                <path
+                  key={`${area.id}-water-area`}
+                  d={area.path}
+                  fill={theme.waterAreaFill}
+                  opacity={theme.waterAreaOpacity}
+                />
+              ))}
+            </g>
+          ) : null}
+          {theme.showWaterLines ? (
+            <g aria-hidden="true" className="pointer-events-none">
+              {mapData.waterLines.map(line => (
                 <path
                   key={`${line.id}-water-line`}
                   d={line.path}
@@ -406,23 +474,30 @@ export default function AmsterdamMapStage({
                   vectorEffect="non-scaling-stroke"
                 />
               ))}
-          </g>
-          <g aria-hidden="true" className="pointer-events-none">
-            {mapData.roadLines.map(line => (
-              <path
-                key={`${line.id}-road-line`}
-                d={line.path}
-                fill="none"
-                stroke={theme.roadStroke}
-                strokeOpacity={theme.roadOpacity}
-                strokeWidth={theme.roadWidth}
-                strokeDasharray={theme.roadDashArray}
-                strokeLinejoin="round"
-                strokeLinecap="round"
-                vectorEffect="non-scaling-stroke"
-              />
-            ))}
-          </g>
+            </g>
+          ) : null}
+          {theme.showRoadLines ? (
+            <g
+              aria-hidden="true"
+              className="pointer-events-none"
+              style={theme.roadGlow ? { filter: theme.roadGlow } : undefined}
+            >
+              {mapData.roadLines.map(line => (
+                <path
+                  key={`${line.id}-road-line`}
+                  d={line.path}
+                  fill="none"
+                  stroke={theme.roadStroke}
+                  strokeOpacity={theme.roadOpacity}
+                  strokeWidth={theme.roadWidth}
+                  strokeDasharray={theme.roadDashArray}
+                  strokeLinejoin="round"
+                  strokeLinecap="round"
+                  vectorEffect="non-scaling-stroke"
+                />
+              ))}
+            </g>
+          ) : null}
           {theme.showLandmarks ? (
             <g aria-hidden="true" className="pointer-events-none">
               {mapData.landmarks.map(landmark => {
