@@ -45,6 +45,9 @@ export default function ActiveSetCard({
         </span>
         <span className="text-[0.7rem] uppercase tracking-[0.22em] text-white/60">Now in zone</span>
       </div>
+      <p className="mb-3 text-[0.72rem] leading-relaxed text-white/65">
+        {zone.areas.join(' · ')}
+      </p>
 
       {row ? (
         <>

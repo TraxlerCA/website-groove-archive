@@ -1,7 +1,36 @@
 'use client';
 
-import type { CSSProperties } from 'react';
+import { useMemo } from 'react';
+import geojson from '@/data/amsterdam-ggw-zones.json';
 import type { MapZoneConfig, MapZoneId } from '@/components/home/mapZones';
+
+type Point = [number, number];
+type PolygonCoordinates = Point[][];
+type Geometry =
+  | { type: 'Polygon'; coordinates: PolygonCoordinates }
+  | { type: 'MultiPolygon'; coordinates: PolygonCoordinates[] };
+
+type GeoFeature = {
+  type: 'Feature';
+  properties: {
+    code: string;
+    name: string;
+    zoneId: MapZoneId;
+  };
+  geometry: Geometry;
+};
+
+type GeoCollection = {
+  type: 'FeatureCollection';
+  features: GeoFeature[];
+};
+
+type ProjectedFeature = {
+  code: string;
+  name: string;
+  zoneId: MapZoneId;
+  path: string;
+};
 
 type AmsterdamMapStageProps = {
   zones: MapZoneConfig[];
@@ -9,14 +38,69 @@ type AmsterdamMapStageProps = {
   onSelect: (zoneId: MapZoneId) => void;
 };
 
-function zoneStyle(zone: MapZoneConfig): CSSProperties {
-  return {
-    left: `${zone.bounds.x}%`,
-    top: `${zone.bounds.y}%`,
-    width: `${zone.bounds.w}%`,
-    height: `${zone.bounds.h}%`,
-    transform: `translate(-50%, -50%) rotate(${zone.bounds.rotate}deg)`,
-  };
+const VIEWBOX_WIDTH = 1000;
+const VIEWBOX_HEIGHT = 740;
+const VIEWBOX_PADDING = 34;
+const LABEL_OFFSETS: Partial<Record<MapZoneId, { dx: number; dy: number }>> = {
+  canal_glow: { dx: -24, dy: -6 },
+  spiegel_funk: { dx: -20, dy: -16 },
+  beton_tunnel: { dx: -18, dy: -14 },
+  ndsm_fracture: { dx: 18, dy: -8 },
+  jordaan_jack: { dx: -22, dy: 14 },
+  amstel_rush: { dx: 20, dy: -10 },
+  polder_drift: { dx: -10, dy: 18 },
+  dam_pop_up: { dx: -16, dy: 12 },
+  oost_dauw: { dx: 24, dy: 12 },
+  nacht_ferry: { dx: 18, dy: 4 },
+};
+
+function forEachPoint(geometry: Geometry, callback: (point: Point) => void): void {
+  if (geometry.type === 'Polygon') {
+    geometry.coordinates.forEach(ring => ring.forEach(callback));
+    return;
+  }
+  geometry.coordinates.forEach(polygon => polygon.forEach(ring => ring.forEach(callback)));
+}
+
+function hexToRgba(hex: string, alpha: number): string {
+  const source = hex.replace('#', '');
+  const value =
+    source.length === 3
+      ? source
+          .split('')
+          .map(part => part + part)
+          .join('')
+      : source;
+  const int = parseInt(value, 16);
+  const r = (int >> 16) & 255;
+  const g = (int >> 8) & 255;
+  const b = int & 255;
+  return `rgba(${r}, ${g}, ${b}, ${alpha})`;
+}
+
+function ringToPath(
+  ring: Point[],
+  project: (point: Point) => { x: number; y: number },
+): string {
+  if (ring.length === 0) return '';
+  return `${ring
+    .map((point, index) => {
+      const projected = project(point);
+      return `${index === 0 ? 'M' : 'L'} ${projected.x.toFixed(2)} ${projected.y.toFixed(2)}`;
+    })
+    .join(' ')} Z`;
+}
+
+function geometryToPath(
+  geometry: Geometry,
+  project: (point: Point) => { x: number; y: number },
+): string {
+  if (geometry.type === 'Polygon') {
+    return geometry.coordinates.map(ring => ringToPath(ring, project)).join(' ');
+  }
+  return geometry.coordinates
+    .map(polygon => polygon.map(ring => ringToPath(ring, project)).join(' '))
+    .join(' ');
 }
 
 export default function AmsterdamMapStage({
@@ -24,92 +108,185 @@ export default function AmsterdamMapStage({
   activeZoneId,
   onSelect,
 }: AmsterdamMapStageProps) {
+  const geometry = geojson as GeoCollection;
+  const zonesById = useMemo(
+    () =>
+      zones.reduce<Record<MapZoneId, MapZoneConfig>>((acc, zone) => {
+        acc[zone.id] = zone;
+        return acc;
+      }, {} as Record<MapZoneId, MapZoneConfig>),
+    [zones],
+  );
+
+  const mapData = useMemo(() => {
+    let minX = Number.POSITIVE_INFINITY;
+    let minY = Number.POSITIVE_INFINITY;
+    let maxX = Number.NEGATIVE_INFINITY;
+    let maxY = Number.NEGATIVE_INFINITY;
+
+    geometry.features.forEach(feature => {
+      forEachPoint(feature.geometry, ([x, y]) => {
+        if (x < minX) minX = x;
+        if (x > maxX) maxX = x;
+        if (y < minY) minY = y;
+        if (y > maxY) maxY = y;
+      });
+    });
+
+    const spanX = Math.max(0.000001, maxX - minX);
+    const spanY = Math.max(0.000001, maxY - minY);
+    const usableWidth = VIEWBOX_WIDTH - VIEWBOX_PADDING * 2;
+    const usableHeight = VIEWBOX_HEIGHT - VIEWBOX_PADDING * 2;
+
+    const project = ([x, y]: Point) => ({
+      x: ((x - minX) / spanX) * usableWidth + VIEWBOX_PADDING,
+      y: ((maxY - y) / spanY) * usableHeight + VIEWBOX_PADDING,
+    });
+
+    const zoneCentroids = new Map<MapZoneId, { sumX: number; sumY: number; count: number }>();
+    const projectedFeatures: ProjectedFeature[] = geometry.features.map(feature => {
+      const path = geometryToPath(feature.geometry, project);
+      let sumX = 0;
+      let sumY = 0;
+      let count = 0;
+      forEachPoint(feature.geometry, point => {
+        const projected = project(point);
+        sumX += projected.x;
+        sumY += projected.y;
+        count += 1;
+      });
+
+      const existing = zoneCentroids.get(feature.properties.zoneId) || {
+        sumX: 0,
+        sumY: 0,
+        count: 0,
+      };
+      zoneCentroids.set(feature.properties.zoneId, {
+        sumX: existing.sumX + sumX,
+        sumY: existing.sumY + sumY,
+        count: existing.count + count,
+      });
+
+      return {
+        code: feature.properties.code,
+        name: feature.properties.name,
+        zoneId: feature.properties.zoneId,
+        path,
+      };
+    });
+
+    const zoneLabelPoints: Partial<Record<MapZoneId, { x: number; y: number }>> = {};
+    zoneCentroids.forEach((value, key) => {
+      zoneLabelPoints[key] = {
+        x: value.sumX / value.count,
+        y: value.sumY / value.count,
+      };
+    });
+
+    return {
+      features: projectedFeatures,
+      zoneLabelPoints,
+    };
+  }, [geometry.features]);
+
   return (
     <section className="relative">
-      <div className="relative aspect-[16/10] min-h-[360px] overflow-hidden rounded-[2rem] border border-white/20 bg-[#0b1020] shadow-[0_24px_70px_rgba(2,8,23,0.55)]">
-        <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_15%_20%,rgba(72,187,255,0.24),transparent_40%),radial-gradient(circle_at_84%_12%,rgba(255,147,83,0.2),transparent_42%),radial-gradient(circle_at_52%_76%,rgba(102,84,255,0.26),transparent_46%),linear-gradient(165deg,#070b16_0%,#0b1020_40%,#070b14_100%)]" />
-        <div className="pointer-events-none absolute inset-0 opacity-70">
-          <svg viewBox="0 0 1200 750" className="h-full w-full" aria-hidden="true">
+      <div className="relative aspect-[16/10] min-h-[390px] overflow-hidden rounded-[2rem] border border-white/15 bg-[#070b16] shadow-[0_24px_70px_rgba(2,8,23,0.58)]">
+        <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_13%_11%,rgba(78,198,255,0.2),transparent_42%),radial-gradient(circle_at_83%_18%,rgba(255,150,90,0.22),transparent_45%),radial-gradient(circle_at_52%_85%,rgba(104,79,255,0.2),transparent_46%),linear-gradient(170deg,#04070f_0%,#060b17_38%,#070c16_100%)]" />
+        <div className="pointer-events-none absolute inset-0 opacity-25 mix-blend-screen">
+          <svg viewBox={`0 0 ${VIEWBOX_WIDTH} ${VIEWBOX_HEIGHT}`} className="h-full w-full" aria-hidden="true">
             <defs>
-              <linearGradient id="canalStroke" x1="0%" y1="0%" x2="100%" y2="100%">
-                <stop offset="0%" stopColor="rgba(106,198,255,0.6)" />
-                <stop offset="100%" stopColor="rgba(177,151,255,0.24)" />
-              </linearGradient>
+              <pattern id="water-grid" width="26" height="26" patternUnits="userSpaceOnUse">
+                <path d="M 0 13 L 26 13 M 13 0 L 13 26" stroke="rgba(142,230,255,0.14)" strokeWidth="1" />
+              </pattern>
             </defs>
-            <path
-              d="M120 430 C250 210, 520 160, 730 300 C910 420, 1060 380, 1130 270"
-              stroke="url(#canalStroke)"
-              strokeWidth="7"
-              strokeLinecap="round"
-              fill="none"
-              opacity="0.55"
-            />
-            <path
-              d="M60 520 C260 390, 440 430, 620 550 C760 640, 980 630, 1160 510"
-              stroke="url(#canalStroke)"
-              strokeWidth="6"
-              strokeLinecap="round"
-              fill="none"
-              opacity="0.35"
-            />
-            <path
-              d="M230 110 C430 210, 400 470, 270 610"
-              stroke="rgba(97,182,255,0.45)"
-              strokeWidth="4"
-              strokeLinecap="round"
-              fill="none"
-            />
-            <path
-              d="M840 120 C760 260, 760 460, 890 620"
-              stroke="rgba(255,159,96,0.45)"
-              strokeWidth="4"
-              strokeLinecap="round"
-              fill="none"
-            />
+            <rect width={VIEWBOX_WIDTH} height={VIEWBOX_HEIGHT} fill="url(#water-grid)" />
           </svg>
         </div>
 
-        <div className="pointer-events-none absolute inset-0 bg-[linear-gradient(0deg,rgba(255,255,255,0.05)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.05)_1px,transparent_1px)] bg-[length:62px_62px] opacity-30" />
-        <div className="pointer-events-none absolute inset-0 motion-safe:animate-[pulse_8s_ease-in-out_infinite] motion-reduce:animate-none bg-[radial-gradient(circle_at_50%_45%,rgba(137,214,255,0.12),transparent_56%)]" />
+        <svg
+          viewBox={`0 0 ${VIEWBOX_WIDTH} ${VIEWBOX_HEIGHT}`}
+          className="absolute inset-0 h-full w-full"
+          aria-label="Amsterdam map with interactive music zones"
+          role="img"
+        >
+          <g>
+            {mapData.features.map(feature => {
+              const zone = zonesById[feature.zoneId];
+              const active = feature.zoneId === activeZoneId;
+              return (
+                <path
+                  key={feature.code}
+                  d={feature.path}
+                  onClick={() => onSelect(feature.zoneId)}
+                  className="cursor-pointer transition"
+                  fill={hexToRgba(zone.accent, active ? 0.48 : 0.2)}
+                  stroke={active ? hexToRgba(zone.accent, 0.95) : 'rgba(240,248,255,0.35)'}
+                  strokeWidth={active ? 2.4 : 1.05}
+                  vectorEffect="non-scaling-stroke"
+                >
+                  <title>{feature.name}</title>
+                </path>
+              );
+            })}
+          </g>
+          {activeZoneId ? (
+            <g aria-hidden="true">
+              {mapData.features
+                .filter(feature => feature.zoneId === activeZoneId)
+                .map(feature => {
+                  const zone = zonesById[feature.zoneId];
+                  return (
+                    <path
+                      key={`${feature.code}-highlight`}
+                      d={feature.path}
+                      fill="none"
+                      stroke={zone.accent}
+                      strokeWidth={3.5}
+                      vectorEffect="non-scaling-stroke"
+                      opacity={0.95}
+                    />
+                  );
+                })}
+            </g>
+          ) : null}
+        </svg>
 
-        {zones.map(zone => {
-          const active = zone.id === activeZoneId;
-          return (
-            <button
-              key={zone.id}
-              type="button"
-              aria-label={`${zone.displayName}, ${zone.genreLabel}`}
-              onClick={() => onSelect(zone.id)}
-              style={zoneStyle(zone)}
-              className={[
-                'absolute flex items-center justify-center rounded-[1.4rem] border px-3 text-[0.62rem] font-semibold uppercase tracking-[0.22em] transition focus-visible:outline-none focus-visible:ring-4',
-                'focus-visible:ring-cyan-200/70',
-                active
-                  ? 'border-white/85 text-white shadow-[0_16px_45px_rgba(15,23,42,0.52)]'
-                  : 'border-white/30 bg-white/10 text-white/85 hover:border-white/65 hover:bg-white/16',
-              ].join(' ')}
-            >
-              <span
+        <div className="absolute inset-0">
+          {zones.map(zone => {
+            const point = mapData.zoneLabelPoints[zone.id];
+            if (!point) return null;
+            const offset = LABEL_OFFSETS[zone.id] || { dx: 0, dy: 0 };
+            const active = zone.id === activeZoneId;
+            return (
+              <button
+                key={zone.id}
+                type="button"
+                onClick={() => onSelect(zone.id)}
+                aria-label={`${zone.displayName}, ${zone.genreLabel}`}
                 className={[
-                  'absolute inset-0 rounded-[1.4rem] transition duration-300',
+                  'absolute rounded-full border px-2.5 py-1 text-[0.58rem] font-semibold uppercase tracking-[0.2em] transition focus-visible:outline-none focus-visible:ring-4',
+                  'focus-visible:ring-cyan-200/70',
                   active
-                    ? 'opacity-85 motion-safe:animate-[pulse_3s_ease-in-out_infinite] motion-reduce:animate-none'
-                    : 'opacity-65',
+                    ? 'border-white/85 bg-white text-neutral-900 shadow-[0_10px_24px_rgba(15,23,42,0.45)]'
+                    : 'border-white/45 bg-black/45 text-white/90 hover:border-white/70 hover:bg-black/55',
                 ].join(' ')}
                 style={{
-                  background:
-                    'radial-gradient(circle at 35% 20%, rgba(255,255,255,0.24), rgba(255,255,255,0.05) 45%, rgba(0,0,0,0.06) 100%)',
-                  boxShadow: `0 0 0 1px ${zone.accent}99, 0 0 42px ${zone.accent}55`,
+                  left: `${(point.x / VIEWBOX_WIDTH) * 100}%`,
+                  top: `${(point.y / VIEWBOX_HEIGHT) * 100}%`,
+                  transform: 'translate(-50%, -50%)',
+                  marginLeft: `${offset.dx}px`,
+                  marginTop: `${offset.dy}px`,
                 }}
-                aria-hidden="true"
-              />
-              <span className="relative z-10 drop-shadow-[0_2px_6px_rgba(0,0,0,0.4)]">{zone.displayName}</span>
-            </button>
-          );
-        })}
+              >
+                {zone.displayName}
+              </button>
+            );
+          })}
+        </div>
 
-        <div className="pointer-events-none absolute bottom-4 left-4 rounded-full border border-white/20 bg-black/30 px-3 py-1 text-[0.62rem] uppercase tracking-[0.24em] text-white/85">
-          Amsterdam Afterhours Grid
+        <div className="pointer-events-none absolute bottom-4 left-4 rounded-full border border-white/20 bg-black/35 px-3 py-1 text-[0.6rem] uppercase tracking-[0.22em] text-white/85">
+          Geometry: Amsterdam GGW areas
         </div>
       </div>
     </section>

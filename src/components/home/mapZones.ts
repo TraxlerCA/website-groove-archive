@@ -16,20 +16,12 @@ export type MapAnchor = {
   align: 'left' | 'right' | 'center';
 };
 
-export type ZoneBounds = {
-  x: number;
-  y: number;
-  w: number;
-  h: number;
-  rotate: number;
-};
-
 export type MapZoneConfig = {
   id: MapZoneId;
   displayName: string;
   genreLabel: string;
   accent: string;
-  bounds: ZoneBounds;
+  areas: string[];
   anchorDesktop: MapAnchor;
   anchorMobile: MapAnchor;
 };
@@ -46,92 +38,92 @@ export const WILDCARD_ZONE_ID: MapZoneId = 'nacht_ferry';
 export const MAP_ZONES: MapZoneConfig[] = [
   {
     id: 'canal_glow',
-    displayName: 'Canal Glow',
+    displayName: 'Grachtenring',
     genreLabel: 'Melodic House & Techno',
     accent: '#42d4ff',
-    bounds: { x: 18, y: 22, w: 22, h: 20, rotate: -6 },
-    anchorDesktop: { x: 43, y: 27, align: 'left' },
+    areas: ['Centrum-West', 'Centrum-Oost', 'Oud-West, De Baarsjes'],
+    anchorDesktop: { x: 48, y: 37, align: 'left' },
     anchorMobile: { x: 50, y: 88, align: 'center' },
   },
   {
     id: 'spiegel_funk',
-    displayName: 'Spiegel Funk',
+    displayName: 'Westerpark Belt',
     genreLabel: 'Disco & Funky House',
     accent: '#ff8d4d',
-    bounds: { x: 42, y: 12, w: 21, h: 18, rotate: 7 },
-    anchorDesktop: { x: 68, y: 22, align: 'left' },
+    areas: ['Westerpark', 'Bos en Lommer'],
+    anchorDesktop: { x: 39, y: 26, align: 'left' },
     anchorMobile: { x: 50, y: 88, align: 'center' },
   },
   {
     id: 'amstel_rush',
-    displayName: 'Amstel Rush',
+    displayName: 'Oostelijke Kades',
     genreLabel: 'Trance & High Energy Rave',
     accent: '#ff5ea8',
-    bounds: { x: 68, y: 20, w: 19, h: 19, rotate: -4 },
-    anchorDesktop: { x: 86, y: 34, align: 'right' },
+    areas: ['Oud-Oost', 'Indische Buurt, Oostelijk Havengebied'],
+    anchorDesktop: { x: 62, y: 41, align: 'left' },
     anchorMobile: { x: 50, y: 88, align: 'center' },
   },
   {
     id: 'jordaan_jack',
-    displayName: 'Jordaan Jack',
+    displayName: 'Zuid Stretches',
     genreLabel: 'Classic House & Garage',
     accent: '#ffd35a',
-    bounds: { x: 12, y: 44, w: 20, h: 18, rotate: 4 },
-    anchorDesktop: { x: 37, y: 55, align: 'left' },
+    areas: ['Oud-Zuid', 'De Pijp, Rivierenbuurt'],
+    anchorDesktop: { x: 46, y: 53, align: 'left' },
     anchorMobile: { x: 50, y: 88, align: 'center' },
   },
   {
     id: 'polder_drift',
-    displayName: 'Polder Drift',
+    displayName: 'Polderlijn Zuid',
     genreLabel: 'Minimal & Deep House',
     accent: '#7ddfb3',
-    bounds: { x: 34, y: 36, w: 18, h: 18, rotate: -10 },
-    anchorDesktop: { x: 53, y: 47, align: 'left' },
+    areas: ['Slotervaart', 'Buitenveldert, Zuidas'],
+    anchorDesktop: { x: 38, y: 65, align: 'left' },
     anchorMobile: { x: 50, y: 88, align: 'center' },
   },
   {
     id: 'beton_tunnel',
-    displayName: 'Beton Tunnel',
+    displayName: 'Sloterdijk Line',
     genreLabel: 'Hard & Driving Techno',
     accent: '#94a2ff',
-    bounds: { x: 56, y: 42, w: 22, h: 18, rotate: 5 },
-    anchorDesktop: { x: 78, y: 50, align: 'right' },
+    areas: ['Sloterdijk Nieuw-West', 'Geuzenveld, Slotermeer'],
+    anchorDesktop: { x: 25, y: 28, align: 'left' },
     anchorMobile: { x: 50, y: 88, align: 'center' },
   },
   {
     id: 'ndsm_fracture',
-    displayName: 'NDSM Fracture',
+    displayName: 'Noord Docks',
     genreLabel: 'Breaks & Experimental',
     accent: '#d487ff',
-    bounds: { x: 76, y: 45, w: 16, h: 19, rotate: -8 },
-    anchorDesktop: { x: 88, y: 58, align: 'right' },
+    areas: ['Noord-West', 'Oud-Noord', 'Noord-Oost'],
+    anchorDesktop: { x: 58, y: 16, align: 'left' },
     anchorMobile: { x: 50, y: 88, align: 'center' },
   },
   {
     id: 'oost_dauw',
-    displayName: 'Oost Dauw',
+    displayName: 'IJ Waters',
     genreLabel: 'Chill & Organic Electronica',
     accent: '#8eeeff',
-    bounds: { x: 20, y: 65, w: 18, h: 18, rotate: -6 },
-    anchorDesktop: { x: 44, y: 76, align: 'left' },
+    areas: ['Watergraafsmeer', 'IJburg, Zeeburgereiland'],
+    anchorDesktop: { x: 69, y: 57, align: 'left' },
     anchorMobile: { x: 50, y: 88, align: 'center' },
   },
   {
     id: 'dam_pop_up',
-    displayName: 'Dam Pop-Up',
+    displayName: 'Nieuw-West South',
     genreLabel: 'Pop Edits & Party Remixes',
     accent: '#ffb347',
-    bounds: { x: 42, y: 61, w: 22, h: 18, rotate: 8 },
-    anchorDesktop: { x: 66, y: 73, align: 'left' },
+    areas: ['Osdorp', 'De Aker, Sloten, Nieuw-Sloten'],
+    anchorDesktop: { x: 22, y: 50, align: 'left' },
     anchorMobile: { x: 50, y: 88, align: 'center' },
   },
   {
     id: 'nacht_ferry',
-    displayName: 'Nacht Ferry',
+    displayName: 'Zuidoost Ferry',
     genreLabel: 'Leftfield',
     accent: '#7f9cff',
-    bounds: { x: 66, y: 68, w: 19, h: 18, rotate: -5 },
-    anchorDesktop: { x: 84, y: 78, align: 'right' },
+    areas: ['Bijlmer-West', 'Bijlmer-Centrum', 'Bijlmer-Oost', 'Gaasperdam', 'Weesp, Driemond'],
+    anchorDesktop: { x: 84, y: 79, align: 'right' },
     anchorMobile: { x: 50, y: 88, align: 'center' },
   },
 ];
