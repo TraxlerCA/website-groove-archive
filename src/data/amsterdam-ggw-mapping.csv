@@ -2,11 +2,11 @@ ggw_code,ggw_name,zone_id,active
 GA01,Centrum-West,jordaan_jack,true
 GA02,Centrum-Oost,festival_peak,true
 GE03,Westerpark,oost_dauw,true
-GE04,Bos en Lommer,,false
+GE04,Bos en Lommer,ndsm_fracture,true
 "GE05","Oud-West, De Baarsjes",spiegel_funk,true
 GF06,Sloterdijk Nieuw-West,,false
 "GF07","Geuzenveld, Slotermeer",,false
-GF08,Osdorp,ndsm_fracture,true
+GF08,Osdorp,,false
 "GF09","De Aker, Sloten, Nieuw-Sloten",,false
 GF10,Slotervaart,,false
 GK11,Oud-Zuid,nacht_ferry,true

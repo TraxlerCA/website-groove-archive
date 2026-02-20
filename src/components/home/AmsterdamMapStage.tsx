@@ -38,25 +38,12 @@ type AmsterdamMapStageProps = {
   zones: MapZoneConfig[];
   activeZoneId: MapZoneId | null;
   onSelect: (zoneId: MapZoneId) => void;
+  onHover: (zoneId: MapZoneId | null) => void;
 };
 
 const VIEWBOX_WIDTH = 1000;
 const VIEWBOX_HEIGHT = 740;
 const VIEWBOX_PADDING = 34;
-const LABEL_OFFSETS: Partial<Record<MapZoneId, { dx: number; dy: number }>> = {
-  canal_glow: { dx: -24, dy: -6 },
-  festival_peak: { dx: 10, dy: -8 },
-  spiegel_funk: { dx: -20, dy: -16 },
-  beton_tunnel: { dx: -18, dy: -14 },
-  ndsm_fracture: { dx: 18, dy: -8 },
-  jordaan_jack: { dx: -22, dy: 14 },
-  amstel_rush: { dx: 20, dy: -10 },
-  polder_drift: { dx: -10, dy: 18 },
-  dam_pop_up: { dx: -16, dy: 12 },
-  oost_dauw: { dx: 24, dy: 12 },
-  nacht_ferry: { dx: 18, dy: 4 },
-};
-
 function forEachPoint(geometry: Geometry, callback: (point: Point) => void): void {
   if (geometry.type === 'Polygon') {
     geometry.coordinates.forEach(ring => ring.forEach(callback));
@@ -94,6 +81,7 @@ export default function AmsterdamMapStage({
   zones,
   activeZoneId,
   onSelect,
+  onHover,
 }: AmsterdamMapStageProps) {
   const geometry = geojson as GeoCollection;
   const zonesById = useMemo(
@@ -111,7 +99,12 @@ export default function AmsterdamMapStage({
     let maxX = Number.NEGATIVE_INFINITY;
     let maxY = Number.NEGATIVE_INFINITY;
 
-    geometry.features.forEach(feature => {
+    const visibleFeatures = geometry.features.filter(
+      feature => feature.properties.active && feature.properties.zoneId,
+    );
+    const boundsSource = visibleFeatures.length > 0 ? visibleFeatures : geometry.features;
+
+    boundsSource.forEach(feature => {
       forEachPoint(feature.geometry, ([x, y]) => {
         if (x < minX) minX = x;
         if (x > maxX) maxX = x;
@@ -199,6 +192,7 @@ export default function AmsterdamMapStage({
           className="absolute inset-0 h-full w-full"
           aria-label="Amsterdam map with interactive music zones"
           role="img"
+          onMouseLeave={() => onHover(null)}
         >
           <g>
             {mapData.features.map(feature => {
@@ -207,16 +201,30 @@ export default function AmsterdamMapStage({
               const zone = zoneId ? zonesById[zoneId] : null;
               const interactive = feature.active && Boolean(zone);
               const active = interactive && zoneId === activeZoneId;
+              const isRandomZone = zoneId === 'nacht_ferry';
+              const fill = isRandomZone
+                ? active
+                  ? 'rgba(138,192,255,0.92)'
+                  : 'rgba(138,192,255,0.58)'
+                : active
+                  ? 'rgba(15,15,15,0.88)'
+                  : 'rgba(22,22,22,0.2)';
               return (
                 <path
                   key={`${feature.code}-fill`}
                   d={feature.path}
                   onClick={interactive && zoneId ? () => onSelect(zoneId) : undefined}
+                  onMouseEnter={interactive ? () => onHover(zoneId) : undefined}
                   className={interactive ? 'cursor-pointer transition' : 'cursor-default transition'}
-                  fill={active ? 'rgba(15,15,15,0.88)' : 'rgba(22,22,22,0.2)'}
-                >
-                  <title>{interactive ? feature.name : `${feature.name} (inactive)`}</title>
-                </path>
+                  fill={fill}
+                  style={
+                    isRandomZone
+                      ? {
+                          filter: 'drop-shadow(0 0 14px rgba(130,190,255,0.58))',
+                        }
+                      : undefined
+                  }
+                />
               );
             })}
           </g>
@@ -245,13 +253,18 @@ export default function AmsterdamMapStage({
               if (!feature.active || !feature.zoneId) return null;
               const interactive = Boolean(zonesById[feature.zoneId]);
               const active = interactive && feature.zoneId === activeZoneId;
+              const isRandomZone = feature.zoneId === 'nacht_ferry';
               return (
                 <path
                   key={`${feature.code}-boundary`}
                   d={feature.path}
                   fill="none"
                   stroke={
-                    active
+                    isRandomZone
+                      ? active
+                        ? 'rgba(255,255,255,0.96)'
+                        : 'rgba(93,146,214,0.92)'
+                      : active
                       ? 'rgba(255,255,255,0.95)'
                       : 'rgba(0,0,0,0.82)'
                   }
@@ -262,39 +275,6 @@ export default function AmsterdamMapStage({
             })}
           </g>
         </svg>
-
-        <div className="absolute inset-0">
-          {zones.map(zone => {
-            const point = mapData.zoneLabelPoints[zone.id];
-            if (!point) return null;
-            const offset = LABEL_OFFSETS[zone.id] || { dx: 0, dy: 0 };
-            const active = zone.id === activeZoneId;
-            return (
-              <button
-                key={zone.id}
-                type="button"
-                onClick={() => onSelect(zone.id)}
-                aria-label={`${zone.displayName}, ${zone.genreLabel}`}
-                className={[
-                  'absolute max-w-[11rem] rounded-full border px-2.5 py-1 text-center text-[0.58rem] leading-tight font-semibold tracking-[0.02em] transition focus-visible:outline-none focus-visible:ring-4',
-                  'focus-visible:ring-black/20',
-                  active
-                    ? 'border-black bg-black text-white shadow-[0_10px_24px_rgba(0,0,0,0.28)]'
-                    : 'border-black/60 bg-white/92 text-neutral-900 hover:border-black hover:bg-white',
-                ].join(' ')}
-                style={{
-                  left: `${(point.x / VIEWBOX_WIDTH) * 100}%`,
-                  top: `${(point.y / VIEWBOX_HEIGHT) * 100}%`,
-                  transform: 'translate(-50%, -50%)',
-                  marginLeft: `${offset.dx}px`,
-                  marginTop: `${offset.dy}px`,
-                }}
-              >
-                {zone.displayName}
-              </button>
-            );
-          })}
-        </div>
 
       </div>
     </section>
