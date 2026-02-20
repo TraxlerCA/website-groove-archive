@@ -285,9 +285,6 @@ export default function AmsterdamMapStage({
           })}
         </div>
 
-        <div className="pointer-events-none absolute bottom-4 left-4 rounded-full border border-white/20 bg-black/35 px-3 py-1 text-[0.6rem] uppercase tracking-[0.22em] text-white/85">
-          Geometry: Amsterdam GGW areas
-        </div>
       </div>
     </section>
   );
