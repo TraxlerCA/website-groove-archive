@@ -12,6 +12,7 @@ const OUTPUT_ZONE_AREAS_PATH = path.join(ROOT_DIR, 'src', 'data', 'amsterdam-ggw
 
 const ZONE_IDS = [
   'canal_glow',
+  'festival_peak',
   'spiegel_funk',
   'amstel_rush',
   'jordaan_jack',

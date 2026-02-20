@@ -1,26 +1,26 @@
 ggw_code,ggw_name,zone_id,active
-GA01,Centrum-West,canal_glow,true
-GA02,Centrum-Oost,canal_glow,false
-GE03,Westerpark,spiegel_funk,true
-GE04,Bos en Lommer,spiegel_funk,false
-"GE05","Oud-West, De Baarsjes",canal_glow,false
-GF06,Sloterdijk Nieuw-West,beton_tunnel,true
-"GF07","Geuzenveld, Slotermeer",beton_tunnel,false
-GF08,Osdorp,dam_pop_up,true
-"GF09","De Aker, Sloten, Nieuw-Sloten",dam_pop_up,false
-GF10,Slotervaart,polder_drift,true
-GK11,Oud-Zuid,jordaan_jack,true
-"GK12","Buitenveldert, Zuidas",polder_drift,false
-"GK13","De Pijp, Rivierenbuurt",jordaan_jack,false
-GM14,Oud-Oost,amstel_rush,true
-"GM15","Indische Buurt, Oostelijk Havengebied",amstel_rush,false
-GM16,Watergraafsmeer,oost_dauw,true
-"GM17","IJburg, Zeeburgereiland",oost_dauw,false
-GN18,Noord-West,ndsm_fracture,true
-GN19,Oud-Noord,ndsm_fracture,false
-GN20,Noord-Oost,ndsm_fracture,false
-"GS25","Weesp, Driemond",nacht_ferry,false
-GT21,Bijlmer-West,nacht_ferry,false
-GT22,Bijlmer-Centrum,nacht_ferry,true
-GT23,Bijlmer-Oost,nacht_ferry,false
-GT24,Gaasperdam,nacht_ferry,false
+GA01,Centrum-West,jordaan_jack,true
+GA02,Centrum-Oost,festival_peak,true
+GE03,Westerpark,oost_dauw,true
+GE04,Bos en Lommer,,false
+"GE05","Oud-West, De Baarsjes",spiegel_funk,true
+GF06,Sloterdijk Nieuw-West,,false
+"GF07","Geuzenveld, Slotermeer",,false
+GF08,Osdorp,,false
+"GF09","De Aker, Sloten, Nieuw-Sloten",,false
+GF10,Slotervaart,,false
+GK11,Oud-Zuid,nacht_ferry,true
+"GK12","Buitenveldert, Zuidas",,false
+"GK13","De Pijp, Rivierenbuurt",dam_pop_up,true
+GM14,Oud-Oost,canal_glow,true
+"GM15","Indische Buurt, Oostelijk Havengebied",polder_drift,true
+GM16,Watergraafsmeer,amstel_rush,true
+"GM17","IJburg, Zeeburgereiland",ndsm_fracture,true
+GN18,Noord-West,,false
+GN19,Oud-Noord,beton_tunnel,true
+GN20,Noord-Oost,,false
+"GS25","Weesp, Driemond",,false
+GT21,Bijlmer-West,,false
+GT22,Bijlmer-Centrum,,false
+GT23,Bijlmer-Oost,,false
+GT24,Gaasperdam,,false

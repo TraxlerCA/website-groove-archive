@@ -1,32 +1,35 @@
 {
   "canal_glow": [
-    "Centrum-West"
-  ],
-  "spiegel_funk": [
-    "Westerpark"
-  ],
-  "amstel_rush": [
     "Oud-Oost"
   ],
-  "jordaan_jack": [
-    "Oud-Zuid"
+  "festival_peak": [
+    "Centrum-Oost"
   ],
-  "polder_drift": [
-    "Slotervaart"
+  "spiegel_funk": [
+    "Oud-West, De Baarsjes"
   ],
-  "beton_tunnel": [
-    "Sloterdijk Nieuw-West"
-  ],
-  "ndsm_fracture": [
-    "Noord-West"
-  ],
-  "oost_dauw": [
+  "amstel_rush": [
     "Watergraafsmeer"
   ],
+  "jordaan_jack": [
+    "Centrum-West"
+  ],
+  "polder_drift": [
+    "Indische Buurt, Oostelijk Havengebied"
+  ],
+  "beton_tunnel": [
+    "Oud-Noord"
+  ],
+  "ndsm_fracture": [
+    "IJburg, Zeeburgereiland"
+  ],
+  "oost_dauw": [
+    "Westerpark"
+  ],
   "dam_pop_up": [
-    "Osdorp"
+    "De Pijp, Rivierenbuurt"
   ],
   "nacht_ferry": [
-    "Bijlmer-Centrum"
+    "Oud-Zuid"
   ]
 }

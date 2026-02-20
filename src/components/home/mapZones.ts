@@ -2,6 +2,7 @@ import zoneAreasById from '@/data/amsterdam-ggw-zone-areas.json';
 
 export type MapZoneId =
   | 'canal_glow'
+  | 'festival_peak'
   | 'spiegel_funk'
   | 'amstel_rush'
   | 'jordaan_jack'
@@ -41,7 +42,7 @@ const ZONE_AREAS_BY_ID = zoneAreasById as Record<MapZoneId, string[]>;
 export const MAP_ZONES: MapZoneConfig[] = [
   {
     id: 'canal_glow',
-    displayName: 'Grachtenring',
+    displayName: 'Melodic House & Techno',
     genreLabel: 'Melodic House & Techno',
     accent: '#42d4ff',
     areas: ZONE_AREAS_BY_ID.canal_glow,
@@ -49,8 +50,17 @@ export const MAP_ZONES: MapZoneConfig[] = [
     anchorMobile: { x: 50, y: 88, align: 'center' },
   },
   {
+    id: 'festival_peak',
+    displayName: 'Festival Anthems & Big Room',
+    genreLabel: 'Festival Anthems & Big Room',
+    accent: '#ff6f5f',
+    areas: ZONE_AREAS_BY_ID.festival_peak,
+    anchorDesktop: { x: 53, y: 35, align: 'left' },
+    anchorMobile: { x: 50, y: 88, align: 'center' },
+  },
+  {
     id: 'spiegel_funk',
-    displayName: 'Westerpark Belt',
+    displayName: 'Disco & Funky House',
     genreLabel: 'Disco & Funky House',
     accent: '#ff8d4d',
     areas: ZONE_AREAS_BY_ID.spiegel_funk,
@@ -59,7 +69,7 @@ export const MAP_ZONES: MapZoneConfig[] = [
   },
   {
     id: 'amstel_rush',
-    displayName: 'Oostelijke Kades',
+    displayName: 'Trance & High Energy Rave',
     genreLabel: 'Trance & High Energy Rave',
     accent: '#ff5ea8',
     areas: ZONE_AREAS_BY_ID.amstel_rush,
@@ -68,7 +78,7 @@ export const MAP_ZONES: MapZoneConfig[] = [
   },
   {
     id: 'jordaan_jack',
-    displayName: 'Zuid Stretches',
+    displayName: 'Classic House & Garage',
     genreLabel: 'Classic House & Garage',
     accent: '#ffd35a',
     areas: ZONE_AREAS_BY_ID.jordaan_jack,
@@ -77,7 +87,7 @@ export const MAP_ZONES: MapZoneConfig[] = [
   },
   {
     id: 'polder_drift',
-    displayName: 'Polderlijn Zuid',
+    displayName: 'Minimal & Deep House',
     genreLabel: 'Minimal & Deep House',
     accent: '#7ddfb3',
     areas: ZONE_AREAS_BY_ID.polder_drift,
@@ -86,7 +96,7 @@ export const MAP_ZONES: MapZoneConfig[] = [
   },
   {
     id: 'beton_tunnel',
-    displayName: 'Sloterdijk Line',
+    displayName: 'Hard & Driving Techno',
     genreLabel: 'Hard & Driving Techno',
     accent: '#94a2ff',
     areas: ZONE_AREAS_BY_ID.beton_tunnel,
@@ -95,7 +105,7 @@ export const MAP_ZONES: MapZoneConfig[] = [
   },
   {
     id: 'ndsm_fracture',
-    displayName: 'Noord Docks',
+    displayName: 'Breaks & Experimental',
     genreLabel: 'Breaks & Experimental',
     accent: '#d487ff',
     areas: ZONE_AREAS_BY_ID.ndsm_fracture,
@@ -104,7 +114,7 @@ export const MAP_ZONES: MapZoneConfig[] = [
   },
   {
     id: 'oost_dauw',
-    displayName: 'IJ Waters',
+    displayName: 'Chill & Organic Electronica',
     genreLabel: 'Chill & Organic Electronica',
     accent: '#8eeeff',
     areas: ZONE_AREAS_BY_ID.oost_dauw,
@@ -113,7 +123,7 @@ export const MAP_ZONES: MapZoneConfig[] = [
   },
   {
     id: 'dam_pop_up',
-    displayName: 'Nieuw-West South',
+    displayName: 'Pop Edits & Party Remixes',
     genreLabel: 'Pop Edits & Party Remixes',
     accent: '#ffb347',
     areas: ZONE_AREAS_BY_ID.dam_pop_up,
@@ -122,8 +132,8 @@ export const MAP_ZONES: MapZoneConfig[] = [
   },
   {
     id: 'nacht_ferry',
-    displayName: 'Zuidoost Ferry',
-    genreLabel: 'Leftfield',
+    displayName: '<Random genre>',
+    genreLabel: '<Random genre>',
     accent: '#7f9cff',
     areas: ZONE_AREAS_BY_ID.nacht_ferry,
     anchorDesktop: { x: 84, y: 79, align: 'right' },
