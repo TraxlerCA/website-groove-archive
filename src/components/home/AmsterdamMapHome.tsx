@@ -76,6 +76,12 @@ export default function AmsterdamMapHome() {
     }
   }, [rows, zonesById]);
 
+  const handleClearSelection = useCallback(() => {
+    setSelectedZoneId(null);
+    setSelectedRowSet(null);
+    setHoveredZoneId(null);
+  }, []);
+
   const handlePlay = useCallback(() => {
     if (!selectedRow || !selectedZone) return;
     play(selectedRow, 'soundcloud');
@@ -112,6 +118,7 @@ export default function AmsterdamMapHome() {
         hoveredZoneId={hoveredZoneId}
         onSelect={handleSelectZone}
         onHover={setHoveredZoneId}
+        onClearSelection={handleClearSelection}
       />
       {selectedZone ? (
         <div

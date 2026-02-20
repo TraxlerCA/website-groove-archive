@@ -40,6 +40,7 @@ type AmsterdamMapStageProps = {
   hoveredZoneId: MapZoneId | null;
   onSelect: (zoneId: MapZoneId) => void;
   onHover: (zoneId: MapZoneId | null) => void;
+  onClearSelection: () => void;
 };
 
 const VIEWBOX_WIDTH = 1000;
@@ -86,6 +87,7 @@ export default function AmsterdamMapStage({
   hoveredZoneId,
   onSelect,
   onHover,
+  onClearSelection,
 }: AmsterdamMapStageProps) {
   const geometry = geojson as GeoCollection;
   const zonesById = useMemo(
@@ -196,6 +198,12 @@ export default function AmsterdamMapStage({
           className="absolute inset-0 h-full w-full"
           aria-label="Amsterdam map with interactive music zones"
           role="img"
+          onClick={event => {
+            const target = event.target as Element;
+            if (target.tagName.toLowerCase() !== 'svg') return;
+            onHover(null);
+            onClearSelection();
+          }}
           onMouseLeave={event => {
             const related = event.relatedTarget as HTMLElement | null;
             if (related?.dataset?.hoverPill === 'true') return;
