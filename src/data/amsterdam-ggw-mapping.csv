@@ -6,7 +6,7 @@ GE04,Bos en Lommer,,false
 "GE05","Oud-West, De Baarsjes",spiegel_funk,true
 GF06,Sloterdijk Nieuw-West,,false
 "GF07","Geuzenveld, Slotermeer",,false
-GF08,Osdorp,,false
+GF08,Osdorp,ndsm_fracture,true
 "GF09","De Aker, Sloten, Nieuw-Sloten",,false
 GF10,Slotervaart,,false
 GK11,Oud-Zuid,nacht_ferry,true
@@ -15,7 +15,7 @@ GK11,Oud-Zuid,nacht_ferry,true
 GM14,Oud-Oost,canal_glow,true
 "GM15","Indische Buurt, Oostelijk Havengebied",polder_drift,true
 GM16,Watergraafsmeer,amstel_rush,true
-"GM17","IJburg, Zeeburgereiland",ndsm_fracture,true
+"GM17","IJburg, Zeeburgereiland",,false
 GN18,Noord-West,,false
 GN19,Oud-Noord,beton_tunnel,true
 GN20,Noord-Oost,,false
