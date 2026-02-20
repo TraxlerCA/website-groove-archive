@@ -15,7 +15,8 @@ type GeoFeature = {
   properties: {
     code: string;
     name: string;
-    zoneId: MapZoneId;
+    zoneId: MapZoneId | null;
+    active: boolean;
   };
   geometry: Geometry;
 };
@@ -28,7 +29,8 @@ type GeoCollection = {
 type ProjectedFeature = {
   code: string;
   name: string;
-  zoneId: MapZoneId;
+  zoneId: MapZoneId | null;
+  active: boolean;
   path: string;
 };
 
@@ -156,21 +158,24 @@ export default function AmsterdamMapStage({
         count += 1;
       });
 
-      const existing = zoneCentroids.get(feature.properties.zoneId) || {
-        sumX: 0,
-        sumY: 0,
-        count: 0,
-      };
-      zoneCentroids.set(feature.properties.zoneId, {
-        sumX: existing.sumX + sumX,
-        sumY: existing.sumY + sumY,
-        count: existing.count + count,
-      });
+      if (feature.properties.active && feature.properties.zoneId) {
+        const existing = zoneCentroids.get(feature.properties.zoneId) || {
+          sumX: 0,
+          sumY: 0,
+          count: 0,
+        };
+        zoneCentroids.set(feature.properties.zoneId, {
+          sumX: existing.sumX + sumX,
+          sumY: existing.sumY + sumY,
+          count: existing.count + count,
+        });
+      }
 
       return {
         code: feature.properties.code,
         name: feature.properties.name,
         zoneId: feature.properties.zoneId,
+        active: feature.properties.active,
         path,
       };
     });
@@ -212,20 +217,18 @@ export default function AmsterdamMapStage({
         >
           <g>
             {mapData.features.map(feature => {
-              const zone = zonesById[feature.zoneId];
-              const active = feature.zoneId === activeZoneId;
+              const zone = feature.zoneId ? zonesById[feature.zoneId] : null;
+              const interactive = feature.active && Boolean(zone);
+              const active = interactive && feature.zoneId === activeZoneId;
               return (
                 <path
-                  key={feature.code}
+                  key={`${feature.code}-fill`}
                   d={feature.path}
-                  onClick={() => onSelect(feature.zoneId)}
-                  className="cursor-pointer transition"
-                  fill={hexToRgba(zone.accent, active ? 0.48 : 0.2)}
-                  stroke={active ? hexToRgba(zone.accent, 0.95) : 'rgba(240,248,255,0.35)'}
-                  strokeWidth={active ? 2.4 : 1.05}
-                  vectorEffect="non-scaling-stroke"
+                  onClick={interactive && feature.zoneId ? () => onSelect(feature.zoneId) : undefined}
+                  className={interactive ? 'cursor-pointer transition' : 'cursor-default transition'}
+                  fill={interactive && zone ? hexToRgba(zone.accent, active ? 0.48 : 0.2) : 'rgba(148,163,184,0.09)'}
                 >
-                  <title>{feature.name}</title>
+                  <title>{interactive ? feature.name : `${feature.name} (inactive)`}</title>
                 </path>
               );
             })}
@@ -233,8 +236,9 @@ export default function AmsterdamMapStage({
           {activeZoneId ? (
             <g aria-hidden="true">
               {mapData.features
-                .filter(feature => feature.zoneId === activeZoneId)
+                .filter(feature => feature.active && feature.zoneId === activeZoneId)
                 .map(feature => {
+                  if (!feature.zoneId) return null;
                   const zone = zonesById[feature.zoneId];
                   return (
                     <path
@@ -242,14 +246,36 @@ export default function AmsterdamMapStage({
                       d={feature.path}
                       fill="none"
                       stroke={zone.accent}
-                      strokeWidth={3.5}
+                      strokeWidth={4}
                       vectorEffect="non-scaling-stroke"
-                      opacity={0.95}
+                      opacity={0.72}
                     />
                   );
                 })}
             </g>
           ) : null}
+          <g aria-hidden="true" className="pointer-events-none">
+            {mapData.features.map(feature => {
+              const interactive = feature.active && Boolean(feature.zoneId && zonesById[feature.zoneId]);
+              const active = interactive && feature.zoneId === activeZoneId;
+              return (
+                <path
+                  key={`${feature.code}-boundary`}
+                  d={feature.path}
+                  fill="none"
+                  stroke={
+                    active
+                      ? 'rgba(255,255,255,0.88)'
+                      : interactive
+                        ? 'rgba(240,248,255,0.5)'
+                        : 'rgba(148,163,184,0.42)'
+                  }
+                  strokeWidth={active ? 1.45 : 1.05}
+                  vectorEffect="non-scaling-stroke"
+                />
+              );
+            })}
+          </g>
         </svg>
 
         <div className="absolute inset-0">

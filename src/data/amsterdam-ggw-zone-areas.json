@@ -1,0 +1,32 @@
+{
+  "canal_glow": [
+    "Centrum-West"
+  ],
+  "spiegel_funk": [
+    "Westerpark"
+  ],
+  "amstel_rush": [
+    "Oud-Oost"
+  ],
+  "jordaan_jack": [
+    "Oud-Zuid"
+  ],
+  "polder_drift": [
+    "Slotervaart"
+  ],
+  "beton_tunnel": [
+    "Sloterdijk Nieuw-West"
+  ],
+  "ndsm_fracture": [
+    "Noord-West"
+  ],
+  "oost_dauw": [
+    "Watergraafsmeer"
+  ],
+  "dam_pop_up": [
+    "Osdorp"
+  ],
+  "nacht_ferry": [
+    "Bijlmer-Centrum"
+  ]
+}

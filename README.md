@@ -35,6 +35,7 @@ App runs on `http://localhost:3000`.
 - `npm run dev`: start local dev server
 - `npm run lint`: run ESLint
 - `npm run test`: run Vitest test suite
+- `npm run generate:ggw-zones`: regenerate map GeoJSON + active-area lists from GGW CSV mapping
 - `npm run build`: production build
 - `npm run start`: run production server
 
@@ -57,6 +58,10 @@ App runs on `http://localhost:3000`.
 
 - Server-side data fetches are in `src/lib/sheets.server.ts`.
 - Root layout loads shared site data once and passes it via `AppShell`/context.
+- Map GGW source-of-truth mapping is `src/data/amsterdam-ggw-mapping.csv`.
+- Generated map artifacts:
+  - `src/data/amsterdam-ggw-zones.json`
+  - `src/data/amsterdam-ggw-zone-areas.json`
 - Supabase tables expected by current code:
   - `sets`
   - `genres`

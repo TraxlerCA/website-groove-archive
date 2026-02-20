@@ -1,3 +1,5 @@
+import zoneAreasById from '@/data/amsterdam-ggw-zone-areas.json';
+
 export type MapZoneId =
   | 'canal_glow'
   | 'spiegel_funk'
@@ -34,6 +36,7 @@ export enum HomeEventName {
 }
 
 export const WILDCARD_ZONE_ID: MapZoneId = 'nacht_ferry';
+const ZONE_AREAS_BY_ID = zoneAreasById as Record<MapZoneId, string[]>;
 
 export const MAP_ZONES: MapZoneConfig[] = [
   {
@@ -41,7 +44,7 @@ export const MAP_ZONES: MapZoneConfig[] = [
     displayName: 'Grachtenring',
     genreLabel: 'Melodic House & Techno',
     accent: '#42d4ff',
-    areas: ['Centrum-West', 'Centrum-Oost', 'Oud-West, De Baarsjes'],
+    areas: ZONE_AREAS_BY_ID.canal_glow,
     anchorDesktop: { x: 48, y: 37, align: 'left' },
     anchorMobile: { x: 50, y: 88, align: 'center' },
   },
@@ -50,7 +53,7 @@ export const MAP_ZONES: MapZoneConfig[] = [
     displayName: 'Westerpark Belt',
     genreLabel: 'Disco & Funky House',
     accent: '#ff8d4d',
-    areas: ['Westerpark', 'Bos en Lommer'],
+    areas: ZONE_AREAS_BY_ID.spiegel_funk,
     anchorDesktop: { x: 39, y: 26, align: 'left' },
     anchorMobile: { x: 50, y: 88, align: 'center' },
   },
@@ -59,7 +62,7 @@ export const MAP_ZONES: MapZoneConfig[] = [
     displayName: 'Oostelijke Kades',
     genreLabel: 'Trance & High Energy Rave',
     accent: '#ff5ea8',
-    areas: ['Oud-Oost', 'Indische Buurt, Oostelijk Havengebied'],
+    areas: ZONE_AREAS_BY_ID.amstel_rush,
     anchorDesktop: { x: 62, y: 41, align: 'left' },
     anchorMobile: { x: 50, y: 88, align: 'center' },
   },
@@ -68,7 +71,7 @@ export const MAP_ZONES: MapZoneConfig[] = [
     displayName: 'Zuid Stretches',
     genreLabel: 'Classic House & Garage',
     accent: '#ffd35a',
-    areas: ['Oud-Zuid', 'De Pijp, Rivierenbuurt'],
+    areas: ZONE_AREAS_BY_ID.jordaan_jack,
     anchorDesktop: { x: 46, y: 53, align: 'left' },
     anchorMobile: { x: 50, y: 88, align: 'center' },
   },
@@ -77,7 +80,7 @@ export const MAP_ZONES: MapZoneConfig[] = [
     displayName: 'Polderlijn Zuid',
     genreLabel: 'Minimal & Deep House',
     accent: '#7ddfb3',
-    areas: ['Slotervaart', 'Buitenveldert, Zuidas'],
+    areas: ZONE_AREAS_BY_ID.polder_drift,
     anchorDesktop: { x: 38, y: 65, align: 'left' },
     anchorMobile: { x: 50, y: 88, align: 'center' },
   },
@@ -86,7 +89,7 @@ export const MAP_ZONES: MapZoneConfig[] = [
     displayName: 'Sloterdijk Line',
     genreLabel: 'Hard & Driving Techno',
     accent: '#94a2ff',
-    areas: ['Sloterdijk Nieuw-West', 'Geuzenveld, Slotermeer'],
+    areas: ZONE_AREAS_BY_ID.beton_tunnel,
     anchorDesktop: { x: 25, y: 28, align: 'left' },
     anchorMobile: { x: 50, y: 88, align: 'center' },
   },
@@ -95,7 +98,7 @@ export const MAP_ZONES: MapZoneConfig[] = [
     displayName: 'Noord Docks',
     genreLabel: 'Breaks & Experimental',
     accent: '#d487ff',
-    areas: ['Noord-West', 'Oud-Noord', 'Noord-Oost'],
+    areas: ZONE_AREAS_BY_ID.ndsm_fracture,
     anchorDesktop: { x: 58, y: 16, align: 'left' },
     anchorMobile: { x: 50, y: 88, align: 'center' },
   },
@@ -104,7 +107,7 @@ export const MAP_ZONES: MapZoneConfig[] = [
     displayName: 'IJ Waters',
     genreLabel: 'Chill & Organic Electronica',
     accent: '#8eeeff',
-    areas: ['Watergraafsmeer', 'IJburg, Zeeburgereiland'],
+    areas: ZONE_AREAS_BY_ID.oost_dauw,
     anchorDesktop: { x: 69, y: 57, align: 'left' },
     anchorMobile: { x: 50, y: 88, align: 'center' },
   },
@@ -113,7 +116,7 @@ export const MAP_ZONES: MapZoneConfig[] = [
     displayName: 'Nieuw-West South',
     genreLabel: 'Pop Edits & Party Remixes',
     accent: '#ffb347',
-    areas: ['Osdorp', 'De Aker, Sloten, Nieuw-Sloten'],
+    areas: ZONE_AREAS_BY_ID.dam_pop_up,
     anchorDesktop: { x: 22, y: 50, align: 'left' },
     anchorMobile: { x: 50, y: 88, align: 'center' },
   },
@@ -122,7 +125,7 @@ export const MAP_ZONES: MapZoneConfig[] = [
     displayName: 'Zuidoost Ferry',
     genreLabel: 'Leftfield',
     accent: '#7f9cff',
-    areas: ['Bijlmer-West', 'Bijlmer-Centrum', 'Bijlmer-Oost', 'Gaasperdam', 'Weesp, Driemond'],
+    areas: ZONE_AREAS_BY_ID.nacht_ferry,
     anchorDesktop: { x: 84, y: 79, align: 'right' },
     anchorMobile: { x: 50, y: 88, align: 'center' },
   },
