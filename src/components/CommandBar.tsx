@@ -5,6 +5,7 @@ import { usePlayerActions } from "@/context/PlayerProvider";
 import type { Row } from "@/lib/types";
 import { SearchIcon } from "@/components/icons";
 import { copyToClipboard } from "@/lib/utils";
+import { sanitizePrimaryMediaUrl } from "@/lib/sanitize";
 
 export default function CommandBar({ rows, onNavigate }: { rows: Row[]; onNavigate: (r: 'home'|'list'|'artists'|'heatmaps'|'suggest') => void }) {
   const [open,setOpen]=useState(false); const [q,setQ]=useState(""); const inputRef=useRef<HTMLInputElement|null>(null); const [sel,setSel]=useState(0);
@@ -34,12 +35,13 @@ export default function CommandBar({ rows, onNavigate }: { rows: Row[]; onNaviga
     if(e.key==="Enter"){
       const row=filtered[sel];
       if(!row) return;
-      const dest=row.youtube ?? row.soundcloud ?? null;
+      const dest = sanitizePrimaryMediaUrl(row);
+      const hasPlayable = !!(row.youtube ?? row.soundcloud);
       if(e.metaKey||e.ctrlKey){
         if(dest) window.open(dest,"_blank","noopener,noreferrer");
         return;
       }
-      if(!dest) return;
+      if(!hasPlayable) return;
       play(row);
       setOpen(false);
     }
@@ -102,28 +104,29 @@ export default function CommandBar({ rows, onNavigate }: { rows: Row[]; onNaviga
                       </div>
                       <div className="flex items-center gap-2 shrink-0">
                         {(() => {
-                          const primary = r.youtube ?? r.soundcloud ?? null;
-                          const hasLink = !!primary;
+                          const primary = sanitizePrimaryMediaUrl(r);
+                          const hasPlayable = !!(r.youtube ?? r.soundcloud);
+                          const hasOutbound = !!primary;
                           return (
                             <>
                               <button
                                 className="btn-secondary hover-lift disabled:pointer-events-none disabled:opacity-40"
-                                onClick={() => { if (hasLink) enqueue(r); }}
-                                disabled={!hasLink}
+                                onClick={() => { if (hasPlayable) enqueue(r); }}
+                                disabled={!hasPlayable}
                               >
                                 queue
                               </button>
                               <button
                                 className="btn-secondary hover-lift disabled:pointer-events-none disabled:opacity-40"
                                 onClick={() => { if (primary) copyToClipboard(primary); }}
-                                disabled={!hasLink}
+                                disabled={!hasOutbound}
                               >
                                 copy
                               </button>
                               <button
                                 className="btn-secondary hover-lift disabled:pointer-events-none disabled:opacity-40"
                                 onClick={() => { if (primary) window.open(primary, "_blank", "noopener,noreferrer"); }}
-                                disabled={!hasLink}
+                                disabled={!hasOutbound}
                               >
                                 open
                               </button>

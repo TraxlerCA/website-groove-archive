@@ -6,6 +6,7 @@ import { GenreTooltip } from '@/components/GenreTooltip';
 import { Tag } from '@/components/ui';
 import { usePlayerActions } from '@/context/PlayerProvider';
 import type { Genre, Row } from '@/lib/types';
+import { sanitizeMediaUrl } from '@/lib/sanitize';
 // ytId helper removed (unused)
 
 // ytThumbs helper removed (unused)
@@ -90,6 +91,10 @@ export default function Home() {
   }, [rows, selectedGenre]);
 
   const serveDisabled = filteredRows.length === 0;
+  const featuredSoundcloudHref = React.useMemo(
+    () => sanitizeMediaUrl(featured?.soundcloud),
+    [featured?.soundcloud],
+  );
 
   const handleServeClick = React.useCallback(() => {
     if (!filteredRows.length) return;
@@ -248,10 +253,17 @@ export default function Home() {
                 </button>
                 {featured?.soundcloud ? (
                   <a
-                    className="ml-auto text-neutral-700 underline-offset-4 transition hover:text-neutral-900 hover:underline"
-                    href={featured.soundcloud}
-                    target="_blank"
-                    rel="noopener noreferrer"
+                    className={[
+                      'ml-auto underline-offset-4 transition',
+                      featuredSoundcloudHref
+                        ? 'text-neutral-700 hover:text-neutral-900 hover:underline'
+                        : 'pointer-events-none text-neutral-400',
+                    ].join(' ')}
+                    href={featuredSoundcloudHref ?? '#'}
+                    target={featuredSoundcloudHref ? '_blank' : undefined}
+                    rel={featuredSoundcloudHref ? 'noopener noreferrer' : undefined}
+                    aria-disabled={!featuredSoundcloudHref}
+                    tabIndex={featuredSoundcloudHref ? 0 : -1}
                   >
                     Open on SoundCloud
                   </a>
