@@ -217,14 +217,15 @@ export default function AmsterdamMapStage({
         >
           <g>
             {mapData.features.map(feature => {
-              const zone = feature.zoneId ? zonesById[feature.zoneId] : null;
+              const zoneId = feature.zoneId;
+              const zone = zoneId ? zonesById[zoneId] : null;
               const interactive = feature.active && Boolean(zone);
-              const active = interactive && feature.zoneId === activeZoneId;
+              const active = interactive && zoneId === activeZoneId;
               return (
                 <path
                   key={`${feature.code}-fill`}
                   d={feature.path}
-                  onClick={interactive && feature.zoneId ? () => onSelect(feature.zoneId) : undefined}
+                  onClick={interactive && zoneId ? () => onSelect(zoneId) : undefined}
                   className={interactive ? 'cursor-pointer transition' : 'cursor-default transition'}
                   fill={interactive && zone ? hexToRgba(zone.accent, active ? 0.48 : 0.2) : 'rgba(148,163,184,0.09)'}
                 >
