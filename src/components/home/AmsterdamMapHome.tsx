@@ -13,6 +13,7 @@ import {
   MAP_ZONES,
   type MapZoneId,
 } from '@/components/home/mapZones';
+import { MAP_VISUAL_VARIANTS } from '@/components/home/mapVisualVariants';
 import { usePlayerActions } from '@/context/PlayerProvider';
 import { useSiteData } from '@/context/SiteDataContext';
 import { stableHash, trackEvent } from '@/lib/analytics';
@@ -104,19 +105,34 @@ export default function AmsterdamMapHome() {
   );
 
   return (
-    <main className="relative h-[calc(100svh-9.5rem)] w-full px-2 py-2 sm:h-[calc(100svh-10.5rem)] sm:px-4 sm:py-4">
-      <AmsterdamMapStage
-        zones={MAP_ZONES}
-        activeZoneId={selectedZoneId}
-        hoveredZoneId={hoveredZoneId}
-        onSelect={handleSelectZone}
-        onHover={setHoveredZoneId}
-        onClearSelection={handleClearSelection}
-      />
+    <main className="relative w-full px-2 py-2 sm:px-4 sm:py-4">
+      <section className="space-y-6 pb-28 sm:space-y-8 sm:pb-32">
+        {MAP_VISUAL_VARIANTS.map(variant => (
+          <article key={variant.id} className="space-y-2 sm:space-y-3">
+            <header className="px-1">
+              <h2 className="text-sm font-semibold uppercase tracking-[0.16em] text-neutral-700 sm:text-base">
+                {variant.title}
+              </h2>
+              <p className="text-xs text-neutral-600 sm:text-sm">{variant.subtitle}</p>
+            </header>
+            <div className="h-[19rem] sm:h-[24rem] lg:h-[28rem]">
+              <AmsterdamMapStage
+                zones={MAP_ZONES}
+                activeZoneId={selectedZoneId}
+                hoveredZoneId={hoveredZoneId}
+                onSelect={handleSelectZone}
+                onHover={setHoveredZoneId}
+                onClearSelection={handleClearSelection}
+                variant={variant.id}
+              />
+            </div>
+          </article>
+        ))}
+      </section>
       {selectedZone ? (
         <div
           className={[
-            'pointer-events-none absolute inset-x-4 bottom-4 sm:inset-x-auto sm:bottom-8 sm:w-[22rem]',
+            'pointer-events-none fixed inset-x-4 bottom-4 z-30 sm:inset-x-auto sm:bottom-8 sm:w-[22rem]',
             selectedZone.anchorDesktop.x >= 50
               ? 'sm:left-8 sm:right-auto'
               : 'sm:right-8 sm:left-auto',
