@@ -2,6 +2,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { usePlayer, usePlayerActions } from "@/context/PlayerProvider";
 import { ytid } from "@/lib/utils";
+import { sanitizeProviderMediaUrl } from "@/lib/sanitize";
 
 // Minimal typings for the YouTube IFrame API and SoundCloud Widget API
 type YTOnStateChangeEvent = { data?: number };
@@ -386,11 +387,12 @@ export default function PlayerModal(){
             {/* right: controls */}
             <div className="flex items-center gap-2">
               {(() => {
-                const href = current?.provider === 'youtube' ? (current?.row.youtube || '') : (current?.row.soundcloud || '');
-                const enabled = !!href;
+                const href = current ? sanitizeProviderMediaUrl(current.row, current.provider) : null;
+                const enabled = href !== null;
+                const safeHref = href ?? '#';
                 return (
                   <a
-                    href={enabled ? href : '#'}
+                    href={safeHref}
                     target={enabled ? '_blank' : undefined}
                     rel={enabled ? 'noopener noreferrer' : undefined}
                     aria-disabled={!enabled}

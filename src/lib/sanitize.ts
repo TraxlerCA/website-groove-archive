@@ -1,3 +1,5 @@
+import type { Provider, Row } from "@/lib/types";
+
 const ALLOWED_HOSTS = new Set([
   // SoundCloud
   'soundcloud.com',
@@ -48,5 +50,29 @@ export function sanitizeMediaUrl(value: string | null | undefined): string | nul
   }
 
   return parsed.toString();
+}
+
+type MediaRow = Pick<Row, "youtube" | "soundcloud">;
+
+/**
+ * Resolve a primary outbound media URL using app preference order:
+ * YouTube first, then SoundCloud.
+ */
+export function sanitizePrimaryMediaUrl(row: MediaRow | null | undefined): string | null {
+  if (!row) return null;
+  return sanitizeMediaUrl(row.youtube) ?? sanitizeMediaUrl(row.soundcloud);
+}
+
+/**
+ * Resolve outbound media URL for a concrete provider without cross-provider fallback.
+ */
+export function sanitizeProviderMediaUrl(
+  row: MediaRow | null | undefined,
+  provider: Provider,
+): string | null {
+  if (!row) return null;
+  return provider === "youtube"
+    ? sanitizeMediaUrl(row.youtube)
+    : sanitizeMediaUrl(row.soundcloud);
 }
 

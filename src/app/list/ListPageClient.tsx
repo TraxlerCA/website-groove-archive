@@ -8,6 +8,7 @@ import { usePlayerActions } from "@/context/PlayerProvider";
 import { GenreTooltip } from "@/components/GenreTooltip";
 import type { Genre, Row } from "@/lib/types";
 import { useSearchParams } from "next/navigation";
+import { sanitizePrimaryMediaUrl } from "@/lib/sanitize";
 
 const ROW_COLS =
   "grid grid-cols-[minmax(0,1fr)_clamp(7rem,28vw,220px)_clamp(5rem,18vw,88px)] items-center gap-3";
@@ -135,7 +136,7 @@ export default function ListPageClient({ rows, genres }: Props) {
           <div style={{ height: rowVirtualizer.getTotalSize(), position: "relative" }}>
             {rowVirtualizer.getVirtualItems().map(vi => {
               const r = filtered[vi.index];
-              const primaryLink = r?.youtube ?? r?.soundcloud ?? null;
+              const primaryLink = sanitizePrimaryMediaUrl(r);
               const disabledLink = !primaryLink;
 
               return (
