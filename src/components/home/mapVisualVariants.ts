@@ -9,17 +9,17 @@ export type MapVisualVariantMeta = {
 export const MAP_VISUAL_VARIANTS: MapVisualVariantMeta[] = [
   {
     id: 'civic_context',
-    title: 'Option A: Civic Context',
-    subtitle: 'Subtle water polygons and A10 trace behind the zones.',
+    title: 'Option A: Minimal Context',
+    subtitle: 'A10 + main river structure (IJ/Amstel).',
   },
   {
     id: 'transit_glow',
-    title: 'Option B: Transit Glow',
-    subtitle: 'Night-style canvas with brighter mobility and water cues.',
+    title: 'Option B: Medium Context',
+    subtitle: 'Adds canal-belt lines for stronger orientation.',
   },
   {
     id: 'landmark_postcard',
-    title: 'Option C: Landmark Postcard',
-    subtitle: 'Warmer paper map with named points for fast orientation.',
+    title: 'Option C: Full Context',
+    subtitle: 'Adds key landmark points on top of roads and waterways.',
   },
 ];
