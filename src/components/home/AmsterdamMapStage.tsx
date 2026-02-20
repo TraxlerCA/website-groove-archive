@@ -233,22 +233,6 @@ function forEachPoint(geometry: Geometry, callback: (point: Point) => void): voi
   geometry.coordinates.forEach(polygon => polygon.forEach(ring => ring.forEach(callback)));
 }
 
-function hexToRgba(hex: string, alpha: number): string {
-  const source = hex.replace('#', '');
-  const value =
-    source.length === 3
-      ? source
-          .split('')
-          .map(part => part + part)
-          .join('')
-      : source;
-  const int = parseInt(value, 16);
-  const r = (int >> 16) & 255;
-  const g = (int >> 8) & 255;
-  const b = int & 255;
-  return `rgba(${r}, ${g}, ${b}, ${alpha})`;
-}
-
 function ringToPath(
   ring: Point[],
   project: (point: Point) => { x: number; y: number },
@@ -401,16 +385,16 @@ export default function AmsterdamMapStage({
 
   return (
     <section className="relative">
-      <div className="relative aspect-[16/10] min-h-[390px] overflow-hidden rounded-[2rem] border border-white/15 bg-[#070b16] shadow-[0_24px_70px_rgba(2,8,23,0.58)]">
-        <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_13%_11%,rgba(78,198,255,0.2),transparent_42%),radial-gradient(circle_at_83%_18%,rgba(255,150,90,0.22),transparent_45%),radial-gradient(circle_at_52%_85%,rgba(104,79,255,0.2),transparent_46%),linear-gradient(170deg,#04070f_0%,#060b17_38%,#070c16_100%)]" />
-        <div className="pointer-events-none absolute inset-0 opacity-25 mix-blend-screen">
+      <div className="relative aspect-[16/10] min-h-[390px] overflow-hidden rounded-[2rem] border border-black/80 bg-[#f6f6f6] shadow-[0_20px_50px_rgba(0,0,0,0.18)]">
+        <div className="pointer-events-none absolute inset-0 bg-[linear-gradient(175deg,#fafafa_0%,#f3f3f3_100%)]" />
+        <div className="pointer-events-none absolute inset-0 opacity-35">
           <svg viewBox={`0 0 ${VIEWBOX_WIDTH} ${VIEWBOX_HEIGHT}`} className="h-full w-full" aria-hidden="true">
             <defs>
-              <pattern id="water-grid" width="26" height="26" patternUnits="userSpaceOnUse">
-                <path d="M 0 13 L 26 13 M 13 0 L 13 26" stroke="rgba(142,230,255,0.14)" strokeWidth="1" />
+              <pattern id="paper-grid" width="30" height="30" patternUnits="userSpaceOnUse">
+                <path d="M 0 15 L 30 15 M 15 0 L 15 30" stroke="rgba(0,0,0,0.06)" strokeWidth="1" />
               </pattern>
             </defs>
-            <rect width={VIEWBOX_WIDTH} height={VIEWBOX_HEIGHT} fill="url(#water-grid)" />
+            <rect width={VIEWBOX_WIDTH} height={VIEWBOX_HEIGHT} fill="url(#paper-grid)" />
           </svg>
         </div>
 
@@ -433,7 +417,7 @@ export default function AmsterdamMapStage({
                   d={feature.path}
                   onClick={interactive && zoneId ? () => onSelect(zoneId) : undefined}
                   className={interactive ? 'cursor-pointer transition' : 'cursor-default transition'}
-                  fill={interactive && zone ? hexToRgba(zone.accent, active ? 0.48 : 0.2) : 'rgba(148,163,184,0.09)'}
+                  fill={active ? 'rgba(15,15,15,0.88)' : 'rgba(22,22,22,0.2)'}
                 >
                   <title>{interactive ? feature.name : `${feature.name} (inactive)`}</title>
                 </path>
@@ -446,16 +430,15 @@ export default function AmsterdamMapStage({
                 .filter(feature => feature.active && feature.zoneId === activeZoneId)
                 .map(feature => {
                   if (!feature.zoneId) return null;
-                  const zone = zonesById[feature.zoneId];
                   return (
                     <path
                       key={`${feature.code}-highlight`}
                       d={feature.path}
                       fill="none"
-                      stroke={zone.accent}
-                      strokeWidth={4}
+                      stroke="rgba(255,255,255,0.95)"
+                      strokeWidth={2.2}
                       vectorEffect="non-scaling-stroke"
-                      opacity={0.72}
+                      opacity={1}
                     />
                   );
                 })}
@@ -465,11 +448,11 @@ export default function AmsterdamMapStage({
             {mapData.referenceLines.map(line => {
               const stroke =
                 line.kind === 'water'
-                  ? 'rgba(108,222,255,0.5)'
+                  ? 'rgba(0,0,0,0.35)'
                   : line.kind === 'canal'
-                    ? 'rgba(126,236,255,0.42)'
-                    : 'rgba(255,216,153,0.32)';
-              const strokeWidth = line.kind === 'water' ? 1.8 : line.kind === 'canal' ? 1.1 : 1.2;
+                    ? 'rgba(0,0,0,0.3)'
+                    : 'rgba(0,0,0,0.45)';
+              const strokeWidth = line.kind === 'water' ? 1.6 : line.kind === 'canal' ? 1.05 : 1.25;
               const strokeDasharray = line.kind === 'road' ? '6 6' : undefined;
               return (
                 <path
@@ -493,7 +476,7 @@ export default function AmsterdamMapStage({
                   x={line.labelPoint.x + 6}
                   y={line.labelPoint.y - 4}
                   fontSize="9"
-                  fill={line.kind === 'water' ? 'rgba(160,236,255,0.72)' : 'rgba(255,225,176,0.66)'}
+                  fill="rgba(0,0,0,0.6)"
                   letterSpacing="0.08em"
                 >
                   {line.label.toUpperCase()}
@@ -505,15 +488,15 @@ export default function AmsterdamMapStage({
                   cx={landmark.x}
                   cy={landmark.y}
                   r={2.2}
-                  fill="rgba(235,245,255,0.8)"
-                  stroke="rgba(10,16,27,0.8)"
+                  fill="rgba(0,0,0,0.78)"
+                  stroke="rgba(255,255,255,0.9)"
                   strokeWidth={0.8}
                 />
                 <text
                   x={landmark.x + 4}
                   y={landmark.y - 3}
                   fontSize="8.5"
-                  fill="rgba(223,236,255,0.76)"
+                  fill="rgba(0,0,0,0.68)"
                   letterSpacing="0.05em"
                 >
                   {landmark.label}
@@ -533,12 +516,10 @@ export default function AmsterdamMapStage({
                   fill="none"
                   stroke={
                     active
-                      ? 'rgba(255,255,255,0.88)'
-                      : interactive
-                        ? 'rgba(240,248,255,0.5)'
-                        : 'rgba(148,163,184,0.42)'
+                      ? 'rgba(255,255,255,0.95)'
+                      : 'rgba(0,0,0,0.82)'
                   }
-                  strokeWidth={active ? 1.45 : 1.05}
+                  strokeWidth={active ? 1.7 : 1.2}
                   vectorEffect="non-scaling-stroke"
                 />
               );
@@ -560,10 +541,10 @@ export default function AmsterdamMapStage({
                 aria-label={`${zone.displayName}, ${zone.genreLabel}`}
                 className={[
                   'absolute max-w-[11rem] rounded-full border px-2.5 py-1 text-center text-[0.58rem] leading-tight font-semibold tracking-[0.02em] transition focus-visible:outline-none focus-visible:ring-4',
-                  'focus-visible:ring-cyan-200/70',
+                  'focus-visible:ring-black/20',
                   active
-                    ? 'border-white/85 bg-white text-neutral-900 shadow-[0_10px_24px_rgba(15,23,42,0.45)]'
-                    : 'border-white/45 bg-black/45 text-white/90 hover:border-white/70 hover:bg-black/55',
+                    ? 'border-black bg-black text-white shadow-[0_10px_24px_rgba(0,0,0,0.28)]'
+                    : 'border-black/60 bg-white/92 text-neutral-900 hover:border-black hover:bg-white',
                 ].join(' ')}
                 style={{
                   left: `${(point.x / VIEWBOX_WIDTH) * 100}%`,
