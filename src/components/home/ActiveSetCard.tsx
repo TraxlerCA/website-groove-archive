@@ -1,8 +1,6 @@
 'use client';
 
 import { useEffect, useMemo, useState } from 'react';
-import { GenreTooltip } from '@/components/GenreTooltip';
-import { Tag } from '@/components/ui';
 import type { MapZoneConfig } from '@/components/home/mapZones';
 import type { Row } from '@/lib/types';
 import { sanitizeMediaUrl } from '@/lib/sanitize';
@@ -10,7 +8,6 @@ import { sanitizeMediaUrl } from '@/lib/sanitize';
 type ActiveSetCardProps = {
   zone: MapZoneConfig;
   row: Row | null;
-  genreDescription?: string;
   onPlay: () => void;
   onOutboundClick: (href: string) => void;
   className?: string;
@@ -20,7 +17,6 @@ type ActiveSetCardProps = {
 export default function ActiveSetCard({
   zone,
   row,
-  genreDescription,
   onPlay,
   onOutboundClick,
   className,
@@ -43,11 +39,7 @@ export default function ActiveSetCard({
         >
           {zone.displayName}
         </span>
-        <span className="text-[0.7rem] uppercase tracking-[0.22em] text-white/60">Now in zone</span>
       </div>
-      <p className="mb-3 text-[0.72rem] leading-relaxed text-white/65">
-        {zone.areas.join(' · ')}
-      </p>
 
       {row ? (
         <>
@@ -62,13 +54,6 @@ export default function ActiveSetCard({
           </button>
 
           <h2 className={compact ? 'text-base font-semibold' : 'text-lg font-semibold'}>{row.set}</h2>
-          <div className="mt-2">
-            <GenreTooltip label={zone.genreLabel} description={genreDescription}>
-              <Tag>
-                <span className="uppercase tracking-[0.22em] text-neutral-700">{zone.genreLabel}</span>
-              </Tag>
-            </GenreTooltip>
-          </div>
 
           <div className="mt-4 flex flex-wrap items-center gap-3">
             <button

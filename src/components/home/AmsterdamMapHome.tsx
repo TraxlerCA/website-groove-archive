@@ -7,7 +7,6 @@ import {
   getRowsForZone,
   pickRandomRow,
   getSoundcloudEligibleRows,
-  normalizeLabel,
 } from '@/components/home/homeMap.logic';
 import {
   HomeEventName,
@@ -42,12 +41,6 @@ export default function AmsterdamMapHome() {
     if (!selectedRowSet) return null;
     return rows.find(row => row.set === selectedRowSet) || null;
   }, [rows, selectedRowSet]);
-
-  const genreDescription = useMemo(() => {
-    if (!selectedZone) return undefined;
-    const target = normalizeLabel(selectedZone.genreLabel);
-    return siteData.genres.find(genre => normalizeLabel(genre.label) === target)?.explanation;
-  }, [selectedZone, siteData.genres]);
 
   const handleSelectZone = useCallback((zoneId: MapZoneId) => {
     const zone = zonesById[zoneId];
@@ -133,7 +126,6 @@ export default function AmsterdamMapHome() {
             <ActiveSetCard
               zone={selectedZone}
               row={selectedRow}
-              genreDescription={genreDescription}
               onPlay={handlePlay}
               onOutboundClick={handleOutboundClick}
               compact
