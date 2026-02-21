@@ -55,40 +55,66 @@ export default function ActiveSetCard({
 
       {row ? (
         <>
+          {compact ? (
+            <div className="mb-3 flex flex-wrap items-center gap-2">
+              <button
+                type="button"
+                onClick={onPlay}
+                className="inline-flex items-center justify-center rounded-full bg-white px-3.5 py-1.5 text-xs font-semibold text-neutral-900 transition hover:-translate-y-0.5 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-white/70"
+              >
+                Play
+              </button>
+              {href ? (
+                <a
+                  href={href}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  onClick={() => onOutboundClick(href)}
+                  className="text-xs text-white/85 underline-offset-4 transition hover:text-white hover:underline"
+                >
+                  Open on SoundCloud
+                </a>
+              ) : (
+                <span className="text-xs text-white/45">No outbound link available</span>
+              )}
+            </div>
+          ) : null}
           <button
             type="button"
             onClick={onPlay}
             className="group mb-4 block w-full overflow-hidden rounded-2xl border border-white/20 transition hover:border-white/60 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-cyan-200/65"
             aria-label={`Play ${row.set}`}
           >
-            <SCArtwork url={row.soundcloud || ''} />
+            <SCArtwork url={row.soundcloud || ''} compact={compact} />
             <span className="sr-only">Play {row.set}</span>
           </button>
 
           <h2 className={compact ? 'text-base font-semibold' : 'text-lg font-semibold'}>{row.set}</h2>
 
-          <div className="mt-4 flex flex-wrap items-center gap-3">
-            <button
-              type="button"
-              onClick={onPlay}
-              className="inline-flex items-center justify-center rounded-full bg-white px-4 py-2 text-sm font-semibold text-neutral-900 transition hover:-translate-y-0.5 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-white/70"
-            >
-              Play
-            </button>
-            {href ? (
-              <a
-                href={href}
-                target="_blank"
-                rel="noopener noreferrer"
-                onClick={() => onOutboundClick(href)}
-                className="text-sm text-white/80 underline-offset-4 transition hover:text-white hover:underline"
+          {!compact ? (
+            <div className="mt-4 flex flex-wrap items-center gap-3">
+              <button
+                type="button"
+                onClick={onPlay}
+                className="inline-flex items-center justify-center rounded-full bg-white px-4 py-2 text-sm font-semibold text-neutral-900 transition hover:-translate-y-0.5 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-white/70"
               >
-                Open on SoundCloud
-              </a>
-            ) : (
-              <span className="text-sm text-white/45">No outbound link available</span>
-            )}
-          </div>
+                Play
+              </button>
+              {href ? (
+                <a
+                  href={href}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  onClick={() => onOutboundClick(href)}
+                  className="text-sm text-white/80 underline-offset-4 transition hover:text-white hover:underline"
+                >
+                  Open on SoundCloud
+                </a>
+              ) : (
+                <span className="text-sm text-white/45">No outbound link available</span>
+              )}
+            </div>
+          ) : null}
         </>
       ) : (
         <div className="space-y-2">
@@ -102,7 +128,7 @@ export default function ActiveSetCard({
   );
 }
 
-function SCArtwork({ url }: { url: string }) {
+function SCArtwork({ url, compact = false }: { url: string; compact?: boolean }) {
   const [art, setArt] = useState<string | null>(null);
   const [failed, setFailed] = useState(false);
 
@@ -138,12 +164,22 @@ function SCArtwork({ url }: { url: string }) {
 
   if (!art || failed) {
     return (
-      <div className="aspect-[4/3] w-full bg-[radial-gradient(circle_at_28%_20%,rgba(95,188,255,0.55),rgba(42,84,132,0.4)_50%,rgba(4,10,24,1)_95%)] sm:aspect-square" />
+      <div
+        className={[
+          compact ? 'aspect-[16/9]' : 'aspect-[4/3]',
+          'w-full bg-[radial-gradient(circle_at_28%_20%,rgba(95,188,255,0.55),rgba(42,84,132,0.4)_50%,rgba(4,10,24,1)_95%)] sm:aspect-square',
+        ].join(' ')}
+      />
     );
   }
 
   return (
     // eslint-disable-next-line @next/next/no-img-element
-    <img src={art} alt="" className="aspect-[4/3] w-full object-cover sm:aspect-square" onError={() => setFailed(true)} />
+    <img
+      src={art}
+      alt=""
+      className={[compact ? 'aspect-[16/9]' : 'aspect-[4/3]', 'w-full object-cover sm:aspect-square'].join(' ')}
+      onError={() => setFailed(true)}
+    />
   );
 }

@@ -1,6 +1,6 @@
 // src/components/Header.tsx
 'use client';
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 
@@ -16,6 +16,7 @@ export function ResourceHints() {
 export function WordmarkHeader() {
   const pathname = usePathname();
   const [hideSecondary, setHideSecondary] = useState(false);
+  const headerRef = useRef<HTMLElement | null>(null);
 
   useEffect(() => {
     let ticking = false;
@@ -40,6 +41,27 @@ export function WordmarkHeader() {
     return () => window.removeEventListener('scroll', onScroll);
   }, []);
 
+  useEffect(() => {
+    const updateHeaderHeightVar = () => {
+      const headerHeight = headerRef.current?.getBoundingClientRect().height ?? 0;
+      document.documentElement.style.setProperty('--tga-header-height', `${Math.round(headerHeight)}px`);
+    };
+
+    updateHeaderHeightVar();
+    window.addEventListener('resize', updateHeaderHeightVar);
+
+    const observer =
+      typeof ResizeObserver !== 'undefined'
+        ? new ResizeObserver(() => updateHeaderHeightVar())
+        : null;
+    if (observer && headerRef.current) observer.observe(headerRef.current);
+
+    return () => {
+      window.removeEventListener('resize', updateHeaderHeightVar);
+      observer?.disconnect();
+    };
+  }, []);
+
   const navLinks = [
     { href: '/', label: 'Home' },
     { href: '/list', label: 'List' },
@@ -48,7 +70,7 @@ export function WordmarkHeader() {
   ];
 
   return (
-    <header className="sticky top-0 z-50">
+    <header ref={headerRef} className="sticky top-0 z-50">
       <div className="relative border-b border-white/50 bg-white/80 backdrop-blur-sm shadow-[0_8px_30px_-16px_rgba(0,0,0,0.45)]">
         <div className="container mx-auto flex max-w-6xl items-center justify-center px-6 pt-6 pb-5 sm:pt-7 sm:pb-5">
           <Link

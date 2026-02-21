@@ -20,8 +20,10 @@ export default function AppShell({ children, data }: { children: ReactNode; data
   return (
     <SiteDataProvider value={data}>
       <ResourceHints />
-      <WordmarkHeader />
-      {children}
+      <div className="flex min-h-[100svh] flex-col">
+        <WordmarkHeader />
+        <div className="min-h-0 flex-1">{children}</div>
+      </div>
       <CommandBar rows={data.rows} onNavigate={onNavigate} />
       <ScrollTopFab />
       <CompactPillPlayer />

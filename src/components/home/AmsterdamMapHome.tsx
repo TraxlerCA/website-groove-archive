@@ -104,7 +104,7 @@ export default function AmsterdamMapHome() {
   );
 
   return (
-    <main className="relative h-[calc(100svh-9.5rem)] w-full px-2 py-2 sm:h-[calc(100svh-10.5rem)] sm:px-4 sm:py-4">
+    <main className="relative h-[calc(100svh-var(--tga-header-height))] min-h-[18rem] w-full px-2 py-2 sm:px-4 sm:py-4">
       <AmsterdamMapStage
         zones={MAP_ZONES}
         activeZoneId={selectedZoneId}
@@ -116,20 +116,21 @@ export default function AmsterdamMapHome() {
       {selectedZone ? (
         <div
           className={[
-            'pointer-events-none absolute inset-x-4 top-4 bottom-4 sm:inset-x-auto sm:top-auto sm:bottom-8 sm:w-[22rem]',
+            'pointer-events-none absolute inset-x-3 top-3 bottom-3 sm:inset-x-auto sm:top-auto sm:bottom-8 sm:w-[22rem]',
             selectedZone.anchorDesktop.x >= 50
               ? 'sm:right-8 sm:left-auto'
               : 'sm:left-8 sm:right-auto',
           ].join(' ')}
         >
           <div className="pointer-events-auto flex h-full items-end sm:block sm:h-auto">
-            <div className="w-full max-h-[min(56svh,100%)] sm:max-h-none">
+            <div className="h-[52svh] max-h-full w-full min-h-0 sm:h-auto sm:max-h-none">
               <ActiveSetCard
                 zone={selectedZone}
                 row={selectedRow}
                 onPlay={handlePlay}
                 onOutboundClick={handleOutboundClick}
                 onClose={handleClearSelection}
+                className="h-full pb-[max(1rem,env(safe-area-inset-bottom))]"
                 compact
               />
             </div>

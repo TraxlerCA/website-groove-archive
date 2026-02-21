@@ -1,6 +1,6 @@
 'use client';
 
-import { useMemo } from 'react';
+import { useMemo, type KeyboardEvent } from 'react';
 import roadsGeoJson from '@/data/amsterdam-roads.json';
 import waterwaysGeoJson from '@/data/amsterdam-waterways.json';
 import zoneGeoJson from '@/data/amsterdam-ggw-zones.json';
@@ -413,6 +413,18 @@ export default function AmsterdamMapStage({
   const activeZone = activeZoneId ? zonesById[activeZoneId] : null;
   const hasActiveSelection = Boolean(activeZoneId);
   const showLabels = hoveredZoneId === null;
+  const handleZoneKeyDown = (event: KeyboardEvent<SVGPathElement>, zoneId: MapZoneId) => {
+    if (event.key === 'Enter' || event.key === ' ') {
+      event.preventDefault();
+      onSelect(zoneId);
+      return;
+    }
+    if (event.key === 'Escape') {
+      event.preventDefault();
+      onHover(null);
+      onClearSelection();
+    }
+  };
 
   return (
     <section className="relative h-full">
@@ -486,15 +498,35 @@ export default function AmsterdamMapStage({
                     : toRgba(zone.accent, 0.12);
 
               return (
-                <path
-                  key={`${feature.code}-fill`}
-                  data-zone-fill="true"
-                  d={feature.path}
-                  onClick={() => onSelect(zoneId)}
-                  onMouseEnter={() => onHover(zoneId)}
-                  className="cursor-pointer transition"
-                  fill={fill}
-                />
+                <g key={`${feature.code}-interactive`}>
+                  <path
+                    d={feature.path}
+                    aria-hidden="true"
+                    onClick={() => onSelect(zoneId)}
+                    onMouseEnter={() => onHover(zoneId)}
+                    className="cursor-pointer"
+                    fill="none"
+                    stroke="rgba(0,0,0,0.001)"
+                    strokeWidth={10}
+                    vectorEffect="non-scaling-stroke"
+                    style={{ pointerEvents: 'stroke' }}
+                  />
+                  <path
+                    key={`${feature.code}-fill`}
+                    data-zone-fill="true"
+                    d={feature.path}
+                    role="button"
+                    tabIndex={0}
+                    aria-label={`Open ${zone.displayName} zone`}
+                    onClick={() => onSelect(zoneId)}
+                    onMouseEnter={() => onHover(zoneId)}
+                    onFocus={() => onHover(zoneId)}
+                    onBlur={() => onHover(null)}
+                    onKeyDown={event => handleZoneKeyDown(event, zoneId)}
+                    className="cursor-pointer transition focus-visible:outline-none"
+                    fill={fill}
+                  />
+                </g>
               );
             })}
           </g>
@@ -542,9 +574,7 @@ export default function AmsterdamMapStage({
                     y={point.y}
                     textAnchor="middle"
                     dominantBaseline="middle"
-                    fontSize={7.25}
-                    letterSpacing="0.05em"
-                    fill="rgba(255,255,255,0.55)"
+                    className="map-zone-label"
                   >
                     {getMapLabel(zone.genreLabel)}
                   </text>
@@ -625,6 +655,21 @@ export default function AmsterdamMapStage({
       <style jsx>{`
         .map-zone-pulse {
           animation: map-zone-pulse 2.2s ease-out infinite;
+        }
+        .map-zone-label {
+          font-size: 8.2px;
+          letter-spacing: 0.04em;
+          fill: rgba(255, 255, 255, 0.85);
+          stroke: rgba(3, 7, 18, 0.88);
+          stroke-width: 1.7px;
+          paint-order: stroke fill;
+          font-weight: 600;
+        }
+        @media (max-width: 420px) {
+          .map-zone-label {
+            font-size: 8.9px;
+            stroke-width: 2px;
+          }
         }
         @keyframes map-zone-pulse {
           0% {
