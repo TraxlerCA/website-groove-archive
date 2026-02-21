@@ -622,6 +622,10 @@ export default function AmsterdamMapStage({
             font-size: 16.8px;
           }
         }
+        svg [data-zone-fill='true']:focus,
+        svg [data-zone-fill='true']:focus-visible {
+          outline: none !important;
+        }
         @keyframes map-zone-pulse {
           0% {
             opacity: 0.8;
