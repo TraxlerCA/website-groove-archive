@@ -145,6 +145,20 @@ export const CORE_ZONE_GENRE_LABELS = MAP_ZONES.filter(
   zone => zone.id !== WILDCARD_ZONE_ID,
 ).map(zone => zone.genreLabel);
 
+function getFirstAlphabeticalCharacter(value: string): string | null {
+  const match = value.match(/[A-Za-z]/);
+  return match ? match[0].toUpperCase() : null;
+}
+
+export function getZoneMarkerGlyph(zone: MapZoneConfig): string {
+  if (zone.id === WILDCARD_ZONE_ID) return '?';
+  return (
+    getFirstAlphabeticalCharacter(zone.genreLabel) ||
+    getFirstAlphabeticalCharacter(zone.displayName) ||
+    '•'
+  );
+}
+
 export function getMapZone(zoneId: MapZoneId): MapZoneConfig {
   const match = MAP_ZONES.find(zone => zone.id === zoneId);
   if (!match) {
