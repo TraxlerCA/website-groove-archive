@@ -2,7 +2,6 @@
 
 import { useMemo, type KeyboardEvent } from 'react';
 import roadsGeoJson from '@/data/amsterdam-roads.json';
-import waterwaysGeoJson from '@/data/amsterdam-waterways.json';
 import zoneGeoJson from '@/data/amsterdam-ggw-zones.json';
 import { getContrastTextColor, type MapZoneConfig, type MapZoneId } from '@/components/home/mapZones';
 
@@ -15,7 +14,6 @@ type MultiLineStringCoordinates = Point[][];
 type ZoneGeometry =
   | { type: 'Polygon'; coordinates: PolygonCoordinates }
   | { type: 'MultiPolygon'; coordinates: MultiPolygonCoordinates };
-type WaterGeometry = ZoneGeometry;
 type RoadGeometry =
   | { type: 'LineString'; coordinates: LineStringCoordinates }
   | { type: 'MultiLineString'; coordinates: MultiLineStringCoordinates };
@@ -34,16 +32,6 @@ type ZoneFeature = {
 type ZoneCollection = {
   type: 'FeatureCollection';
   features: ZoneFeature[];
-};
-
-type WaterFeature = {
-  type: 'Feature';
-  geometry: WaterGeometry;
-};
-
-type WaterCollection = {
-  type: 'FeatureCollection';
-  features: WaterFeature[];
 };
 
 type RoadFeature = {
@@ -83,14 +71,13 @@ const VIEWBOX_WIDTH = 1000;
 const VIEWBOX_HEIGHT = 740;
 const VIEWBOX_PADDING = 34;
 const MAP_BACKGROUND = '#f8fafc';
-const WATER_FILL = 'rgba(59,130,246,0.08)';
 const ROAD_STROKE = 'rgba(15,23,42,0.12)';
 const IDLE_STROKE = 'rgba(255,255,255,0.76)';
 const HOVER_STROKE = 'rgba(255,255,255,0.98)';
 const DIMMED_STROKE = 'rgba(255,255,255,0.56)';
 
 function forEachPolygonPoint(
-  geometry: ZoneGeometry | WaterGeometry,
+  geometry: ZoneGeometry,
   callback: (point: Point) => void,
 ): void {
   if (geometry.type === 'Polygon') {
@@ -230,7 +217,7 @@ function ringToPath(
 }
 
 function polygonGeometryToPath(
-  geometry: ZoneGeometry | WaterGeometry,
+  geometry: ZoneGeometry,
   project: (point: Point) => { x: number; y: number },
 ): string {
   if (geometry.type === 'Polygon') {
@@ -274,7 +261,6 @@ export default function AmsterdamMapStage({
   onClearSelection,
 }: AmsterdamMapStageProps) {
   const zoneCollection = zoneGeoJson as ZoneCollection;
-  const waterCollection = waterwaysGeoJson as WaterCollection;
   const roadCollection = roadsGeoJson as RoadCollection;
 
   const zonesById = useMemo(
@@ -372,10 +358,6 @@ export default function AmsterdamMapStage({
       zoneLabelPoints[zoneId] = projected;
     });
 
-    const waterPaths = waterCollection.features
-      .map(feature => polygonGeometryToPath(feature.geometry, project))
-      .filter(Boolean);
-
     const roadPaths = roadCollection.features
       .map(feature => lineGeometryToPath(feature.geometry, project))
       .filter(Boolean);
@@ -387,11 +369,10 @@ export default function AmsterdamMapStage({
     return {
       zoneFeatures,
       zoneLabelPoints,
-      waterPaths,
       roadPaths,
       zoneFootprintPaths,
     };
-  }, [roadCollection.features, waterCollection.features, zoneCollection.features]);
+  }, [roadCollection.features, zoneCollection.features]);
 
   const activeZone = activeZoneId ? zonesById[activeZoneId] : null;
   const hasActiveSelection = Boolean(activeZoneId);
@@ -438,12 +419,6 @@ export default function AmsterdamMapStage({
           </defs>
 
           <rect width={VIEWBOX_WIDTH} height={VIEWBOX_HEIGHT} fill={MAP_BACKGROUND} />
-
-          <g aria-hidden="true" clipPath="url(#zone-footprint-clip)">
-            {mapData.waterPaths.map((path, index) => (
-              <path key={`water-${index}`} d={path} fill={WATER_FILL} fillRule="evenodd" stroke="none" />
-            ))}
-          </g>
 
           <g aria-hidden="true" clipPath="url(#zone-footprint-clip)">
             {mapData.roadPaths.map((path, index) => (
@@ -539,20 +514,21 @@ export default function AmsterdamMapStage({
               const point = mapData.zoneLabelPoints[zone.id];
               if (!point) return null;
               const labelLines = getMapLabelLines(zone.genreLabel);
+              const lineHeight = 16.5;
+              const firstLineY = point.y - (lineHeight * (labelLines.length - 1)) / 2;
               return (
                 <text
                   key={`${zone.id}-label`}
                   x={point.x}
                   y={point.y}
                   textAnchor="middle"
-                  dominantBaseline="middle"
                   className="map-zone-label"
                 >
                   {labelLines.map((line, index) => (
                     <tspan
                       key={`${zone.id}-label-line-${index}`}
                       x={point.x}
-                      dy={index === 0 ? (labelLines.length > 1 ? -4.2 : 0) : 9}
+                      y={firstLineY + index * lineHeight}
                     >
                       {line}
                     </tspan>
@@ -632,17 +608,18 @@ export default function AmsterdamMapStage({
           animation: map-zone-pulse 2.2s ease-out infinite;
         }
         .map-zone-label {
-          font-size: 18.3px;
-          letter-spacing: 0.02em;
-          fill: rgba(255, 255, 255, 0.98);
-          stroke: none;
-          stroke-width: 0;
-          font-weight: 700;
+          font-family: var(--font-urbanist), ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont,
+            'Segoe UI', sans-serif;
+          font-size: 15.8px;
+          letter-spacing: 0.012em;
+          fill: rgba(255, 255, 255, 0.97);
+          font-weight: 650;
+          text-rendering: geometricPrecision;
+          filter: drop-shadow(0 1px 1px rgba(0, 0, 0, 0.45));
         }
         @media (max-width: 420px) {
           .map-zone-label {
-            font-size: 19.2px;
-            stroke-width: 0;
+            font-size: 16.8px;
           }
         }
         @keyframes map-zone-pulse {
