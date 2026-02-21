@@ -44,7 +44,7 @@ export const MAP_ZONES: MapZoneConfig[] = [
     id: 'canal_glow',
     displayName: 'Melodic House & Techno',
     genreLabel: 'Melodic House & Techno',
-    accent: '#42d4ff',
+    accent: '#00A8CC',
     areas: ZONE_AREAS_BY_ID.canal_glow,
     anchorDesktop: { x: 48, y: 37, align: 'left' },
     anchorMobile: { x: 50, y: 88, align: 'center' },
@@ -53,7 +53,7 @@ export const MAP_ZONES: MapZoneConfig[] = [
     id: 'festival_peak',
     displayName: 'Festival Anthems & Big Room',
     genreLabel: 'Festival Anthems & Big Room',
-    accent: '#ff6f5f',
+    accent: '#480CA8',
     areas: ZONE_AREAS_BY_ID.festival_peak,
     anchorDesktop: { x: 53, y: 35, align: 'left' },
     anchorMobile: { x: 50, y: 88, align: 'center' },
@@ -62,7 +62,7 @@ export const MAP_ZONES: MapZoneConfig[] = [
     id: 'spiegel_funk',
     displayName: 'Disco & Funky House',
     genreLabel: 'Disco & Funky House',
-    accent: '#ff8d4d',
+    accent: '#FB5607',
     areas: ZONE_AREAS_BY_ID.spiegel_funk,
     anchorDesktop: { x: 39, y: 26, align: 'left' },
     anchorMobile: { x: 50, y: 88, align: 'center' },
@@ -71,7 +71,7 @@ export const MAP_ZONES: MapZoneConfig[] = [
     id: 'amstel_rush',
     displayName: '<Random genre>',
     genreLabel: '<Random genre>',
-    accent: '#7f9cff',
+    accent: '#ADB5BD',
     areas: ZONE_AREAS_BY_ID.amstel_rush,
     anchorDesktop: { x: 62, y: 41, align: 'left' },
     anchorMobile: { x: 50, y: 88, align: 'center' },
@@ -80,7 +80,7 @@ export const MAP_ZONES: MapZoneConfig[] = [
     id: 'jordaan_jack',
     displayName: 'Classic House & Garage',
     genreLabel: 'Classic House & Garage',
-    accent: '#ffd35a',
+    accent: '#16302B',
     areas: ZONE_AREAS_BY_ID.jordaan_jack,
     anchorDesktop: { x: 46, y: 53, align: 'left' },
     anchorMobile: { x: 50, y: 88, align: 'center' },
@@ -89,7 +89,7 @@ export const MAP_ZONES: MapZoneConfig[] = [
     id: 'polder_drift',
     displayName: 'Minimal & Deep House',
     genreLabel: 'Minimal & Deep House',
-    accent: '#7ddfb3',
+    accent: '#212529',
     areas: ZONE_AREAS_BY_ID.polder_drift,
     anchorDesktop: { x: 38, y: 65, align: 'left' },
     anchorMobile: { x: 50, y: 88, align: 'center' },
@@ -98,7 +98,7 @@ export const MAP_ZONES: MapZoneConfig[] = [
     id: 'beton_tunnel',
     displayName: 'Hard & Driving Techno',
     genreLabel: 'Hard & Driving Techno',
-    accent: '#94a2ff',
+    accent: '#9E0019',
     areas: ZONE_AREAS_BY_ID.beton_tunnel,
     anchorDesktop: { x: 25, y: 28, align: 'left' },
     anchorMobile: { x: 50, y: 88, align: 'center' },
@@ -107,7 +107,7 @@ export const MAP_ZONES: MapZoneConfig[] = [
     id: 'ndsm_fracture',
     displayName: 'Breaks & Experimental',
     genreLabel: 'Breaks & Experimental',
-    accent: '#d487ff',
+    accent: '#FFB703',
     areas: ZONE_AREAS_BY_ID.ndsm_fracture,
     anchorDesktop: { x: 58, y: 16, align: 'left' },
     anchorMobile: { x: 50, y: 88, align: 'center' },
@@ -116,7 +116,7 @@ export const MAP_ZONES: MapZoneConfig[] = [
     id: 'oost_dauw',
     displayName: 'Chill & Organic Electronica',
     genreLabel: 'Chill & Organic Electronica',
-    accent: '#8eeeff',
+    accent: '#002855',
     areas: ZONE_AREAS_BY_ID.oost_dauw,
     anchorDesktop: { x: 69, y: 57, align: 'left' },
     anchorMobile: { x: 50, y: 88, align: 'center' },
@@ -125,7 +125,7 @@ export const MAP_ZONES: MapZoneConfig[] = [
     id: 'dam_pop_up',
     displayName: 'Pop Edits & Party Remixes',
     genreLabel: 'Pop Edits & Party Remixes',
-    accent: '#ffb347',
+    accent: '#FF9F1C',
     areas: ZONE_AREAS_BY_ID.dam_pop_up,
     anchorDesktop: { x: 22, y: 50, align: 'left' },
     anchorMobile: { x: 50, y: 88, align: 'center' },
@@ -134,7 +134,7 @@ export const MAP_ZONES: MapZoneConfig[] = [
     id: 'nacht_ferry',
     displayName: 'Trance & High Energy Rave',
     genreLabel: 'Trance & High Energy Rave',
-    accent: '#ff5ea8',
+    accent: '#FF006E',
     areas: ZONE_AREAS_BY_ID.nacht_ferry,
     anchorDesktop: { x: 84, y: 79, align: 'right' },
     anchorMobile: { x: 50, y: 88, align: 'center' },
@@ -165,4 +165,29 @@ export function getMapZone(zoneId: MapZoneId): MapZoneConfig {
     throw new Error(`Unknown zone id: ${zoneId}`);
   }
   return match;
+}
+
+export function getContrastTextColor(hex: string): '#030712' | '#F8FAFC' {
+  const sanitized = hex.trim().replace('#', '');
+  const normalized =
+    sanitized.length === 3
+      ? sanitized
+          .split('')
+          .map(char => `${char}${char}`)
+          .join('')
+      : sanitized;
+
+  if (!/^[0-9a-fA-F]{6}$/.test(normalized)) {
+    return '#030712';
+  }
+
+  const r = Number.parseInt(normalized.slice(0, 2), 16) / 255;
+  const g = Number.parseInt(normalized.slice(2, 4), 16) / 255;
+  const b = Number.parseInt(normalized.slice(4, 6), 16) / 255;
+
+  const linearize = (value: number) =>
+    value <= 0.03928 ? value / 12.92 : ((value + 0.055) / 1.055) ** 2.4;
+
+  const luminance = 0.2126 * linearize(r) + 0.7152 * linearize(g) + 0.0722 * linearize(b);
+  return luminance < 0.34 ? '#F8FAFC' : '#030712';
 }

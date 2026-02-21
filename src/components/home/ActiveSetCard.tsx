@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useMemo, useState } from 'react';
-import type { MapZoneConfig } from '@/components/home/mapZones';
+import { getContrastTextColor, type MapZoneConfig } from '@/components/home/mapZones';
 import type { Row } from '@/lib/types';
 import { sanitizeMediaUrl } from '@/lib/sanitize';
 
@@ -37,7 +37,7 @@ export default function ActiveSetCard({
       <div className="mb-3 flex items-center justify-between gap-2">
         <span
           className="inline-flex items-center rounded-full px-3 py-1 text-[0.62rem] font-semibold uppercase tracking-[0.24em]"
-          style={{ backgroundColor: zone.accent, color: '#050816' }}
+          style={{ backgroundColor: zone.accent, color: getContrastTextColor(zone.accent) }}
         >
           {zone.displayName}
         </span>
