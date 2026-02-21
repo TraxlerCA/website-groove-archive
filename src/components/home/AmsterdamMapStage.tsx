@@ -278,6 +278,10 @@ function getMapLabel(value: string): string {
   return words.slice(0, 3).join(' ');
 }
 
+function getHoverPillWidth(label: string): number {
+  return Math.max(74, Math.min(260, label.length * 6.4 + 24));
+}
+
 export default function AmsterdamMapStage({
   zones,
   activeZoneId,
@@ -424,11 +428,7 @@ export default function AmsterdamMapStage({
             onHover(null);
             onClearSelection();
           }}
-          onMouseLeave={event => {
-            const related = event.relatedTarget as HTMLElement | null;
-            if (related?.dataset?.hoverPill === 'true') return;
-            onHover(null);
-          }}
+          onMouseLeave={() => onHover(null)}
           onMouseMove={event => {
             const target = event.target as Element;
             if (target.tagName.toLowerCase() === 'svg') onHover(null);
@@ -553,6 +553,44 @@ export default function AmsterdamMapStage({
             </g>
           ) : null}
 
+          {hoveredZoneId ? (
+            (() => {
+              const point = mapData.zoneLabelPoints[hoveredZoneId];
+              const zone = zonesById[hoveredZoneId];
+              if (!point || !zone) return null;
+              const pillWidth = getHoverPillWidth(zone.genreLabel);
+              const pillHeight = 22;
+              const pillRadius = 11;
+              return (
+                <g data-hover-pill="true" aria-hidden="true" className="pointer-events-none">
+                  <rect
+                    x={point.x - pillWidth / 2}
+                    y={point.y - pillHeight / 2}
+                    width={pillWidth}
+                    height={pillHeight}
+                    rx={pillRadius}
+                    ry={pillRadius}
+                    fill={zone.accent}
+                    stroke="rgba(255,255,255,0.58)"
+                    strokeWidth={0.8}
+                  />
+                  <text
+                    x={point.x}
+                    y={point.y}
+                    textAnchor="middle"
+                    dominantBaseline="middle"
+                    fontSize={8}
+                    letterSpacing="0.02em"
+                    fill="#030712"
+                    fontWeight={600}
+                  >
+                    {zone.genreLabel}
+                  </text>
+                </g>
+              );
+            })()
+          ) : null}
+
           {activeZoneId && activeZone ? (
             <g aria-hidden="true" className="pointer-events-none">
               {mapData.zoneFeatures
@@ -582,34 +620,6 @@ export default function AmsterdamMapStage({
           />
         </svg>
 
-        <div className="pointer-events-none absolute inset-0">
-          <div className="pointer-events-none absolute inset-0">
-            {hoveredZoneId ? (
-              (() => {
-                const point = mapData.zoneLabelPoints[hoveredZoneId];
-                const zone = zonesById[hoveredZoneId];
-                if (!point || !zone) return null;
-                return (
-                  <button
-                    data-hover-pill="true"
-                    type="button"
-                    onClick={() => onSelect(hoveredZoneId)}
-                    onMouseEnter={() => onHover(hoveredZoneId)}
-                    onMouseLeave={() => onHover(null)}
-                    className="pointer-events-auto absolute -translate-x-1/2 -translate-y-1/2 rounded-full border border-white/60 px-3 py-1 text-[0.66rem] font-semibold tracking-[0.03em] text-[#030712] shadow-[0_10px_20px_rgba(0,0,0,0.28)] focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-white/45"
-                    style={{
-                      left: `${(point.x / VIEWBOX_WIDTH) * 100}%`,
-                      top: `${(point.y / VIEWBOX_HEIGHT) * 100}%`,
-                      backgroundColor: zone.accent,
-                    }}
-                  >
-                    {zone.genreLabel}
-                  </button>
-                );
-              })()
-            ) : null}
-          </div>
-        </div>
       </div>
 
       <style jsx>{`

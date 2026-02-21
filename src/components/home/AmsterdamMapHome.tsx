@@ -118,8 +118,8 @@ export default function AmsterdamMapHome() {
           className={[
             'pointer-events-none absolute inset-x-4 top-4 bottom-4 sm:inset-x-auto sm:top-auto sm:bottom-8 sm:w-[22rem]',
             selectedZone.anchorDesktop.x >= 50
-              ? 'sm:left-8 sm:right-auto'
-              : 'sm:right-8 sm:left-auto',
+              ? 'sm:right-8 sm:left-auto'
+              : 'sm:left-8 sm:right-auto',
           ].join(' ')}
         >
           <div className="pointer-events-auto flex h-full items-end sm:block sm:h-auto">
