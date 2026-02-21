@@ -63,6 +63,13 @@ type ProjectedZoneFeature = {
   path: string;
 };
 
+type Bounds = {
+  minX: number;
+  minY: number;
+  maxX: number;
+  maxY: number;
+};
+
 type AmsterdamMapStageProps = {
   zones: MapZoneConfig[];
   activeZoneId: MapZoneId | null;
@@ -111,6 +118,120 @@ function forEachPolygonPoint(
     return;
   }
   geometry.coordinates.forEach(polygon => polygon.forEach(ring => ring.forEach(callback)));
+}
+
+function createBounds(): Bounds {
+  return {
+    minX: Number.POSITIVE_INFINITY,
+    minY: Number.POSITIVE_INFINITY,
+    maxX: Number.NEGATIVE_INFINITY,
+    maxY: Number.NEGATIVE_INFINITY,
+  };
+}
+
+function expandBounds(bounds: Bounds, [x, y]: Point): void {
+  if (x < bounds.minX) bounds.minX = x;
+  if (x > bounds.maxX) bounds.maxX = x;
+  if (y < bounds.minY) bounds.minY = y;
+  if (y > bounds.maxY) bounds.maxY = y;
+}
+
+function getGeometryBounds(geometry: ZoneGeometry): Bounds {
+  const bounds = createBounds();
+  forEachPolygonPoint(geometry, point => {
+    expandBounds(bounds, point);
+  });
+  return bounds;
+}
+
+function pointsMatch(a: Point, b: Point): boolean {
+  return Math.abs(a[0] - b[0]) < 1e-12 && Math.abs(a[1] - b[1]) < 1e-12;
+}
+
+function normalizeRing(ring: Point[]): Point[] {
+  if (ring.length < 2) return ring;
+  if (pointsMatch(ring[0], ring[ring.length - 1])) {
+    return ring.slice(0, -1);
+  }
+  return ring;
+}
+
+function getRingCentroidAndArea(ring: Point[]): { centroid: Point; area: number } | null {
+  const normalized = normalizeRing(ring);
+  if (normalized.length < 3) return null;
+
+  let doubleArea = 0;
+  let centroidXFactor = 0;
+  let centroidYFactor = 0;
+
+  for (let index = 0; index < normalized.length; index += 1) {
+    const current = normalized[index];
+    const next = normalized[(index + 1) % normalized.length];
+    const cross = current[0] * next[1] - next[0] * current[1];
+    doubleArea += cross;
+    centroidXFactor += (current[0] + next[0]) * cross;
+    centroidYFactor += (current[1] + next[1]) * cross;
+  }
+
+  const signedArea = doubleArea * 0.5;
+  if (Math.abs(signedArea) < 1e-12) return null;
+
+  return {
+    centroid: [
+      centroidXFactor / (6 * signedArea),
+      centroidYFactor / (6 * signedArea),
+    ],
+    area: Math.abs(signedArea),
+  };
+}
+
+function getPolygonCentroidAndArea(rings: PolygonCoordinates): { centroid: Point; area: number } | null {
+  let weightedX = 0;
+  let weightedY = 0;
+  let signedAreaSum = 0;
+
+  rings.forEach((ring, index) => {
+    const ringResult = getRingCentroidAndArea(ring);
+    if (!ringResult) return;
+    const ringWeight = index === 0 ? ringResult.area : -ringResult.area;
+    weightedX += ringResult.centroid[0] * ringWeight;
+    weightedY += ringResult.centroid[1] * ringWeight;
+    signedAreaSum += ringWeight;
+  });
+
+  if (Math.abs(signedAreaSum) < 1e-12) return null;
+
+  return {
+    centroid: [weightedX / signedAreaSum, weightedY / signedAreaSum],
+    area: Math.abs(signedAreaSum),
+  };
+}
+
+function getGeometryCentroidAndArea(
+  geometry: ZoneGeometry,
+): { centroid: Point; area: number } | null {
+  if (geometry.type === 'Polygon') {
+    return getPolygonCentroidAndArea(geometry.coordinates);
+  }
+
+  let weightedX = 0;
+  let weightedY = 0;
+  let areaSum = 0;
+
+  geometry.coordinates.forEach(polygon => {
+    const polygonResult = getPolygonCentroidAndArea(polygon);
+    if (!polygonResult) return;
+    weightedX += polygonResult.centroid[0] * polygonResult.area;
+    weightedY += polygonResult.centroid[1] * polygonResult.area;
+    areaSum += polygonResult.area;
+  });
+
+  if (areaSum < 1e-12) return null;
+
+  return {
+    centroid: [weightedX / areaSum, weightedY / areaSum],
+    area: areaSum,
+  };
 }
 
 function ringToPath(
@@ -179,10 +300,7 @@ export default function AmsterdamMapStage({
   );
 
   const mapData = useMemo(() => {
-    let minX = Number.POSITIVE_INFINITY;
-    let minY = Number.POSITIVE_INFINITY;
-    let maxX = Number.NEGATIVE_INFINITY;
-    let maxY = Number.NEGATIVE_INFINITY;
+    const bounds = createBounds();
 
     const visibleZoneFeatures = zoneCollection.features.filter(
       feature => feature.properties.active && feature.properties.zoneId,
@@ -190,48 +308,50 @@ export default function AmsterdamMapStage({
     const boundsSource = visibleZoneFeatures.length > 0 ? visibleZoneFeatures : zoneCollection.features;
 
     boundsSource.forEach(feature => {
-      forEachPolygonPoint(feature.geometry, ([x, y]) => {
-        if (x < minX) minX = x;
-        if (x > maxX) maxX = x;
-        if (y < minY) minY = y;
-        if (y > maxY) maxY = y;
+      forEachPolygonPoint(feature.geometry, point => {
+        expandBounds(bounds, point);
       });
     });
 
-    const spanX = Math.max(0.000001, maxX - minX);
-    const spanY = Math.max(0.000001, maxY - minY);
+    const spanX = Math.max(0.000001, bounds.maxX - bounds.minX);
+    const spanY = Math.max(0.000001, bounds.maxY - bounds.minY);
     const usableWidth = VIEWBOX_WIDTH - VIEWBOX_PADDING * 2;
     const usableHeight = VIEWBOX_HEIGHT - VIEWBOX_PADDING * 2;
 
     const project = ([x, y]: Point) => ({
-      x: ((x - minX) / spanX) * usableWidth + VIEWBOX_PADDING,
-      y: ((maxY - y) / spanY) * usableHeight + VIEWBOX_PADDING,
+      x: ((x - bounds.minX) / spanX) * usableWidth + VIEWBOX_PADDING,
+      y: ((bounds.maxY - y) / spanY) * usableHeight + VIEWBOX_PADDING,
     });
 
-    const labelBoundsByZone = new Map<MapZoneId, { minX: number; minY: number; maxX: number; maxY: number }>();
+    const zoneCentroidAccumulators = new Map<MapZoneId, { weightedX: number; weightedY: number; area: number }>();
+    const zoneFallbackCenters = new Map<MapZoneId, Point[]>();
 
     const zoneFeatures: ProjectedZoneFeature[] = zoneCollection.features.map(feature => {
       const path = polygonGeometryToPath(feature.geometry, project);
 
       if (feature.properties.active && feature.properties.zoneId) {
         const zoneId = feature.properties.zoneId;
-        forEachPolygonPoint(feature.geometry, point => {
-          const projected = project(point);
-          const existing = labelBoundsByZone.get(zoneId);
-          if (!existing) {
-            labelBoundsByZone.set(zoneId, {
-              minX: projected.x,
-              minY: projected.y,
-              maxX: projected.x,
-              maxY: projected.y,
-            });
-            return;
-          }
-          if (projected.x < existing.minX) existing.minX = projected.x;
-          if (projected.y < existing.minY) existing.minY = projected.y;
-          if (projected.x > existing.maxX) existing.maxX = projected.x;
-          if (projected.y > existing.maxY) existing.maxY = projected.y;
-        });
+        const centroidResult = getGeometryCentroidAndArea(feature.geometry);
+        if (centroidResult && centroidResult.area > 1e-12) {
+          const existing = zoneCentroidAccumulators.get(zoneId) ?? {
+            weightedX: 0,
+            weightedY: 0,
+            area: 0,
+          };
+          zoneCentroidAccumulators.set(zoneId, {
+            weightedX: existing.weightedX + centroidResult.centroid[0] * centroidResult.area,
+            weightedY: existing.weightedY + centroidResult.centroid[1] * centroidResult.area,
+            area: existing.area + centroidResult.area,
+          });
+        } else {
+          const featureBounds = getGeometryBounds(feature.geometry);
+          const fallbackCenter: Point = [
+            (featureBounds.minX + featureBounds.maxX) / 2,
+            (featureBounds.minY + featureBounds.maxY) / 2,
+          ];
+          const existingFallbacks = zoneFallbackCenters.get(zoneId) ?? [];
+          zoneFallbackCenters.set(zoneId, [...existingFallbacks, fallbackCenter]);
+        }
       }
 
       return {
@@ -243,11 +363,26 @@ export default function AmsterdamMapStage({
     });
 
     const zoneLabelPoints: Partial<Record<MapZoneId, { x: number; y: number }>> = {};
-    labelBoundsByZone.forEach((bounds, zoneId) => {
-      zoneLabelPoints[zoneId] = {
-        x: (bounds.minX + bounds.maxX) / 2,
-        y: (bounds.minY + bounds.maxY) / 2,
-      };
+    zoneCentroidAccumulators.forEach((accumulator, zoneId) => {
+      if (accumulator.area <= 1e-12) return;
+      const projected = project([
+        accumulator.weightedX / accumulator.area,
+        accumulator.weightedY / accumulator.area,
+      ]);
+      zoneLabelPoints[zoneId] = projected;
+    });
+
+    zoneFallbackCenters.forEach((centers, zoneId) => {
+      if (zoneLabelPoints[zoneId] || centers.length === 0) return;
+      const averageCenter = centers.reduce<Point>(
+        (acc, center) => [acc[0] + center[0], acc[1] + center[1]],
+        [0, 0],
+      );
+      const projected = project([
+        averageCenter[0] / centers.length,
+        averageCenter[1] / centers.length,
+      ]);
+      zoneLabelPoints[zoneId] = projected;
     });
 
     const waterPaths = waterCollection.features
@@ -258,11 +393,16 @@ export default function AmsterdamMapStage({
       .map(feature => lineGeometryToPath(feature.geometry, project))
       .filter(Boolean);
 
+    const zoneFootprintPaths = zoneFeatures
+      .filter(feature => feature.active && feature.zoneId)
+      .map(feature => feature.path);
+
     return {
       zoneFeatures,
       zoneLabelPoints,
       waterPaths,
       roadPaths,
+      zoneFootprintPaths,
     };
   }, [roadCollection.features, waterCollection.features, zoneCollection.features]);
 
@@ -299,45 +439,22 @@ export default function AmsterdamMapStage({
               <stop offset="58%" stopColor="rgba(4,8,20,0)" />
               <stop offset="100%" stopColor="rgba(4,8,20,0.76)" />
             </radialGradient>
-            <filter id="amstel-shimmer" x="-20%" y="-20%" width="140%" height="140%">
-              <feTurbulence
-                type="fractalNoise"
-                baseFrequency="0.015"
-                numOctaves="2"
-                seed="2"
-                result="noise"
-              >
-                <animate
-                  attributeName="baseFrequency"
-                  values="0.013;0.018;0.013"
-                  dur="20s"
-                  repeatCount="indefinite"
-                />
-              </feTurbulence>
-              <feColorMatrix
-                in="noise"
-                type="matrix"
-                values="
-                  0 0 0 0 0.34
-                  0 0 0 0 0.66
-                  0 0 0 0 1
-                  0 0 0 0.2 0
-                "
-                result="shimmer-tint"
-              />
-              <feBlend in="SourceGraphic" in2="shimmer-tint" mode="screen" />
-            </filter>
+            <clipPath id="zone-footprint-clip" clipPathUnits="userSpaceOnUse">
+              {mapData.zoneFootprintPaths.map((path, index) => (
+                <path key={`zone-footprint-${index}`} d={path} />
+              ))}
+            </clipPath>
           </defs>
 
           <rect width={VIEWBOX_WIDTH} height={VIEWBOX_HEIGHT} fill={MAP_BACKGROUND} />
 
-          <g aria-hidden="true">
+          <g aria-hidden="true" clipPath="url(#zone-footprint-clip)">
             {mapData.waterPaths.map((path, index) => (
-              <path key={`water-${index}`} d={path} fill={WATER_FILL} stroke="none" />
+              <path key={`water-${index}`} d={path} fill={WATER_FILL} fillRule="evenodd" stroke="none" />
             ))}
           </g>
 
-          <g aria-hidden="true">
+          <g aria-hidden="true" clipPath="url(#zone-footprint-clip)">
             {mapData.roadPaths.map((path, index) => (
               <path
                 key={`road-${index}`}
@@ -360,7 +477,6 @@ export default function AmsterdamMapStage({
               if (!zone) return null;
               const isActive = zoneId === activeZoneId;
               const isHovered = zoneId === hoveredZoneId;
-              const isIdle = !hasActiveSelection && !isHovered;
               const fill = isActive
                 ? toRgba(zone.accent, 0.85)
                 : hasActiveSelection
@@ -368,7 +484,6 @@ export default function AmsterdamMapStage({
                   : isHovered
                     ? toRgba(zone.accent, 0.35)
                     : toRgba(zone.accent, 0.12);
-              const isShimmerZone = zoneId === 'amstel_rush' && isIdle;
 
               return (
                 <path
@@ -379,7 +494,6 @@ export default function AmsterdamMapStage({
                   onMouseEnter={() => onHover(zoneId)}
                   className="cursor-pointer transition"
                   fill={fill}
-                  style={isShimmerZone ? { filter: 'url(#amstel-shimmer)' } : undefined}
                 />
               );
             })}
