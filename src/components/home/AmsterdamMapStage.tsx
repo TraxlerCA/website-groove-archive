@@ -82,12 +82,12 @@ type AmsterdamMapStageProps = {
 const VIEWBOX_WIDTH = 1000;
 const VIEWBOX_HEIGHT = 740;
 const VIEWBOX_PADDING = 34;
-const MAP_BACKGROUND = '#080d1a';
-const WATER_FILL = 'rgba(10,40,80,0.55)';
-const ROAD_STROKE = 'rgba(255,255,255,0.08)';
-const IDLE_STROKE = 'rgba(255,255,255,0.18)';
-const HOVER_STROKE = 'rgba(255,255,255,0.35)';
-const DIMMED_STROKE = 'rgba(255,255,255,0.08)';
+const MAP_BACKGROUND = '#f8fafc';
+const WATER_FILL = 'rgba(59,130,246,0.08)';
+const ROAD_STROKE = 'rgba(15,23,42,0.12)';
+const IDLE_STROKE = 'rgba(15,23,42,0.24)';
+const HOVER_STROKE = 'rgba(15,23,42,0.46)';
+const DIMMED_STROKE = 'rgba(15,23,42,0.12)';
 
 function toRgba(hex: string, alpha: number): string {
   const sanitized = hex.trim().replace('#', '');
@@ -271,11 +271,14 @@ function lineGeometryToPath(
   return geometry.coordinates.map(line => ringToPath(line, project, false)).join(' ');
 }
 
-function getMapLabel(value: string): string {
+function getMapLabelLines(value: string): string[] {
   const cleaned = value.replace(/[<>]/g, ' ').replace(/\s+/g, ' ').trim();
-  if (!cleaned) return 'Zone';
+  if (!cleaned) return ['Zone'];
   const words = cleaned.split(' ').filter(word => word !== '&' && word.toLowerCase() !== 'and');
-  return words.slice(0, 3).join(' ');
+  const limited = words.slice(0, 4);
+  if (limited.length <= 2) return [limited.join(' ')];
+  const midpoint = Math.ceil(limited.length / 2);
+  return [limited.slice(0, midpoint).join(' '), limited.slice(midpoint).join(' ')];
 }
 
 function getHoverPillWidth(label: string): number {
@@ -428,7 +431,7 @@ export default function AmsterdamMapStage({
 
   return (
     <section className="relative h-full">
-      <div className="relative h-full overflow-hidden rounded-[1.5rem] border border-white/15 bg-[#050a16] shadow-[0_24px_56px_rgba(3,8,24,0.52)] sm:rounded-[2rem]">
+      <div className="relative h-full overflow-hidden rounded-[1.5rem] border border-neutral-200/90 bg-[#f8fafc] shadow-[0_16px_40px_rgba(15,23,42,0.14)] sm:rounded-[2rem]">
         <svg
           viewBox={`0 0 ${VIEWBOX_WIDTH} ${VIEWBOX_HEIGHT}`}
           className="absolute inset-0 h-full w-full"
@@ -447,10 +450,6 @@ export default function AmsterdamMapStage({
           }}
         >
           <defs>
-            <radialGradient id="map-vignette" cx="50%" cy="50%" r="72%">
-              <stop offset="58%" stopColor="rgba(4,8,20,0)" />
-              <stop offset="100%" stopColor="rgba(4,8,20,0.76)" />
-            </radialGradient>
             <clipPath id="zone-footprint-clip" clipPathUnits="userSpaceOnUse">
               {mapData.zoneFootprintPaths.map((path, index) => (
                 <path key={`zone-footprint-${index}`} d={path} />
@@ -490,12 +489,12 @@ export default function AmsterdamMapStage({
               const isActive = zoneId === activeZoneId;
               const isHovered = zoneId === hoveredZoneId;
               const fill = isActive
-                ? toRgba(zone.accent, 0.85)
+                ? toRgba(zone.accent, 0.58)
                 : hasActiveSelection
-                  ? toRgba(zone.accent, 0.06)
+                  ? toRgba(zone.accent, 0.12)
                   : isHovered
-                    ? toRgba(zone.accent, 0.35)
-                    : toRgba(zone.accent, 0.12);
+                    ? toRgba(zone.accent, 0.4)
+                    : toRgba(zone.accent, 0.24);
 
               return (
                 <g key={`${feature.code}-interactive`}>
@@ -567,6 +566,7 @@ export default function AmsterdamMapStage({
               {zones.map(zone => {
                 const point = mapData.zoneLabelPoints[zone.id];
                 if (!point) return null;
+                const labelLines = getMapLabelLines(zone.genreLabel);
                 return (
                   <text
                     key={`${zone.id}-label`}
@@ -576,7 +576,15 @@ export default function AmsterdamMapStage({
                     dominantBaseline="middle"
                     className="map-zone-label"
                   >
-                    {getMapLabel(zone.genreLabel)}
+                    {labelLines.map((line, index) => (
+                      <tspan
+                        key={`${zone.id}-label-line-${index}`}
+                        x={point.x}
+                        dy={index === 0 ? (labelLines.length > 1 ? -4.2 : 0) : 9}
+                      >
+                        {line}
+                      </tspan>
+                    ))}
                   </text>
                 );
               })}
@@ -640,14 +648,6 @@ export default function AmsterdamMapStage({
                 ))}
             </g>
           ) : null}
-
-          <rect
-            aria-hidden="true"
-            className="pointer-events-none"
-            width={VIEWBOX_WIDTH}
-            height={VIEWBOX_HEIGHT}
-            fill="url(#map-vignette)"
-          />
         </svg>
 
       </div>
@@ -657,18 +657,18 @@ export default function AmsterdamMapStage({
           animation: map-zone-pulse 2.2s ease-out infinite;
         }
         .map-zone-label {
-          font-size: 8.2px;
-          letter-spacing: 0.04em;
-          fill: rgba(255, 255, 255, 0.85);
-          stroke: rgba(3, 7, 18, 0.88);
-          stroke-width: 1.7px;
+          font-size: 12.2px;
+          letter-spacing: 0.02em;
+          fill: rgba(15, 23, 42, 0.86);
+          stroke: rgba(248, 250, 252, 0.98);
+          stroke-width: 3.1px;
           paint-order: stroke fill;
-          font-weight: 600;
+          font-weight: 700;
         }
         @media (max-width: 420px) {
           .map-zone-label {
-            font-size: 8.9px;
-            stroke-width: 2px;
+            font-size: 12.8px;
+            stroke-width: 3.3px;
           }
         }
         @keyframes map-zone-pulse {
