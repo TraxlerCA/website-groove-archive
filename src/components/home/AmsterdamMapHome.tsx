@@ -116,20 +116,23 @@ export default function AmsterdamMapHome() {
       {selectedZone ? (
         <div
           className={[
-            'pointer-events-none absolute inset-x-4 bottom-4 sm:inset-x-auto sm:bottom-8 sm:w-[22rem]',
+            'pointer-events-none absolute inset-x-4 top-4 bottom-4 sm:inset-x-auto sm:top-auto sm:bottom-8 sm:w-[22rem]',
             selectedZone.anchorDesktop.x >= 50
-              ? 'sm:left-8 sm:right-auto'
-              : 'sm:right-8 sm:left-auto',
+              ? 'sm:right-8 sm:left-auto'
+              : 'sm:left-8 sm:right-auto',
           ].join(' ')}
         >
-          <div className="pointer-events-auto">
-            <ActiveSetCard
-              zone={selectedZone}
-              row={selectedRow}
-              onPlay={handlePlay}
-              onOutboundClick={handleOutboundClick}
-              compact
-            />
+          <div className="pointer-events-auto flex h-full items-end sm:block sm:h-auto">
+            <div className="w-full max-h-[min(56svh,100%)] sm:max-h-none">
+              <ActiveSetCard
+                zone={selectedZone}
+                row={selectedRow}
+                onPlay={handlePlay}
+                onOutboundClick={handleOutboundClick}
+                onClose={handleClearSelection}
+                compact
+              />
+            </div>
           </div>
         </div>
       ) : null}

@@ -10,6 +10,7 @@ type ActiveSetCardProps = {
   row: Row | null;
   onPlay: () => void;
   onOutboundClick: (href: string) => void;
+  onClose?: () => void;
   className?: string;
   compact?: boolean;
 };
@@ -19,6 +20,7 @@ export default function ActiveSetCard({
   row,
   onPlay,
   onOutboundClick,
+  onClose,
   className,
   compact = false,
 }: ActiveSetCardProps) {
@@ -27,18 +29,28 @@ export default function ActiveSetCard({
   return (
     <article
       className={[
-        'w-full overflow-hidden rounded-3xl border border-white/20 bg-[rgba(5,10,22,0.8)] text-white shadow-[0_18px_44px_rgba(4,8,20,0.45)] backdrop-blur-xl',
+        'max-h-full w-full overflow-x-hidden overflow-y-auto rounded-3xl border border-white/20 bg-[rgba(5,10,22,0.8)] text-white shadow-[0_18px_44px_rgba(4,8,20,0.45)] backdrop-blur-xl',
         compact ? 'p-4' : 'p-5',
         className || '',
       ].join(' ')}
     >
-      <div className="mb-3 flex items-center gap-2">
+      <div className="mb-3 flex items-center justify-between gap-2">
         <span
           className="inline-flex items-center rounded-full px-3 py-1 text-[0.62rem] font-semibold uppercase tracking-[0.24em]"
           style={{ backgroundColor: zone.accent, color: '#050816' }}
         >
           {zone.displayName}
         </span>
+        {onClose ? (
+          <button
+            type="button"
+            onClick={onClose}
+            aria-label="Back to map"
+            className="inline-flex items-center rounded-full border border-white/30 bg-white/12 px-3 py-1 text-[0.66rem] font-semibold uppercase tracking-[0.2em] text-white/92 transition hover:bg-white/22 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-white/45 sm:hidden"
+          >
+            Back to map
+          </button>
+        ) : null}
       </div>
 
       {row ? (
@@ -126,12 +138,12 @@ function SCArtwork({ url }: { url: string }) {
 
   if (!art || failed) {
     return (
-      <div className="aspect-square w-full bg-[radial-gradient(circle_at_28%_20%,rgba(95,188,255,0.55),rgba(42,84,132,0.4)_50%,rgba(4,10,24,1)_95%)]" />
+      <div className="aspect-[4/3] w-full bg-[radial-gradient(circle_at_28%_20%,rgba(95,188,255,0.55),rgba(42,84,132,0.4)_50%,rgba(4,10,24,1)_95%)] sm:aspect-square" />
     );
   }
 
   return (
     // eslint-disable-next-line @next/next/no-img-element
-    <img src={art} alt="" className="aspect-square w-full object-cover" onError={() => setFailed(true)} />
+    <img src={art} alt="" className="aspect-[4/3] w-full object-cover sm:aspect-square" onError={() => setFailed(true)} />
   );
 }
