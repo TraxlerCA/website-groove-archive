@@ -69,6 +69,7 @@ const CARD_BORDER = 'border border-white shadow-[0_1px_2px_rgba(0,0,0,0.06)] rou
 const SLOT_GAP_PX = 6;
 
 const norm = (v?: string | null) => (v ?? '').replace(/\u00a0/g, ' ').replace(/\s+/g, ' ').trim();
+const normalizeUtf8 = (v: string) => v.normalize('NFC');
 const toMin = (t: string) => {
   const s = norm(t);
   const [h, m] = s.split(':').map(n => parseInt(n, 10));
@@ -129,7 +130,7 @@ const TEMPLATE_CSV_DEKMANTEL_SAT = [
   'Dekmantel - Saturday,2025-08-02,Radar,7,Mad Miran,19:15,20:15,nahh',
   'Dekmantel - Saturday,2025-08-02,Radar,7,Djrum,20:30,21:45,nahh',
   'Dekmantel - Saturday,2025-08-02,Radar,7,Quest,22:00,23:00,ok',
-].join('\n');
+].map(normalizeUtf8).join('\n');
 
 // First 5 rows for example table
 const TEMPLATE_FIRST5: Row[] = [
@@ -255,7 +256,8 @@ export default function HeatmapsPage() {
             <motion.button
               className="h-12 rounded-md border border-neutral-300 bg-white px-4 text-sm hover:bg-neutral-50"
               onClick={() => {
-                const blob = new Blob([TEMPLATE_CSV_DEKMANTEL_SAT], { type: 'text/csv;charset=utf-8' });
+                const templateCsv = `\uFEFF${normalizeUtf8(TEMPLATE_CSV_DEKMANTEL_SAT)}`;
+                const blob = new Blob([templateCsv], { type: 'text/csv;charset=utf-8' });
                 const url = URL.createObjectURL(blob);
                 const a = document.createElement('a'); a.href = url; a.download = 'heatmap-template.csv'; a.click();
                 URL.revokeObjectURL(url);
@@ -747,7 +749,7 @@ function CreateHeatmapModal({
 
         {parsedRows && errors.length === 0 && (
           <div className="mt-3 rounded-md border border-emerald-200 bg-emerald-50 p-3 text-sm text-emerald-800">
-            Looks good! Parsed {parsedRows.length} rows. Click “Add preview” to render above.
+            Looks good! Parsed {parsedRows.length} rows. Click &quot;Add preview&quot; to render above.
           </div>
         )}
 
