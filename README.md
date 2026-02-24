@@ -9,55 +9,74 @@ Curated DJ set discovery app built with Next.js App Router and Supabase-backed d
 - Tailwind CSS 4
 - Supabase (`@supabase/supabase-js`)
 - Vitest (unit tests)
+- Playwright (e2e smoke tests)
+
+## Contributor Quickstart
+
+1. Install dependencies:
+   ```bash
+   npm install
+   ```
+2. Create local env file from the template:
+   - macOS/Linux:
+     ```bash
+     cp .env.example .env
+     ```
+   - Windows (PowerShell):
+     ```powershell
+     Copy-Item .env.example .env
+     ```
+3. Fill in required Supabase values in `.env`.
+4. Start local dev server:
+   ```bash
+   npm run dev
+   ```
+5. Open `http://localhost:3000`.
 
 ## Environment Variables
 
-Create a `.env` file in the project root:
+Copy `.env.example` to `.env` and set values:
 
 ```bash
 NEXT_PUBLIC_SUPABASE_URL=your_supabase_project_url
 NEXT_PUBLIC_SUPABASE_ANON_KEY=your_supabase_anon_key
+# Optional: map (default) or crate
+NEXT_PUBLIC_HOME_EXPERIENCE=map
 ```
 
-These are required by `src/lib/supabase.ts`.
-
-## Local Development
-
-```bash
-npm install
-npm run dev
-```
-
-App runs on `http://localhost:3000`.
+`NEXT_PUBLIC_SUPABASE_URL` and `NEXT_PUBLIC_SUPABASE_ANON_KEY` are required by `src/lib/supabase.ts`.
 
 ## Scripts
 
 - `npm run dev`: start local dev server
 - `npm run lint`: run ESLint
 - `npm run test`: run Vitest test suite
+- `npm run test:e2e`: run Playwright e2e suite
+- `npm run test:e2e:headed`: run Playwright e2e suite in headed mode
 - `npm run generate:ggw-zones`: regenerate map GeoJSON + active-area lists from GGW CSV mapping
 - `npm run build`: production build
 - `npm run start`: run production server
 
+## Architecture and Data Flow
+
+- Server data entry point: `src/lib/sheets.server.ts`.
+- App bootstrap: `src/app/layout.tsx` loads shared datasets once (`list`, `genres`, `artists`) and passes them into `AppShell`.
+- Client data access: `SiteDataContext` (`src/context/SiteDataContext.tsx`) exposes rows/genres/updatedAt to client components.
+- Home mode switch: `src/app/page.tsx` selects map or crate experience via `NEXT_PUBLIC_HOME_EXPERIENCE`.
+- API fallback/access points:
+  - `GET /api/sheets?tabs=list,genres,artists`
+  - `GET /api/soundcloud-artwork?url=<soundcloud-track-url>`
+
 ## Main Routes
 
-- `/`: hero + random "serve a set" flow
+- `/`: home experience (map or crate mode)
 - `/list`: full set list experience
 - `/artists`: artist view grouped by rating
 - `/heatmaps`: festival heatmap page with CSV upload/export
 - `/suggest`: suggestion form page
 
-## API Routes
-
-- `GET /api/sheets?tabs=list,genres,artists`
-  - returns Supabase-backed data payload for selected tabs
-- `GET /api/soundcloud-artwork?url=<soundcloud-track-url>`
-  - returns SoundCloud artwork via oEmbed with in-memory cache
-
 ## Data Notes
 
-- Server-side data fetches are in `src/lib/sheets.server.ts`.
-- Root layout loads shared site data once and passes it via `AppShell`/context.
 - Map GGW source-of-truth mapping is `src/data/amsterdam-ggw-mapping.csv`.
 - Generated map artifacts:
   - `src/data/amsterdam-ggw-zones.json`
