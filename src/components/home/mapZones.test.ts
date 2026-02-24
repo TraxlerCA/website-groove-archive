@@ -4,6 +4,7 @@ import {
   MAP_ZONES,
   WILDCARD_ZONE_ID,
   getContrastTextColor,
+  normalizeMapZoneId,
 } from '@/components/home/mapZones';
 
 describe('mapZones config', () => {
@@ -32,5 +33,19 @@ describe('getContrastTextColor', () => {
 
   it('falls back to dark text for invalid hex values', () => {
     expect(getContrastTextColor('not-a-color')).toBe('#030712');
+  });
+});
+
+describe('normalizeMapZoneId', () => {
+  it('keeps canonical ids unchanged', () => {
+    expect(normalizeMapZoneId('melodic_house_techno')).toBe('melodic_house_techno');
+  });
+
+  it('maps legacy ids to canonical ids', () => {
+    expect(normalizeMapZoneId('canal_glow')).toBe('melodic_house_techno');
+  });
+
+  it('returns null for unknown ids', () => {
+    expect(normalizeMapZoneId('unknown_zone')).toBeNull();
   });
 });
