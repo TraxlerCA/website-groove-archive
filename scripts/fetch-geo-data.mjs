@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 
 /**
- * Bakes Amsterdam waterway and major road geometry into static GeoJSON files.
+ * Bakes Amsterdam major road geometry into a static GeoJSON file.
  * Usage: node scripts/fetch-geo-data.mjs
  */
 
@@ -20,8 +20,6 @@ const BBOX = {
 };
 const MIN_ROAD_LENGTH_DEGREES = 0.0038;
 
-const WATERWAYS_URL =
-  'https://api.data.amsterdam.nl/v1/water/binnenwater?_format=geojson&_pageSize=10000';
 const OVERPASS_URLS = [
   'https://overpass-api.de/api/interpreter',
   'https://lz4.overpass-api.de/api/interpreter',
@@ -29,8 +27,8 @@ const OVERPASS_URLS = [
 ];
 
 function sleep(ms) {
-  return new Promise(resolve => {
-    setTimeout(resolve, ms);
+  return new Promise(resolveTimer => {
+    setTimeout(resolveTimer, ms);
   });
 }
 
@@ -54,16 +52,6 @@ function dedupeConsecutivePoints(points) {
     }
   }
   return deduped;
-}
-
-function closeRing(points) {
-  if (points.length === 0) return points;
-  const first = points[0];
-  const last = points[points.length - 1];
-  if (!pointsEqual(first, last)) {
-    points.push([...first]);
-  }
-  return points;
 }
 
 function clipSegmentToBbox(a, b, bbox) {
@@ -140,105 +128,6 @@ function clipLineStringToBbox(points, bbox) {
     .filter(segment => segment.length >= 2);
 }
 
-function clipRingToBbox(ring, bbox) {
-  if (!Array.isArray(ring) || ring.length < 3) return [];
-
-  const source = [...ring];
-  if (source.length > 1 && pointsEqual(source[0], source[source.length - 1])) {
-    source.pop();
-  }
-
-  const edges = [
-    {
-      inside: point => point[0] >= bbox.minLng,
-      intersect: (a, b) => {
-        const t = (bbox.minLng - a[0]) / (b[0] - a[0]);
-        return [bbox.minLng, a[1] + t * (b[1] - a[1])];
-      },
-    },
-    {
-      inside: point => point[0] <= bbox.maxLng,
-      intersect: (a, b) => {
-        const t = (bbox.maxLng - a[0]) / (b[0] - a[0]);
-        return [bbox.maxLng, a[1] + t * (b[1] - a[1])];
-      },
-    },
-    {
-      inside: point => point[1] >= bbox.minLat,
-      intersect: (a, b) => {
-        const t = (bbox.minLat - a[1]) / (b[1] - a[1]);
-        return [a[0] + t * (b[0] - a[0]), bbox.minLat];
-      },
-    },
-    {
-      inside: point => point[1] <= bbox.maxLat,
-      intersect: (a, b) => {
-        const t = (bbox.maxLat - a[1]) / (b[1] - a[1]);
-        return [a[0] + t * (b[0] - a[0]), bbox.maxLat];
-      },
-    },
-  ];
-
-  let output = source;
-  for (const edge of edges) {
-    const input = output;
-    output = [];
-    if (input.length === 0) break;
-
-    let previous = input[input.length - 1];
-    for (const current of input) {
-      const currentInside = edge.inside(current);
-      const previousInside = edge.inside(previous);
-
-      if (currentInside) {
-        if (!previousInside) {
-          output.push(edge.intersect(previous, current));
-        }
-        output.push(current);
-      } else if (previousInside) {
-        output.push(edge.intersect(previous, current));
-      }
-
-      previous = current;
-    }
-  }
-
-  if (output.length < 3) return [];
-
-  const rounded = dedupeConsecutivePoints(output.map(roundPoint));
-  if (rounded.length < 3) return [];
-  closeRing(rounded);
-
-  if (rounded.length < 4) return [];
-  return rounded;
-}
-
-function clipPolygonToBbox(rings, bbox) {
-  const clippedRings = rings.map(ring => clipRingToBbox(ring, bbox)).filter(ring => ring.length >= 4);
-  if (clippedRings.length === 0) return null;
-  return clippedRings;
-}
-
-function clipWaterGeometry(geometry, bbox) {
-  if (!geometry) return null;
-
-  if (geometry.type === 'Polygon') {
-    const clipped = clipPolygonToBbox(geometry.coordinates, bbox);
-    if (!clipped) return null;
-    return { type: 'Polygon', coordinates: clipped };
-  }
-
-  if (geometry.type === 'MultiPolygon') {
-    const clippedPolygons = geometry.coordinates
-      .map(polygon => clipPolygonToBbox(polygon, bbox))
-      .filter(Boolean);
-    if (clippedPolygons.length === 0) return null;
-    return { type: 'MultiPolygon', coordinates: clippedPolygons };
-  }
-
-  return null;
-}
-
 function featureHashFromCoordinates(coordinates) {
   const forward = coordinates.map(([lng, lat]) => `${lng},${lat}`).join(';');
   const reverse = [...coordinates]
@@ -291,32 +180,6 @@ function sanitizeRoadFeatures(features) {
   });
 
   return deduped;
-}
-
-async function fetchWaterways() {
-  console.log('Fetching waterways from Amsterdam DataPunt...');
-  const response = await fetch(WATERWAYS_URL);
-  if (!response.ok) {
-    throw new Error(`Waterway fetch failed: ${response.status}`);
-  }
-
-  const payload = await response.json();
-  const features = (payload.features || [])
-    .map(feature => {
-      const clippedGeometry = clipWaterGeometry(feature.geometry, BBOX);
-      if (!clippedGeometry) return null;
-      return {
-        type: 'Feature',
-        geometry: clippedGeometry,
-      };
-    })
-    .filter(Boolean);
-
-  console.log(`  Waterway features kept: ${features.length}`);
-  return {
-    type: 'FeatureCollection',
-    features,
-  };
 }
 
 async function fetchRoads() {
@@ -403,13 +266,9 @@ function writeOutput(filename, featureCollection) {
 
 async function main() {
   try {
-    const [waterways, roads] = await Promise.all([fetchWaterways(), fetchRoads()]);
-
-    const waterResult = writeOutput('amsterdam-waterways.json', waterways);
+    const roads = await fetchRoads();
     const roadResult = writeOutput('amsterdam-roads.json', roads);
-
-    console.log(`\nWrote ${waterResult.outputPath} (${waterResult.sizeKb} KB)`);
-    console.log(`Wrote ${roadResult.outputPath} (${roadResult.sizeKb} KB)`);
+    console.log(`\nWrote ${roadResult.outputPath} (${roadResult.sizeKb} KB)`);
   } catch (error) {
     const message = error instanceof Error ? error.message : String(error);
     console.error(`\nFailed to fetch geodata: ${message}`);

@@ -1,6 +1,19 @@
 import zoneAreasById from '@/data/amsterdam-ggw-zone-areas.json';
 
 export type MapZoneId =
+  | 'melodic_house_techno'
+  | 'festival_big_room'
+  | 'disco_funky_house'
+  | 'wildcard_leftfield'
+  | 'classic_house_garage'
+  | 'minimal_deep_house'
+  | 'hard_driving_techno'
+  | 'breaks_experimental'
+  | 'chill_organic_electronica'
+  | 'pop_party_remixes'
+  | 'trance_high_energy_rave';
+
+export type LegacyMapZoneId =
   | 'canal_glow'
   | 'festival_peak'
   | 'spiegel_funk'
@@ -13,20 +26,13 @@ export type MapZoneId =
   | 'dam_pop_up'
   | 'nacht_ferry';
 
-export type MapAnchor = {
-  x: number;
-  y: number;
-  align: 'left' | 'right' | 'center';
-};
-
 export type MapZoneConfig = {
   id: MapZoneId;
   displayName: string;
   genreLabel: string;
   accent: string;
   areas: string[];
-  anchorDesktop: MapAnchor;
-  anchorMobile: MapAnchor;
+  panelSideDesktop: 'left' | 'right';
 };
 
 export enum HomeEventName {
@@ -36,136 +42,141 @@ export enum HomeEventName {
   OutboundClicked = 'home_map_outbound_clicked',
 }
 
-export const WILDCARD_ZONE_ID: MapZoneId = 'amstel_rush';
+export const LEGACY_ZONE_ID_ALIASES: Record<LegacyMapZoneId, MapZoneId> = {
+  canal_glow: 'melodic_house_techno',
+  festival_peak: 'festival_big_room',
+  spiegel_funk: 'disco_funky_house',
+  amstel_rush: 'wildcard_leftfield',
+  jordaan_jack: 'classic_house_garage',
+  polder_drift: 'minimal_deep_house',
+  beton_tunnel: 'hard_driving_techno',
+  ndsm_fracture: 'breaks_experimental',
+  oost_dauw: 'chill_organic_electronica',
+  dam_pop_up: 'pop_party_remixes',
+  nacht_ferry: 'trance_high_energy_rave',
+};
+
+const MAP_ZONE_ID_SET = new Set<MapZoneId>([
+  'melodic_house_techno',
+  'festival_big_room',
+  'disco_funky_house',
+  'wildcard_leftfield',
+  'classic_house_garage',
+  'minimal_deep_house',
+  'hard_driving_techno',
+  'breaks_experimental',
+  'chill_organic_electronica',
+  'pop_party_remixes',
+  'trance_high_energy_rave',
+]);
+
+export function isMapZoneId(value: string): value is MapZoneId {
+  return MAP_ZONE_ID_SET.has(value as MapZoneId);
+}
+
+export function normalizeMapZoneId(value: string | null | undefined): MapZoneId | null {
+  if (!value) return null;
+  if (isMapZoneId(value)) return value;
+  return LEGACY_ZONE_ID_ALIASES[value as LegacyMapZoneId] ?? null;
+}
+
+export const WILDCARD_ZONE_ID: MapZoneId = 'wildcard_leftfield';
 const ZONE_AREAS_BY_ID = zoneAreasById as Record<MapZoneId, string[]>;
 
 export const MAP_ZONES: MapZoneConfig[] = [
   {
-    id: 'canal_glow',
+    id: 'melodic_house_techno',
     displayName: 'Melodic House & Techno',
     genreLabel: 'Melodic House & Techno',
     accent: '#00A8CC',
-    areas: ZONE_AREAS_BY_ID.canal_glow,
-    anchorDesktop: { x: 48, y: 37, align: 'left' },
-    anchorMobile: { x: 50, y: 88, align: 'center' },
+    areas: ZONE_AREAS_BY_ID.melodic_house_techno,
+    panelSideDesktop: 'left',
   },
   {
-    id: 'festival_peak',
+    id: 'festival_big_room',
     displayName: 'Festival Anthems & Big Room',
     genreLabel: 'Festival Anthems & Big Room',
     accent: '#480CA8',
-    areas: ZONE_AREAS_BY_ID.festival_peak,
-    anchorDesktop: { x: 53, y: 35, align: 'left' },
-    anchorMobile: { x: 50, y: 88, align: 'center' },
+    areas: ZONE_AREAS_BY_ID.festival_big_room,
+    panelSideDesktop: 'left',
   },
   {
-    id: 'spiegel_funk',
+    id: 'disco_funky_house',
     displayName: 'Disco & Funky House',
     genreLabel: 'Disco & Funky House',
     accent: '#FB5607',
-    areas: ZONE_AREAS_BY_ID.spiegel_funk,
-    anchorDesktop: { x: 39, y: 26, align: 'left' },
-    anchorMobile: { x: 50, y: 88, align: 'center' },
+    areas: ZONE_AREAS_BY_ID.disco_funky_house,
+    panelSideDesktop: 'left',
   },
   {
-    id: 'amstel_rush',
+    id: 'wildcard_leftfield',
     displayName: '<Random genre>',
     genreLabel: '<Random genre>',
     accent: '#ADB5BD',
-    areas: ZONE_AREAS_BY_ID.amstel_rush,
-    anchorDesktop: { x: 62, y: 41, align: 'left' },
-    anchorMobile: { x: 50, y: 88, align: 'center' },
+    areas: ZONE_AREAS_BY_ID.wildcard_leftfield,
+    panelSideDesktop: 'left',
   },
   {
-    id: 'jordaan_jack',
+    id: 'classic_house_garage',
     displayName: 'Classic House & Garage',
     genreLabel: 'Classic House & Garage',
     accent: '#16302B',
-    areas: ZONE_AREAS_BY_ID.jordaan_jack,
-    anchorDesktop: { x: 46, y: 53, align: 'left' },
-    anchorMobile: { x: 50, y: 88, align: 'center' },
+    areas: ZONE_AREAS_BY_ID.classic_house_garage,
+    panelSideDesktop: 'left',
   },
   {
-    id: 'polder_drift',
+    id: 'minimal_deep_house',
     displayName: 'Minimal & Deep House',
     genreLabel: 'Minimal & Deep House',
     accent: '#212529',
-    areas: ZONE_AREAS_BY_ID.polder_drift,
-    anchorDesktop: { x: 38, y: 65, align: 'left' },
-    anchorMobile: { x: 50, y: 88, align: 'center' },
+    areas: ZONE_AREAS_BY_ID.minimal_deep_house,
+    panelSideDesktop: 'left',
   },
   {
-    id: 'beton_tunnel',
+    id: 'hard_driving_techno',
     displayName: 'Hard & Driving Techno',
     genreLabel: 'Hard & Driving Techno',
     accent: '#9E0019',
-    areas: ZONE_AREAS_BY_ID.beton_tunnel,
-    anchorDesktop: { x: 25, y: 28, align: 'left' },
-    anchorMobile: { x: 50, y: 88, align: 'center' },
+    areas: ZONE_AREAS_BY_ID.hard_driving_techno,
+    panelSideDesktop: 'left',
   },
   {
-    id: 'ndsm_fracture',
+    id: 'breaks_experimental',
     displayName: 'Breaks & Experimental',
     genreLabel: 'Breaks & Experimental',
     accent: '#FFB703',
-    areas: ZONE_AREAS_BY_ID.ndsm_fracture,
-    anchorDesktop: { x: 58, y: 16, align: 'left' },
-    anchorMobile: { x: 50, y: 88, align: 'center' },
+    areas: ZONE_AREAS_BY_ID.breaks_experimental,
+    panelSideDesktop: 'left',
   },
   {
-    id: 'oost_dauw',
+    id: 'chill_organic_electronica',
     displayName: 'Chill & Organic Electronica',
     genreLabel: 'Chill & Organic Electronica',
     accent: '#002855',
-    areas: ZONE_AREAS_BY_ID.oost_dauw,
-    anchorDesktop: { x: 69, y: 57, align: 'left' },
-    anchorMobile: { x: 50, y: 88, align: 'center' },
+    areas: ZONE_AREAS_BY_ID.chill_organic_electronica,
+    panelSideDesktop: 'left',
   },
   {
-    id: 'dam_pop_up',
+    id: 'pop_party_remixes',
     displayName: 'Pop Edits & Party Remixes',
     genreLabel: 'Pop Edits & Party Remixes',
     accent: '#FF9F1C',
-    areas: ZONE_AREAS_BY_ID.dam_pop_up,
-    anchorDesktop: { x: 22, y: 50, align: 'left' },
-    anchorMobile: { x: 50, y: 88, align: 'center' },
+    areas: ZONE_AREAS_BY_ID.pop_party_remixes,
+    panelSideDesktop: 'left',
   },
   {
-    id: 'nacht_ferry',
+    id: 'trance_high_energy_rave',
     displayName: 'Trance & High Energy Rave',
     genreLabel: 'Trance & High Energy Rave',
     accent: '#FF006E',
-    areas: ZONE_AREAS_BY_ID.nacht_ferry,
-    anchorDesktop: { x: 84, y: 79, align: 'right' },
-    anchorMobile: { x: 50, y: 88, align: 'center' },
+    areas: ZONE_AREAS_BY_ID.trance_high_energy_rave,
+    panelSideDesktop: 'right',
   },
 ];
 
 export const CORE_ZONE_GENRE_LABELS = MAP_ZONES.filter(
   zone => zone.id !== WILDCARD_ZONE_ID,
 ).map(zone => zone.genreLabel);
-
-function getFirstAlphabeticalCharacter(value: string): string | null {
-  const match = value.match(/[A-Za-z]/);
-  return match ? match[0].toUpperCase() : null;
-}
-
-export function getZoneMarkerGlyph(zone: MapZoneConfig): string {
-  if (zone.id === WILDCARD_ZONE_ID) return '?';
-  return (
-    getFirstAlphabeticalCharacter(zone.genreLabel) ||
-    getFirstAlphabeticalCharacter(zone.displayName) ||
-    '•'
-  );
-}
-
-export function getMapZone(zoneId: MapZoneId): MapZoneConfig {
-  const match = MAP_ZONES.find(zone => zone.id === zoneId);
-  if (!match) {
-    throw new Error(`Unknown zone id: ${zoneId}`);
-  }
-  return match;
-}
 
 export function getContrastTextColor(hex: string): '#030712' | '#F8FAFC' {
   const sanitized = hex.trim().replace('#', '');

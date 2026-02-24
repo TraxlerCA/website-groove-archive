@@ -33,7 +33,7 @@ afterEach(() => {
 describe('homeMap.logic', () => {
   it('returns only valid SoundCloud rows for zone filtering', () => {
     const eligible = getSoundcloudEligibleRows(baseRows);
-    const zone = MAP_ZONES.find(item => item.id === 'canal_glow');
+    const zone = MAP_ZONES.find(item => item.id === 'melodic_house_techno');
     if (!zone) throw new Error('missing zone');
 
     const pool = getRowsForZone(eligible, zone, MAP_ZONES);

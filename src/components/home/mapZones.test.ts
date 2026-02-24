@@ -1,58 +1,36 @@
 import { describe, expect, it } from 'vitest';
 import {
+  CORE_ZONE_GENRE_LABELS,
   MAP_ZONES,
   WILDCARD_ZONE_ID,
-  getZoneMarkerGlyph,
-  type MapZoneConfig,
+  getContrastTextColor,
 } from '@/components/home/mapZones';
 
-function buildZone(overrides: Partial<MapZoneConfig>): MapZoneConfig {
-  return {
-    id: 'canal_glow',
-    displayName: 'Default Display',
-    genreLabel: 'Default Genre',
-    accent: '#000000',
-    areas: [],
-    anchorDesktop: { x: 0, y: 0, align: 'center' },
-    anchorMobile: { x: 0, y: 0, align: 'center' },
-    ...overrides,
-  };
-}
-
-describe('getZoneMarkerGlyph', () => {
-  it('returns ? for wildcard zone', () => {
-    const wildcard = MAP_ZONES.find(zone => zone.id === WILDCARD_ZONE_ID);
-    if (!wildcard) throw new Error('missing wildcard zone');
-    expect(getZoneMarkerGlyph(wildcard)).toBe('?');
+describe('mapZones config', () => {
+  it('has unique zone ids', () => {
+    const ids = MAP_ZONES.map(zone => zone.id);
+    expect(new Set(ids).size).toBe(ids.length);
   });
 
-  it('returns uppercase first alphabetical character for standard zones', () => {
-    const canalGlow = MAP_ZONES.find(zone => zone.id === 'canal_glow');
-    if (!canalGlow) throw new Error('missing canal_glow zone');
-    expect(getZoneMarkerGlyph(canalGlow)).toBe('M');
+  it('contains the wildcard zone exactly once', () => {
+    expect(MAP_ZONES.filter(zone => zone.id === WILDCARD_ZONE_ID)).toHaveLength(1);
   });
 
-  it('handles leading spaces and symbols in genre labels', () => {
-    const zone = buildZone({
-      genreLabel: '   123 - deep house',
-      displayName: 'Should Not Be Used',
-    });
-    expect(getZoneMarkerGlyph(zone)).toBe('D');
+  it('maps core labels to all non-wildcard zones', () => {
+    expect(CORE_ZONE_GENRE_LABELS).toHaveLength(MAP_ZONES.length - 1);
+  });
+});
+
+describe('getContrastTextColor', () => {
+  it('returns light text for dark colors', () => {
+    expect(getContrastTextColor('#111827')).toBe('#F8FAFC');
   });
 
-  it('falls back to display name when genre label has no letters', () => {
-    const zone = buildZone({
-      genreLabel: ' 1234 !!!',
-      displayName: '  _party remixes',
-    });
-    expect(getZoneMarkerGlyph(zone)).toBe('P');
+  it('returns dark text for light colors', () => {
+    expect(getContrastTextColor('#f8fafc')).toBe('#030712');
   });
 
-  it('falls back to bullet when no alphabetical characters exist', () => {
-    const zone = buildZone({
-      genreLabel: '1234 !!!',
-      displayName: '---',
-    });
-    expect(getZoneMarkerGlyph(zone)).toBe('•');
+  it('falls back to dark text for invalid hex values', () => {
+    expect(getContrastTextColor('not-a-color')).toBe('#030712');
   });
 });

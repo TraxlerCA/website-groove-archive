@@ -1,35 +1,35 @@
 {
-  "canal_glow": [
+  "melodic_house_techno": [
     "Oud-Oost"
   ],
-  "festival_peak": [
+  "festival_big_room": [
     "Centrum-Oost"
   ],
-  "spiegel_funk": [
+  "disco_funky_house": [
     "Oud-West, De Baarsjes"
   ],
-  "amstel_rush": [
+  "wildcard_leftfield": [
     "Watergraafsmeer"
   ],
-  "jordaan_jack": [
+  "classic_house_garage": [
     "Centrum-West"
   ],
-  "polder_drift": [
+  "minimal_deep_house": [
     "Indische Buurt, Oostelijk Havengebied"
   ],
-  "beton_tunnel": [
+  "hard_driving_techno": [
     "Oud-Noord"
   ],
-  "ndsm_fracture": [
+  "breaks_experimental": [
     "Bos en Lommer"
   ],
-  "oost_dauw": [
+  "chill_organic_electronica": [
     "Westerpark"
   ],
-  "dam_pop_up": [
+  "pop_party_remixes": [
     "De Pijp, Rivierenbuurt"
   ],
-  "nacht_ferry": [
+  "trance_high_energy_rave": [
     "Oud-Zuid"
   ]
 }

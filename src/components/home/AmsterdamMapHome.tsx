@@ -117,7 +117,7 @@ export default function AmsterdamMapHome() {
         <div
           className={[
             'pointer-events-none absolute inset-x-3 top-3 bottom-3 sm:inset-x-auto sm:top-auto sm:bottom-8 sm:w-[22rem]',
-            selectedZone.anchorDesktop.x >= 50
+            selectedZone.panelSideDesktop === 'right'
               ? 'sm:right-8 sm:left-auto'
               : 'sm:left-8 sm:right-auto',
           ].join(' ')}

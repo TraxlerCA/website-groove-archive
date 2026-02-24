@@ -11,17 +11,17 @@ const OUTPUT_GEO_PATH = path.join(ROOT_DIR, 'src', 'data', 'amsterdam-ggw-zones.
 const OUTPUT_ZONE_AREAS_PATH = path.join(ROOT_DIR, 'src', 'data', 'amsterdam-ggw-zone-areas.json');
 
 const ZONE_IDS = [
-  'canal_glow',
-  'festival_peak',
-  'spiegel_funk',
-  'amstel_rush',
-  'jordaan_jack',
-  'polder_drift',
-  'beton_tunnel',
-  'ndsm_fracture',
-  'oost_dauw',
-  'dam_pop_up',
-  'nacht_ferry',
+  'melodic_house_techno',
+  'festival_big_room',
+  'disco_funky_house',
+  'wildcard_leftfield',
+  'classic_house_garage',
+  'minimal_deep_house',
+  'hard_driving_techno',
+  'breaks_experimental',
+  'chill_organic_electronica',
+  'pop_party_remixes',
+  'trance_high_energy_rave',
 ];
 
 const ZONE_ID_SET = new Set(ZONE_IDS);

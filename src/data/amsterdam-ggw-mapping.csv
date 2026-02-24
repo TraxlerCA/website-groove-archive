@@ -1,23 +1,23 @@
 ggw_code,ggw_name,zone_id,active
-GA01,Centrum-West,jordaan_jack,true
-GA02,Centrum-Oost,festival_peak,true
-GE03,Westerpark,oost_dauw,true
-GE04,Bos en Lommer,ndsm_fracture,true
-"GE05","Oud-West, De Baarsjes",spiegel_funk,true
+GA01,Centrum-West,classic_house_garage,true
+GA02,Centrum-Oost,festival_big_room,true
+GE03,Westerpark,chill_organic_electronica,true
+GE04,Bos en Lommer,breaks_experimental,true
+"GE05","Oud-West, De Baarsjes",disco_funky_house,true
 GF06,Sloterdijk Nieuw-West,,false
 "GF07","Geuzenveld, Slotermeer",,false
 GF08,Osdorp,,false
 "GF09","De Aker, Sloten, Nieuw-Sloten",,false
 GF10,Slotervaart,,false
-GK11,Oud-Zuid,nacht_ferry,true
+GK11,Oud-Zuid,trance_high_energy_rave,true
 "GK12","Buitenveldert, Zuidas",,false
-"GK13","De Pijp, Rivierenbuurt",dam_pop_up,true
-GM14,Oud-Oost,canal_glow,true
-"GM15","Indische Buurt, Oostelijk Havengebied",polder_drift,true
-GM16,Watergraafsmeer,amstel_rush,true
+"GK13","De Pijp, Rivierenbuurt",pop_party_remixes,true
+GM14,Oud-Oost,melodic_house_techno,true
+"GM15","Indische Buurt, Oostelijk Havengebied",minimal_deep_house,true
+GM16,Watergraafsmeer,wildcard_leftfield,true
 "GM17","IJburg, Zeeburgereiland",,false
 GN18,Noord-West,,false
-GN19,Oud-Noord,beton_tunnel,true
+GN19,Oud-Noord,hard_driving_techno,true
 GN20,Noord-Oost,,false
 "GS25","Weesp, Driemond",,false
 GT21,Bijlmer-West,,false
