@@ -10,7 +10,8 @@
     "test": "vitest run",
     "generate:ggw-zones": "node scripts/generate-ggw-zones.cjs",
     "test:e2e": "playwright test",
-    "test:e2e:headed": "playwright test --headed"
+    "test:e2e:headed": "playwright test --headed",
+    "test:coverage": "vitest run --coverage"
   },
   "dependencies": {
     "@floating-ui/react": "^0.26.17",
@@ -31,6 +32,7 @@
     "@types/papaparse": "^5.3.16",
     "@types/react": "^19",
     "@types/react-dom": "^19",
+    "@vitest/coverage-v8": "^4.0.18",
     "eslint": "^9",
     "eslint-config-next": "15.5.12",
     "tailwindcss": "^4",
