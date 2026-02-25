@@ -6,36 +6,13 @@ import { getSoundcloudEligibleRows, normalizeLabel } from '@/components/home/hom
 import { usePlayerActions } from '@/context/PlayerProvider';
 import { useSiteData } from '@/context/SiteDataContext';
 import { stableHash, trackEvent } from '@/lib/analytics';
-import type { Row } from '@/lib/types';
 
 export default function CrateDiggerHome() {
   const siteData = useSiteData();
   const { play } = usePlayerActions();
-  const [rows, setRows] = useState<Row[]>(() => getSoundcloudEligibleRows(siteData.rows));
+  const rows = useMemo(() => getSoundcloudEligibleRows(siteData.rows), [siteData.rows]);
   const [activeIndex, setActiveIndex] = useState(0);
   const [genreFilter, setGenreFilter] = useState('all');
-
-  useEffect(() => {
-    let mounted = true;
-    const fallback = getSoundcloudEligibleRows(siteData.rows);
-    setRows(fallback);
-
-    (async () => {
-      try {
-        const response = await fetch('/api/sheets?tabs=list', { cache: 'no-store' });
-        const payload = await response.json();
-        if (!mounted) return;
-        const fetchedRows = getSoundcloudEligibleRows((payload?.data?.list || []) as Row[]);
-        if (fetchedRows.length > 0) setRows(fetchedRows);
-      } catch {
-        // fallback already applied
-      }
-    })();
-
-    return () => {
-      mounted = false;
-    };
-  }, [siteData.rows]);
 
   const genreOptions = useMemo(() => {
     const set = new Set<string>();
