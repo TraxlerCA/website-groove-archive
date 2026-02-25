@@ -76,4 +76,33 @@ describe('homeMap.logic', () => {
     const picked = pickRandomRow(pool, 'Set A');
     expect(picked?.set).toBe('Set B');
   });
+
+  it('covers wildcard fallback genres and random selection edge-cases', () => {
+    const wildcardZone = MAP_ZONES.find(item => item.id === WILDCARD_ZONE_ID);
+    if (!wildcardZone) throw new Error('missing wildcard zone');
+
+    const rows: Row[] = [
+      {
+        set: 'Core One',
+        classification: 'Melodic House & Techno',
+        soundcloud: 'https://soundcloud.com/artist/core-one',
+      },
+      {
+        set: 'No Genre',
+        classification: null,
+        soundcloud: 'https://soundcloud.com/artist/no-genre',
+      },
+    ];
+
+    const customZones = [wildcardZone];
+    const wildcardPool = getRowsForZone(rows, wildcardZone, customZones);
+    expect(wildcardPool.map(row => row.set)).toEqual(['No Genre']);
+
+    expect(pickRandomRow([], null)).toBeNull();
+    expect(pickRandomRow([rows[0]], rows[0].set)).toEqual(rows[0]);
+
+    vi.spyOn(Math, 'random').mockReturnValue(0);
+    const pickedWithoutPrevious = pickRandomRow(rows, '   ');
+    expect(pickedWithoutPrevious).toEqual(rows[0]);
+  });
 });
