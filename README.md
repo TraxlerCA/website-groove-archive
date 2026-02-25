@@ -70,7 +70,8 @@ NEXT_PUBLIC_HOME_EXPERIENCE=map
 
 ## Main Routes
 
-- `/`: home experience (map or crate mode)
+- `/`: home experience (map or crate mode via env switch)
+- `/crate`: dedicated crate digger home experience
 - `/list`: full set list experience
 - `/artists`: artist view grouped by rating
 - `/heatmaps`: festival heatmap page with CSV upload/export
