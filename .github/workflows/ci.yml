@@ -27,3 +27,6 @@ jobs:
 
       - name: Unit tests with coverage thresholds
         run: npm run test:coverage
+
+      - name: Build
+        run: npm run build

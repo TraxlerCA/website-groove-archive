@@ -51,6 +51,7 @@ NEXT_PUBLIC_HOME_EXPERIENCE=map
 - `npm run dev`: start local dev server
 - `npm run lint`: run ESLint
 - `npm run test`: run Vitest test suite
+- `npm run test:coverage`: run Vitest with coverage thresholds
 - `npm run test:e2e`: run Playwright e2e suite
 - `npm run test:e2e:headed`: run Playwright e2e suite in headed mode
 - `npm run generate:ggw-zones`: regenerate map GeoJSON + active-area lists from GGW CSV mapping

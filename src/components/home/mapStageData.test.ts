@@ -68,4 +68,98 @@ describe('buildMapData', () => {
     expect(result.zoneFeatures[0].zoneId).toBeNull();
     expect(result.zoneFootprintPaths).toHaveLength(0);
   });
+
+  it('falls back to bounds center when polygon centroid cannot be computed', () => {
+    const degeneratePolygon: ZoneFeature['geometry'] = {
+      type: 'Polygon',
+      coordinates: [
+        [
+          [4.88, 52.36],
+          [4.89, 52.36],
+          [4.9, 52.36],
+          [4.88, 52.36],
+        ],
+      ],
+    };
+
+    const zones: ZoneFeature[] = [
+      {
+        type: 'Feature',
+        properties: {
+          code: 'GA03',
+          name: 'Fallback Zone',
+          zoneId: 'melodic_house_techno',
+          active: true,
+        },
+        geometry: degeneratePolygon,
+      },
+    ];
+
+    const result = buildMapData(zones, []);
+    expect(result.zoneLabelPoints.melodic_house_techno).toBeDefined();
+    expect(result.zoneFootprintPaths).toHaveLength(1);
+  });
+
+  it('supports multipolygon zones and multiline road geometry', () => {
+    const zones: ZoneFeature[] = [
+      {
+        type: 'Feature',
+        properties: {
+          code: 'GA04',
+          name: 'Multipolygon Zone',
+          zoneId: 'classic_house_garage',
+          active: true,
+        },
+        geometry: {
+          type: 'MultiPolygon',
+          coordinates: [
+            [
+              [
+                [4.87, 52.35],
+                [4.875, 52.35],
+                [4.875, 52.355],
+                [4.87, 52.355],
+                [4.87, 52.35],
+              ],
+            ],
+            [
+              [
+                [4.89, 52.37],
+                [4.895, 52.37],
+                [4.895, 52.375],
+                [4.89, 52.375],
+                [4.89, 52.37],
+              ],
+            ],
+          ],
+        },
+      },
+    ];
+
+    const multiRoads: RoadFeature[] = [
+      {
+        type: 'Feature',
+        geometry: {
+          type: 'MultiLineString',
+          coordinates: [
+            [
+              [4.86, 52.34],
+              [4.87, 52.35],
+            ],
+            [
+              [4.9, 52.38],
+              [4.91, 52.39],
+            ],
+          ],
+        },
+      },
+    ];
+
+    const result = buildMapData(zones, multiRoads);
+    expect(result.zoneFeatures).toHaveLength(1);
+    expect(result.zoneFeatures[0].path).toContain('M ');
+    expect(result.roadPaths).toHaveLength(1);
+    expect(result.roadPaths[0]).toContain('L ');
+    expect(result.zoneLabelPoints.classic_house_garage).toBeDefined();
+  });
 });
