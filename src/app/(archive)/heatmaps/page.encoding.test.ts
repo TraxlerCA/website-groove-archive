@@ -5,7 +5,7 @@ import { describe, expect, it } from "vitest";
 describe("heatmaps page text encoding", () => {
   it("does not contain known mojibake sequences", () => {
     const pageSource = readFileSync(
-      resolve(process.cwd(), "src/app/heatmaps/page.tsx"),
+      resolve(process.cwd(), "src/app/(archive)/heatmaps/page.tsx"),
       "utf8",
     );
 

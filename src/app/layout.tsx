@@ -2,12 +2,7 @@
 import './globals.css';
 import type { ReactNode } from 'react';
 import type { Metadata } from 'next';
-import { PlayerProvider } from '@/context/PlayerProvider';
-import AppShell from '@/components/AppShell';
 import { Urbanist } from 'next/font/google';
-import { getSheets } from '@/lib/sheets.server';
-import type { Genre, Row } from '@/lib/types';
-import type { SiteData } from '@/context/SiteDataContext';
 
 const TITLE = 'The Groove Archive';
 const DESCRIPTION =
@@ -52,22 +47,12 @@ const urbanist = Urbanist({
   variable: '--font-urbanist',
 });
 
-export default async function RootLayout({ children }: { children: ReactNode }) {
-  const sheets = await getSheets();
-  const data: SiteData = {
-    rows: (sheets.data.list ?? []) as Row[],
-    genres: (sheets.data.genres ?? []) as Genre[],
-    updatedAt: sheets.updatedAt,
-  };
-
+export default function RootLayout({ children }: { children: ReactNode }) {
   return (
     <html lang="en" className={urbanist.variable}>
       <body className={`${urbanist.className} min-h-screen bg-neutral-50 text-neutral-800 relative overflow-x-hidden`}>
-        {/* light theme variables for any legacy components that still reference them */}
         <style>{`:root{--accent:#000000;--label:#737373;--radius:0.75rem;--sodium:#000000}`}</style>
-        <PlayerProvider>
-          <AppShell data={data}>{children}</AppShell>
-        </PlayerProvider>
+        {children}
       </body>
     </html>
   );

@@ -4,6 +4,9 @@ test('primary routes render their key UI', async ({ page }) => {
   await page.goto('/');
   await expect(page.getByLabel('Amsterdam map with interactive music zones')).toBeVisible();
 
+  await page.goto('/cabra');
+  await expect(page.getByTestId('cabra-primary-value')).toBeVisible();
+
   await page.goto('/crate');
   await expect(page.getByText('Crate Digger mode')).toBeVisible();
 
