@@ -12,7 +12,7 @@ export const metadata: Metadata = {
 
 export default function CabraPage() {
   return (
-    <main className="relative isolate min-h-[100svh] overflow-hidden bg-[#ece8de] text-[#171614]">
+    <main data-cabra-page className="relative isolate h-[100dvh] min-h-[100svh] overflow-hidden bg-[#ece8de] text-[#171614]">
       <div
         aria-hidden
         className="pointer-events-none absolute inset-0 opacity-70"
@@ -22,8 +22,8 @@ export default function CabraPage() {
             'linear-gradient(rgba(23,22,20,0.06) 1px, transparent 1px)',
             'linear-gradient(90deg, rgba(23,22,20,0.06) 1px, transparent 1px)',
           ].join(','),
-          backgroundSize: 'auto, 72px 72px, 72px 72px',
-          backgroundPosition: '0 0, 0 0, 0 0',
+          backgroundSize: 'auto, 48px 48px, 48px 48px',
+          backgroundPosition: '0 0, 24px 24px, 24px 24px',
         }}
       />
       <div

@@ -38,8 +38,8 @@ export default function CabraCountdown({ initialNow }: CabraCountdownProps) {
   }, []);
 
   const countdown = getCabraCountdown(now);
-  const title = countdown.isComplete ? 'Now live' : `Total ${mode} remaining`;
-  const primaryValue = countdown.isComplete
+  const isComplete = countdown.isComplete;
+  const primaryValue = isComplete
     ? 'Now live'
     : formatCabraDisplayValue(getCabraPrimaryValue(countdown, mode));
   const summaryRows = MODES.map(option => ({
@@ -61,7 +61,7 @@ export default function CabraCountdown({ initialNow }: CabraCountdownProps) {
         : mode === 'minutes'
           ? [{ label: 'Seconds', value: countdown.seconds, testId: 'cabra-seconds' }]
           : [];
-  const primarySizeClass = countdown.isComplete
+  const primarySizeClass = isComplete
     ? 'text-[clamp(3.4rem,10vw,8rem)] uppercase tracking-[-0.04em]'
     : mode === 'days'
       ? 'text-[clamp(6rem,23vw,16rem)] tracking-[-0.09em]'
@@ -81,33 +81,40 @@ export default function CabraCountdown({ initialNow }: CabraCountdownProps) {
   }
 
   return (
-    <section className="mx-auto flex min-h-[100svh] max-w-[1440px] flex-col px-3 py-3 sm:px-5 sm:py-5 lg:px-8 lg:py-8">
+    <section className="mx-auto flex h-full min-h-0 max-w-[1440px] flex-col overflow-hidden box-border px-4 py-3 sm:px-6 sm:py-5 lg:px-12 lg:py-8">
       <motion.div
-        className="grid flex-1 grid-rows-[auto_1fr] gap-3 sm:gap-4 lg:gap-5"
+        className="grid h-full min-h-0 flex-1 grid-rows-[auto_minmax(0,1fr)] gap-3 overflow-hidden sm:gap-5"
         initial={shouldReduceMotion ? false : { opacity: 0, y: 24 }}
         animate={{ opacity: 1, y: 0 }}
         transition={shouldReduceMotion ? { duration: 0 } : { duration: 0.65, ease: SWISS_EASE }}
       >
-        <header className="border border-black/12 bg-[#f7f2e8] px-4 py-4 sm:px-6 lg:px-8 lg:py-5">
+        <header className="border border-black/12 bg-[#f7f2e8] px-5 py-4 lg:px-12 lg:py-5">
           <h1
             data-testid="cabra-title"
-            className="max-w-[13ch] text-[0.95rem] font-semibold uppercase tracking-[0.18em] text-[#454038] sm:max-w-[16ch] sm:text-[1.35rem] sm:tracking-[0.22em] lg:max-w-none lg:text-[2.1rem]"
+            className="text-[0.88rem] font-semibold uppercase tracking-[0.15em] text-[#454038] sm:text-[1.2rem] sm:tracking-[0.2em] lg:text-[2.1rem] lg:tracking-[0.22em]"
           >
-            {title}
+            {isComplete ? (
+              'Now live'
+            ) : (
+              <>
+                <span className="whitespace-nowrap">Total {mode}</span>{' '}
+                <span className="ml-[0.22em] whitespace-nowrap">remaining</span>
+              </>
+            )}
           </h1>
         </header>
 
-        <div className="grid flex-1 gap-px border border-black/12 bg-black/12 lg:grid-cols-[minmax(0,1fr)_18rem]">
-          <div className="grid min-h-0 bg-[#f6f2e8] p-2 sm:p-3">
+        <div className="grid min-h-0 flex-1 gap-px overflow-hidden border border-black/12 bg-black/12 lg:grid-cols-[minmax(0,1fr)_18rem]">
+          <div className="grid min-h-0 bg-[#f6f2e8] p-4 sm:p-5">
             <div
-              className={`grid h-full min-h-[23rem] border border-black/10 bg-[#f3efe5] ${
-                supportRows.length ? 'grid-rows-[1fr_auto]' : 'grid-rows-[1fr]'
-              } sm:min-h-[30rem]`}
+              className={`grid h-full min-h-0 border border-black/10 bg-[#f3efe5] ${
+                supportRows.length ? 'grid-rows-[minmax(0,1fr)_auto]' : 'grid-rows-[1fr]'
+              }`}
             >
-              <div className="grid place-items-center px-4 py-8 sm:px-10 sm:py-14 lg:px-14 lg:py-16">
+              <div className="grid min-h-0 place-items-center px-4 py-6 sm:px-8 sm:py-8 lg:px-12 lg:py-10">
                 <AnimatePresence mode="wait" initial={false}>
                   <motion.div
-                    key={countdown.isComplete ? 'complete' : mode}
+                    key={isComplete ? 'complete' : mode}
                     className="flex max-w-full flex-col items-center justify-center"
                     initial={shouldReduceMotion ? false : { opacity: 0, y: 12 }}
                     animate={{ opacity: 1, y: 0 }}
@@ -125,16 +132,16 @@ export default function CabraCountdown({ initialNow }: CabraCountdownProps) {
               </div>
 
               {supportRows.length > 0 && (
-                <div className="grid border-t border-black/10 bg-[#f9f6ef] px-4 py-4 sm:px-6 sm:py-5">
+                <div className="grid border-t border-black/10 bg-[#f9f6ef] p-4 sm:p-5">
                   <div className={`grid ${supportGridClass} gap-px border border-black/10 bg-black/10`}>
                     {supportRows.map(row => (
-                      <div key={row.label} className="bg-[#fcfaf5] px-4 py-4 text-center sm:px-5 sm:py-5">
+                      <div key={row.label} className="bg-[#fcfaf5] px-4 py-4 text-center lg:px-6 lg:py-5">
                         <p className="text-[0.58rem] font-medium uppercase tracking-[0.3em] text-black/48 sm:text-[0.6rem] sm:tracking-[0.34em]">
                           {row.label}
                         </p>
                         <p
                           data-testid={row.testId}
-                          className="mt-2 font-mono text-[1.8rem] leading-none tabular-nums tracking-[-0.07em] text-[#191816] sm:text-[2.15rem]"
+                          className="mt-2 font-mono text-[1.55rem] leading-none tabular-nums tracking-[-0.07em] text-[#191816] sm:text-[2.05rem]"
                         >
                           {row.value}
                         </p>
@@ -146,7 +153,7 @@ export default function CabraCountdown({ initialNow }: CabraCountdownProps) {
             </div>
           </div>
 
-          <aside className="grid grid-cols-2 gap-px bg-black/12 sm:grid-cols-4 lg:grid-cols-1 lg:grid-rows-4">
+          <aside className="grid min-h-0 grid-cols-2 gap-px overflow-hidden bg-black/12 sm:grid-cols-4 lg:grid-cols-1 lg:grid-rows-4">
             {summaryRows.map(row => {
               const isActive = row.id === mode;
               const valueSizeClass =
@@ -164,7 +171,7 @@ export default function CabraCountdown({ initialNow }: CabraCountdownProps) {
                   type="button"
                   onClick={() => handleModeChange(row.id)}
                   aria-pressed={isActive}
-                  className={`flex min-h-22 flex-col justify-between px-3 py-3 text-left transition-colors duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-black/20 focus-visible:ring-inset sm:min-h-24 sm:px-4 sm:py-4 lg:min-h-0 lg:px-5 lg:py-5 ${
+                  className={`flex min-h-20 flex-col justify-between px-4 py-4 text-left transition-colors duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-black/20 focus-visible:ring-inset lg:min-h-0 lg:px-6 lg:py-5 ${
                     isActive
                       ? 'bg-[#141311] text-[#faf7f0]'
                       : 'bg-[#faf6ee] text-[#191816] hover:bg-[#efe8da]'
