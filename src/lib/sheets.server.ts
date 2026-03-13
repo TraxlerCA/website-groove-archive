@@ -73,16 +73,23 @@ export const getListRows = cache(async (): Promise<Row[]> => {
 
 // New function for heatmaps
 export const getFestivalSets = cache(async () => {
-  const { data, error } = await supabase
-    .from('festival_sets')
-    .select('*')
-    .order('date', { ascending: false });
+  const candidateTables = ['festival_sets', 'heatmaps'];
 
-  if (error) {
-    console.error('Error fetching festival sets:', error);
-    return [];
+  for (const table of candidateTables) {
+    const { data, error } = await supabase
+      .from(table)
+      .select('*')
+      .order('date', { ascending: false });
+
+    if (!error) {
+      return data || [];
+    }
+
+    console.warn(`Failed fetching festival data from ${table}:`, error.message);
   }
-  return data || [];
+
+  console.error('Error fetching festival sets: could not load from festival_sets or heatmaps');
+  return [];
 });
 
 // Deprecated/Compatibility exports
