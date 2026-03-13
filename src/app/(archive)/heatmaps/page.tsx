@@ -142,14 +142,12 @@ const TEMPLATE_FIRST5: Row[] = [
 ];
 
 export default function HeatmapsPage() {
-  const DEFAULT_CSV =
-    'https://docs.google.com/spreadsheets/d/e/2PACX-1vRexqa-1vfj-JdFSSFUjWycho-00d5rLdS76eBgvCbruyvtcVIIom-VM52SvfuhLg-CeHLRp2I6k5B2/pub?gid=116583245&single=true&output=csv';
-  const CSV_URL =
+  const csvOverrideUrl =
     typeof window !== 'undefined'
-      ? new URLSearchParams(location.search).get('csv') || DEFAULT_CSV
-      : DEFAULT_CSV;
+      ? new URLSearchParams(location.search).get('csv')
+      : null;
 
-  // curated data fetched from the default CSV (existing behavior)
+  // curated data is fetched from Supabase by default (CSV still supported via ?csv= override)
   const [rows, setRows] = useState<Row[]>([]);
   // user-provided preview rows (ephemeral)
   const [userRows, setUserRows] = useState<Row[]>([]);
@@ -161,34 +159,51 @@ export default function HeatmapsPage() {
 
   useEffect(() => {
     let cancelled = false;
+
+    const normalizeRows = (input: Row[]) => input
+      .map(r => ({
+        festival: norm(r.festival),
+        date: norm(r.date),
+        stage: norm(r.stage),
+        stage_order: Number(r.stage_order ?? 9999),
+        artist: norm(r.artist),
+        start: norm(r.start),
+        end: norm(r.end),
+        rating: norm(r.rating || ''),
+      }))
+      .filter(r => r.festival && r.date && r.stage && r.artist && r.start && r.end);
+
     (async () => {
-      const Papa = await loadPapa();
-      Papa.parse<Row>(CSV_URL, {
-        download: true,
-        header: true,
-        skipEmptyLines: true,
-        complete: (res: ParseResult<Row>) => {
-          if (cancelled) return;
-          const clean = (res.data || [])
-            .map(r => ({
-              festival: norm(r.festival),
-              date: norm(r.date),
-              stage: norm(r.stage),
-              stage_order: Number(r.stage_order ?? 9999),
-              artist: norm(r.artist),
-              start: norm(r.start),
-              end: norm(r.end),
-              rating: norm(r.rating || ''),
-            }))
-            .filter(r => r.festival && r.date && r.stage && r.artist && r.start && r.end);
-          setRows(clean);
-        },
-      });
+      if (csvOverrideUrl) {
+        const Papa = await loadPapa();
+        Papa.parse<Row>(csvOverrideUrl, {
+          download: true,
+          header: true,
+          skipEmptyLines: true,
+          complete: (res: ParseResult<Row>) => {
+            if (cancelled) return;
+            setRows(normalizeRows(res.data || []));
+          },
+        });
+        return;
+      }
+
+      try {
+        const response = await fetch('/api/festival-sets', { cache: 'no-store' });
+        const payload = await response.json() as { ok?: boolean; data?: Row[] };
+        if (cancelled) return;
+        setRows(normalizeRows(payload.data || []));
+      } catch (error) {
+        if (cancelled) return;
+        console.error('Failed to load festival sets:', error);
+        setRows([]);
+      }
     })();
+
     return () => {
       cancelled = true;
     };
-  }, [CSV_URL]);
+  }, [csvOverrideUrl]);
 
   const groups: Group[] = useMemo(() => {
     const map = new Map<string, Group>();

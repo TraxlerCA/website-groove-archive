@@ -55,6 +55,7 @@ NEXT_PUBLIC_HOME_EXPERIENCE=map
 - `npm run test:e2e`: run Playwright e2e suite
 - `npm run test:e2e:headed`: run Playwright e2e suite in headed mode
 - `npm run generate:ggw-zones`: regenerate map GeoJSON + active-area lists from GGW CSV mapping
+- `npm run logs:supabase -- <path-to-log.json>`: summarize a Supabase edge log event and highlight bot/security signals
 - `npm run build`: production build
 - `npm run start`: run production server
 
@@ -67,6 +68,7 @@ NEXT_PUBLIC_HOME_EXPERIENCE=map
 - API fallback/access points:
   - `GET /api/sheets?tabs=list,genres,artists`
   - `GET /api/soundcloud-artwork?url=<soundcloud-track-url>`
+  - `GET /api/festival-sets`
 
 ## Main Routes
 
@@ -74,8 +76,23 @@ NEXT_PUBLIC_HOME_EXPERIENCE=map
 - `/crate`: dedicated crate digger home experience
 - `/list`: full set list experience
 - `/artists`: artist view grouped by rating
-- `/heatmaps`: festival heatmap page with CSV upload/export
+- `/heatmaps`: festival heatmap page (Supabase-backed curated data; CSV upload/export still supported)
 - `/suggest`: suggestion form page
+
+
+### Supabase Log Triage
+
+Use the helper script with either a file path or stdin:
+
+```bash
+npm run logs:supabase -- ./event.json
+# or
+cat event.json | npm run logs:supabase
+```
+
+The report includes request metadata, a `riskLevel`/`riskScore`, bot heuristics, and follow-up recommendations for RLS/rate limiting checks.
+
+Tip: run `npm run logs:supabase -- --help` for quick usage output.
 
 ## Data Notes
 

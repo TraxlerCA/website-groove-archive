@@ -11,7 +11,8 @@
     "generate:ggw-zones": "node scripts/generate-ggw-zones.cjs",
     "test:e2e": "playwright test",
     "test:e2e:headed": "playwright test --headed",
-    "test:coverage": "vitest run --coverage"
+    "test:coverage": "vitest run --coverage",
+    "logs:supabase": "node scripts/analyze-supabase-log.mjs"
   },
   "dependencies": {
     "@floating-ui/react": "^0.27.18",
