@@ -229,7 +229,6 @@ export function HeatmapRenderer({
                                 style={{ left, width, height: '100%', backgroundColor: bg, color: txt }}
                               >
                                 <div className="text-[11px] sm:text-[13px] font-black leading-tight truncate w-full">{r.artist}</div>
-                                <div className="text-[9px] opacity-70 font-bold">{r.start} - {r.end}</div>
                               </div>
                             </div>
                           </div>
