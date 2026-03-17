@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useMemo } from 'react';
-import { motion } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
 import {
   Row,
   COLORS,
@@ -13,6 +13,8 @@ import {
   toMin,
   clamp,
   bucketFromRating,
+  loadHtmlToImage,
+  slugify,
 } from '@/lib/heatmaps';
 
 interface HeatmapRendererProps {
@@ -36,7 +38,8 @@ export function HeatmapRenderer({
   onExport,
   showExport = true,
 }: HeatmapRendererProps) {
-  const [isFitScreen, setIsFitScreen] = React.useState(false);
+  const [isSnapshotting, setIsSnapshotting] = React.useState(false);
+  const [snapshotUrl, setSnapshotUrl] = React.useState<string | null>(null);
   const [now, setNow] = React.useState<number | null>(null);
 
   React.useEffect(() => {
@@ -45,7 +48,6 @@ export function HeatmapRenderer({
       const todayStr = d.toISOString().split('T')[0];
       if (todayStr === date) {
         const mins = d.getHours() * 60 + d.getMinutes();
-        // handling 10:00 cutoff like in startMin/endMin
         const NIGHT_CUTOFF_H = 10;
         const CUTOFF = NIGHT_CUTOFF_H * 60;
         const DAY = 24 * 60;
@@ -68,9 +70,8 @@ export function HeatmapRenderer({
     return Array.from(map.entries()).sort((a, b) => a[1] - b[1]).map(([s]) => s);
   }, [rows]);
 
-  // midnight handling with 10:00 cutoff
   const DAY = 24 * 60;
-  const NIGHT_CUTOFF_H = 10;           // anything earlier is treated as next day
+  const NIGHT_CUTOFF_H = 10;
   const CUTOFF = NIGHT_CUTOFF_H * 60;
 
   const startMin = React.useCallback((r: Row) => {
@@ -82,7 +83,7 @@ export function HeatmapRenderer({
     const s = startMin(r);
     let e = toMin(r.end);
     e = e < CUTOFF ? e + DAY : e;
-    if (e <= s) e += DAY; // safety for 22:00→01:00 and odd cases
+    if (e <= s) e += DAY;
     return e;
   }, [startMin, CUTOFF, DAY]);
 
@@ -101,6 +102,31 @@ export function HeatmapRenderer({
     return Array.from({ length: Math.max(0, e - s + 1) }, (_, i) => (s + i) * 60);
   }, [minStart, maxEnd]);
 
+  const handleSnapshot = async () => {
+    if (!registerRef) return;
+    setIsSnapshotting(true);
+    try {
+      const htmlToImage = await loadHtmlToImage();
+      const el = document.querySelector(`[data-heatmap="${groupKey}"]`) as HTMLElement;
+      if (!el) return;
+      
+      const dataUrl = await htmlToImage.toPng(el, {
+        pixelRatio: 3, // High-res for zooming
+        backgroundColor: '#ffffff',
+        cacheBust: true,
+        style: {
+          transform: 'none',
+          borderRadius: '0',
+        }
+      });
+      setSnapshotUrl(dataUrl);
+    } catch (e) {
+      console.error('Snapshot failed:', e);
+    } finally {
+      setIsSnapshotting(false);
+    }
+  };
+
   return (
     <section aria-labelledby={`h-${groupKey}`} className="w-full">
       <div className="mb-4 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
@@ -108,64 +134,69 @@ export function HeatmapRenderer({
           <h2 id={`h-${groupKey}`} className="text-2xl sm:text-3xl font-bold tracking-tight text-neutral-900">
             {title}
           </h2>
-          <p className="text-sm font-medium text-neutral-500">{date}</p>
+          <div className="flex items-center gap-2">
+            <p className="text-sm font-medium text-neutral-500">{date}</p>
+            <span className="h-1 w-1 rounded-full bg-neutral-300" />
+            <p className="text-sm font-bold text-neutral-400 uppercase tracking-widest">{stages.length} Stages</p>
+          </div>
         </div>
         <div className="flex items-center gap-3">
           <button
-            onClick={() => setIsFitScreen(!isFitScreen)}
-            className="flex items-center gap-2 rounded-full border border-neutral-200 bg-white px-4 py-2 text-sm font-bold text-neutral-600 shadow-sm hover:bg-neutral-50 transition-colors"
+            onClick={handleSnapshot}
+            disabled={isSnapshotting}
+            className="flex items-center gap-2 rounded-full border border-neutral-200 bg-white px-5 py-2.5 text-sm font-bold text-neutral-700 shadow-sm hover:bg-neutral-50 active:scale-95 transition-all disabled:opacity-50"
           >
-            {isFitScreen ? (
-              <>
-                <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0zM10 7v3m0 0v3m0-3h3m-3 0H7" />
-                </svg>
-                Zoom In
-              </>
+            {isSnapshotting ? (
+              <div className="h-4 w-4 animate-spin rounded-full border-2 border-neutral-300 border-t-neutral-600" />
             ) : (
-              <>
-                <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M4 8V4m0 0h4M4 4l5 5m11-1V4m0 0h-4m4 0l-5 5M4 16v4m0 0h4m-4 0l5-5m11 5l-5-5m5 5v-4m0 4h-4" />
-                </svg>
-                Fit Width
-              </>
+              <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z" />
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M15 13a3 3 0 11-6 0 3 3 0 016 0z" />
+              </svg>
             )}
+            View Snapshot
           </button>
           
-          {showExport && (
+          {showExport && !isSnapshotting && (
             <motion.button
-              className="rounded-full bg-neutral-900 px-6 py-2.5 text-sm font-semibold text-white shadow-lg hover:bg-neutral-800 transition-colors"
+              className="hidden sm:flex items-center gap-2 rounded-full bg-neutral-900 px-6 py-2.5 text-sm font-semibold text-white shadow-lg hover:bg-neutral-800 transition-colors"
               onClick={onExport}
-              whileHover={{ y: -2, scale: 1.02 }}
-              whileTap={{ y: 0, scale: 0.98 }}
+              whileHover={{ y: -2 }}
+              whileTap={{ scale: 0.98 }}
             >
-              Export PNG
+              <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+              </svg>
+              PNG
             </motion.button>
           )}
         </div>
       </div>
 
       <div 
-        ref={registerRef} 
-        className="rounded-2xl border border-neutral-200 bg-white p-2 sm:p-4 shadow-xl overflow-x-auto scrollbar-hide"
+        ref={registerRef}
+        data-heatmap={groupKey}
+        className="relative rounded-3xl border border-neutral-200 bg-white p-2 sm:p-6 shadow-2xl overflow-x-auto scrollbar-hide touch-pan-x"
       >
         {/* legend */}
-        <div className="mb-6 flex flex-wrap items-center gap-4 sm:gap-6 text-[10px] sm:text-xs font-bold uppercase tracking-widest text-neutral-500">
-          <span className="inline-flex items-center gap-2"><i className="inline-block h-3 w-6 rounded-sm" style={{ backgroundColor: COLORS.nahh }} /> nahh</span>
-          <span className="inline-flex items-center gap-2"><i className="inline-block h-3 w-6 rounded-sm" style={{ backgroundColor: COLORS.ok }} /> ok</span>
-          <span className="inline-flex items-center gap-2"><i className="inline-block h-3 w-6 rounded-sm" style={{ backgroundColor: COLORS.hot }} /> hot</span>
-          <span className="inline-flex items-center gap-2"><i className="inline-block h-3 w-6 rounded-sm" style={{ backgroundColor: COLORS.blazing }} /> blazing</span>
-        </div>
+        {!isSnapshotting && (
+          <div className="mb-8 flex flex-wrap items-center gap-4 sm:gap-8 text-[10px] sm:text-xs font-black uppercase tracking-[0.2em] text-neutral-400">
+            <span className="inline-flex items-center gap-2.5"><i className="inline-block h-2.5 w-6 rounded-full" style={{ backgroundColor: COLORS.nahh }} /> nahh</span>
+            <span className="inline-flex items-center gap-2.5"><i className="inline-block h-2.5 w-6 rounded-full" style={{ backgroundColor: COLORS.ok }} /> ok</span>
+            <span className="inline-flex items-center gap-2.5"><i className="inline-block h-2.5 w-6 rounded-full" style={{ backgroundColor: COLORS.hot }} /> hot</span>
+            <span className="inline-flex items-center gap-2.5"><i className="inline-block h-2.5 w-6 rounded-full" style={{ backgroundColor: COLORS.blazing }} /> blazing</span>
+          </div>
+        )}
 
-        <div className={isFitScreen ? 'w-full' : 'min-w-[800px]'}>
+        <div className="min-w-[1000px] lg:min-w-full">
           {/* headers */}
-          <div className="sticky top-0 z-30 flex items-stretch bg-white border-b border-neutral-200">
-            <div className="sticky left-0 z-40 bg-white" style={{ width: TIME_W }} />
+          <div className="sticky top-0 z-30 flex items-stretch bg-white/90 backdrop-blur-md border-b border-neutral-100">
+            <div className="sticky left-0 z-40 bg-white/90" style={{ width: TIME_W }} />
             <div className="grid w-full gap-0" style={{ gridTemplateColumns: `repeat(${stages.length}, minmax(0, 1fr))` }}>
               {stages.map((s, i) => (
                 <div
                   key={s}
-                  className={`text-center text-[10px] sm:text-sm font-black uppercase tracking-tighter text-neutral-900 border-r border-neutral-100 ${i === stages.length - 1 ? 'border-r-0' : ''} py-2`}
+                  className={`text-center text-[11px] sm:text-sm font-black uppercase tracking-tighter text-neutral-900 border-r border-neutral-50 ${i === stages.length - 1 ? 'border-r-0' : ''} py-4`}
                 >
                   {s}
                 </div>
@@ -174,20 +205,20 @@ export function HeatmapRenderer({
           </div>
 
           {/* body */}
-          <div className="relative mt-2 flex items-stretch">
+          <div className="relative mt-4 flex items-stretch">
             {/* time rail */}
-            <div className="sticky left-0 z-20 bg-white/95 backdrop-blur-sm" style={{ width: TIME_W, height: heightPx }}>
+            <div className="sticky left-0 z-20 bg-white/80 backdrop-blur-sm" style={{ width: TIME_W, height: heightPx }}>
               {hours.map(h => (
                 <div
                   key={`tick-${h}`}
-                  className="absolute right-0 h-px bg-neutral-200"
+                  className="absolute right-0 h-px bg-neutral-100"
                   style={{ top: (h - minStart) * pxPerMin, width: TICK_W }}
                 />
               ))}
               {hours.map(h => (
                 <div
                   key={`lab-${h}`}
-                  className="absolute -translate-y-3 text-[10px] sm:text-sm font-black tabular-nums text-neutral-400"
+                  className="absolute -translate-y-3 text-[11px] sm:text-sm font-black tabular-nums text-neutral-300"
                   style={{ top: (h - minStart) * pxPerMin, right: TICK_W + LABEL_GAP }}
                 >
                   {fmtHour(h)}
@@ -201,7 +232,7 @@ export function HeatmapRenderer({
                 {hours.map(h => (
                   <div
                     key={`hline-${h}`}
-                    className="absolute left-0 right-0 h-px bg-neutral-50"
+                    className="absolute left-0 right-0 h-px bg-neutral-50/50"
                     style={{ top: (h - minStart) * pxPerMin }}
                   />
                 ))}
@@ -212,8 +243,8 @@ export function HeatmapRenderer({
                     className="absolute left-0 right-0 z-40 flex items-center"
                     style={{ top: (now - minStart) * pxPerMin }}
                   >
-                    <div className="h-0.5 w-full bg-red-500 shadow-[0_0_8px_rgba(239,68,68,0.5)]" />
-                    <div className="absolute -left-1.5 h-3 w-3 rounded-full border-2 border-white bg-red-500 shadow-md" />
+                    <div className="h-0.5 w-full bg-red-500 shadow-[0_0_12px_rgba(239,68,68,0.6)]" />
+                    <div className="absolute -left-1.5 h-3.5 w-3.5 rounded-full border-2 border-white bg-red-500 shadow-lg ring-4 ring-red-500/20" />
                   </div>
                 )}
               </div>
@@ -258,12 +289,12 @@ export function HeatmapRenderer({
                   }
 
                   return (
-                    <div key={stage} className={`relative border-r border-neutral-100/50 ${idx === stages.length - 1 ? 'border-r-0' : ''}`}>
+                    <div key={stage} className={`relative border-r border-neutral-100/30 ${idx === stages.length - 1 ? 'border-r-0' : ''}`}>
                       {sets.map((r, i) => {
                         const s = startMin(r);
                         const e = endMin(r);
                         const naturalTop = (s - minStart) * pxPerMin;
-                        const naturalH   = Math.max(isFitScreen ? 12 : 32, (e - s) * pxPerMin);
+                        const naturalH   = Math.max(30, (e - s) * pxPerMin);
                         const innerH = naturalH * 0.94;
                         const top = naturalTop + (naturalH - innerH) / 2;
 
@@ -276,20 +307,24 @@ export function HeatmapRenderer({
                         const n = Math.max(1, place.cols);
                         const c = Math.max(0, Math.min(place.col, n - 1));
                         
-                        // use simpler width/left calc for cleaner mobile view
-                        const width = `calc((100% - ${(n - 1) * (isFitScreen ? 2 : SLOT_GAP_PX)}px) / ${n})`;
-                        const left  = `calc(${c} * (100% - ${(n - 1) * (isFitScreen ? 2 : SLOT_GAP_PX)}px) / ${n} + ${c * (isFitScreen ? 2 : SLOT_GAP_PX)}px)`;
+                        const width = `calc((100% - ${(n - 1) * SLOT_GAP_PX}px) / ${n})`;
+                        const left  = `calc(${c} * (100% - ${(n - 1) * SLOT_GAP_PX}px) / ${n} + ${c * SLOT_GAP_PX}px)`;
 
                         return (
-                          <div key={stage + '-' + i} className="absolute left-1 right-1" style={{ top }}>
+                          <div key={stage + '-' + i} className="absolute left-1.5 right-1.5" style={{ top }}>
                             <div className="relative" style={{ height: innerH }}>
                               <div
-                                className={`${CARD_BORDER} absolute inset-y-0 flex flex-col items-center justify-center text-center px-1 sm:px-2 transition-all hover:scale-[1.02] hover:shadow-lg z-10 overflow-hidden`}
+                                className={`${CARD_BORDER} absolute inset-y-0 flex flex-col items-center justify-center text-center px-2 transition-all hover:ring-2 hover:ring-black/5 hover:scale-[1.01] hover:shadow-xl z-10 overflow-hidden group`}
                                 style={{ left, width, height: '100%', backgroundColor: bg, color: txt }}
                               >
-                                <div className={`${isFitScreen ? 'text-[6px]' : 'text-[10px]'} sm:text-[13px] font-black leading-tight truncate w-full`}>
+                                <div className="text-[11px] sm:text-[13px] font-black leading-tight truncate w-full tracking-tighter">
                                   {r.artist}
                                 </div>
+                                {!isSnapshotting && (
+                                  <div className="mt-0.5 opacity-0 group-hover:opacity-60 transition-opacity text-[8px] font-bold uppercase">
+                                    {r.start} — {r.end}
+                                  </div>
+                                )}
                               </div>
                             </div>
                           </div>
@@ -303,6 +338,59 @@ export function HeatmapRenderer({
           </div>
         </div>
       </div>
+
+      {/* Snapshot Lightbox */}
+      <AnimatePresence>
+        {snapshotUrl && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-[100] flex flex-col bg-black/95 p-4 sm:p-10 backdrop-blur-xl"
+          >
+            <div className="flex items-center justify-between mb-6">
+              <div className="text-white">
+                <h3 className="text-xl font-black tracking-tight">{title}</h3>
+                <p className="text-sm font-medium text-neutral-400">Pinch or double-tap to zoom</p>
+              </div>
+              <button 
+                onClick={() => setSnapshotUrl(null)}
+                className="h-12 w-12 flex items-center justify-center rounded-full bg-white/10 text-white hover:bg-white/20 transition-colors"
+              >
+                <svg className="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            </div>
+            
+            <div className="relative flex-1 overflow-auto rounded-2xl bg-white/5 cursor-zoom-in">
+              <motion.img 
+                src={snapshotUrl} 
+                alt="Heatmap snapshot"
+                initial={{ scale: 0.9, opacity: 0 }}
+                animate={{ scale: 1, opacity: 1 }}
+                className="min-h-full min-w-full object-contain"
+                // Native pinch zoom is handled by browser overflow-auto, but we can add drag
+                drag
+                dragConstraints={{ left: -2000, right: 2000, top: -2000, bottom: 2000 }}
+              />
+            </div>
+
+            <div className="mt-6 flex justify-center gap-4">
+              <a 
+                href={snapshotUrl} 
+                download={`${slugify(title)}-poster.png`}
+                className="flex items-center gap-2 rounded-full bg-white px-8 py-4 text-sm font-black text-black shadow-2xl active:scale-95 transition-transform"
+              >
+                <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+                </svg>
+                Save to Photos
+              </a>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </section>
   );
 }
