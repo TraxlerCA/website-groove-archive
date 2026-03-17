@@ -1,779 +1,84 @@
 'use client';
 
-import React, { useEffect, useMemo, useRef, useState, useCallback } from 'react';
-import { motion } from 'framer-motion';
-
-type ParseResult<T> = import('papaparse').ParseResult<T>;
-type PapaModule = typeof import('papaparse');
-type HtmlToImageModule = typeof import('html-to-image');
-
-const isPapaModule = (value: unknown): value is PapaModule =>
-  typeof value === 'object' && value !== null && 'parse' in value;
-
-let papaPromise: Promise<PapaModule> | null = null;
-async function loadPapa(): Promise<PapaModule> {
-  if (!papaPromise) {
-    papaPromise = import('papaparse').then(mod => {
-      const candidate = mod as unknown;
-
-      if (isPapaModule(candidate)) {
-        return candidate;
-      }
-
-      const fallback = (candidate as { default?: unknown }).default;
-      if (isPapaModule(fallback)) {
-        return fallback;
-      }
-
-      throw new Error('Failed to load papaparse module');
-    });
-  }
-  return papaPromise;
-}
-
-let htmlToImagePromise: Promise<HtmlToImageModule> | null = null;
-function loadHtmlToImage(): Promise<HtmlToImageModule> {
-  if (!htmlToImagePromise) {
-    htmlToImagePromise = import('html-to-image');
-  }
-  return htmlToImagePromise;
-}
-
-type Rating = 'nahh' | 'ok' | 'hot' | 'blazing' | '';
-type Row = {
-  festival: string;  // full title to show
-  date: string;      // YYYY-MM-DD
-  stage: string;
-  stage_order?: string | number;
-  artist: string;
-  start: string;     // HH:MM
-  end: string;       // HH:MM
-  rating?: string | null;
-};
-
-const COLORS = {
-  unrated: '#E7E5E4',
-  nahh:    '#8AA3FF',
-  ok:      '#FEF0B8',
-  hot:     '#FF9D2E',
-  blazing: '#E7180B',
-};
-
-// rails and ticks
-const TIME_W = 96;          // width of the left time rail
-const TICK_W = 12;          // horizontal tick length inside time rail
-const LABEL_GAP = 10;       // space between tick end and time label
-
-const CARD_BORDER = 'border border-white shadow-[0_1px_2px_rgba(0,0,0,0.06)] rounded-md';
-// tiny sliver between overlapping boxes
-const SLOT_GAP_PX = 6;
-
-const norm = (v?: string | null) => (v ?? '').replace(/\u00a0/g, ' ').replace(/\s+/g, ' ').trim();
-const normalizeUtf8 = (v: string) => v.normalize('NFC');
-const toMin = (t: string) => {
-  const s = norm(t);
-  const [h, m] = s.split(':').map(n => parseInt(n, 10));
-  return (isNaN(h) ? 0 : h) * 60 + (isNaN(m) ? 0 : m);
-};
-const clamp = (n: number, min: number, max: number) => Math.max(min, Math.min(max, n));
-const parseDate = (d: string) => Date.parse(norm(d));
-const bucketFromRating = (s?: string | null): Rating => {
-  const v = norm(s).toLowerCase();
-  if (v === 'empty') return '';
-  if (v === 'nahh' || v === 'nah' || v === 'blue') return 'nahh';
-  if (v === 'ok'   || v === 'yellow') return 'ok';
-  if (v === 'hot'  || v === 'orange') return 'hot';
-  if (v === 'blazing' || v === 'red') return 'blazing';
-  return '';
-};
-
-type Group = { title: string; date: string; rows: Row[]; key: string };
-
-// Full template CSV (Dekmantel - Saturday)
-const TEMPLATE_CSV_DEKMANTEL_SAT = [
-  'festival,date,stage,stage_order,artist,start,end,rating',
-  'Dekmantel - Saturday,2025-08-02,The Loop,1,MKS,13:00,16:00,ok',
-  'Dekmantel - Saturday,2025-08-02,The Loop,1,Bashkka & Roi Perez,16:00,18:00,hot',
-  'Dekmantel - Saturday,2025-08-02,The Loop,1,Steffi & Virginia,18:00,19:00,ok',
-  'Dekmantel - Saturday,2025-08-02,The Loop,1,Call Super,19:00,21:00,ok',
-  'Dekmantel - Saturday,2025-08-02,The Loop,1,Honey Dijon,21:00,23:00,blazing',
-  'Dekmantel - Saturday,2025-08-02,UFO I,2,AMORAL,13:00,15:00,',
-  'Dekmantel - Saturday,2025-08-02,UFO I,2,Blasha & Allatt,15:00,17:00,',
-  'Dekmantel - Saturday,2025-08-02,UFO I,2,MARRØN,17:00,19:00,nahh',
-  'Dekmantel - Saturday,2025-08-02,UFO I,2,Freddy K,19:00,21:00,ok',
-  'Dekmantel - Saturday,2025-08-02,UFO I,2,Rod & Sterac,21:00,23:00,nahh',
-  'Dekmantel - Saturday,2025-08-02,UFO II,3,Loek Frey & Timnah,13:00,16:00,',
-  'Dekmantel - Saturday,2025-08-02,UFO II,3,Steevio (live),16:00,17:00,',
-  'Dekmantel - Saturday,2025-08-02,UFO II,3,Priori (live),17:00,18:00,nahh',
-  'Dekmantel - Saturday,2025-08-02,UFO II,3,KIA,18:00,20:00,ok',
-  'Dekmantel - Saturday,2025-08-02,UFO II,3,IMDT (live),20:00,21:00,ok',
-  'Dekmantel - Saturday,2025-08-02,UFO II,3,Spekki Webu & Woody92,21:00,23:00,ok',
-  'Dekmantel - Saturday,2025-08-02,Selectors,4,Shanti Celeste,13:00,17:00,blazing',
-  'Dekmantel - Saturday,2025-08-02,Selectors,4,Casper Tielrooij & Victor,17:00,20:00,blazing',
-  'Dekmantel - Saturday,2025-08-02,Selectors,4,Hunee & Paquita Gordon,20:00,23:00,blazing',
-  'Dekmantel - Saturday,2025-08-02,Greenhouse,5,Mafalda,13:00,16:30,',
-  'Dekmantel - Saturday,2025-08-02,Greenhouse,5,Mark Ernestus’ Ndagga Rhythm Force,16:30,17:30,',
-  'Dekmantel - Saturday,2025-08-02,Greenhouse,5,Moda & Wolfers,18:00,19:00,nahh',
-  'Dekmantel - Saturday,2025-08-02,Greenhouse,5,The Sabres of Paradise,19:30,20:30,nahh',
-  'Dekmantel - Saturday,2025-08-02,Greenhouse,5,dBridge & Donato Dozzy,20:30,23:00,ok',
-  'Dekmantel - Saturday,2025-08-02,The Nest,6,State Offf,13:00,15:30,',
-  'Dekmantel - Saturday,2025-08-02,The Nest,6,Kampire,15:30,16:30,',
-  'Dekmantel - Saturday,2025-08-02,The Nest,6,De Schuurman & Shaun D,16:30,18:00,',
-  'Dekmantel - Saturday,2025-08-02,The Nest,6,DJ K,18:00,19:00,nahh',
-  'Dekmantel - Saturday,2025-08-02,The Nest,6,Moktar & Surusinghe,19:00,21:00,ok',
-  'Dekmantel - Saturday,2025-08-02,The Nest,6,Verraco,21:00,23:00,ok',
-  'Dekmantel - Saturday,2025-08-02,Radar,7,Om Unit – Acid Dub Studies (live),14:00,15:00,',
-  'Dekmantel - Saturday,2025-08-02,Radar,7,Ploy,15:00,16:00,',
-  'Dekmantel - Saturday,2025-08-02,Radar,7,Kia,16:00,17:00,',
-  'Dekmantel - Saturday,2025-08-02,Radar,7,Shed (live),17:15,18:15,',
-  'Dekmantel - Saturday,2025-08-02,Radar,7,Batu,18:15,19:15,nahh',
-  'Dekmantel - Saturday,2025-08-02,Radar,7,Mad Miran,19:15,20:15,nahh',
-  'Dekmantel - Saturday,2025-08-02,Radar,7,Djrum,20:30,21:45,nahh',
-  'Dekmantel - Saturday,2025-08-02,Radar,7,Quest,22:00,23:00,ok',
-].map(normalizeUtf8).join('\n');
-
-// First 5 rows for example table
-const TEMPLATE_FIRST5: Row[] = [
-  { festival: 'Dekmantel - Saturday', date: '2025-08-02', stage: 'The Loop', stage_order: 1, artist: 'MKS', start: '13:00', end: '16:00', rating: 'ok' },
-  { festival: 'Dekmantel - Saturday', date: '2025-08-02', stage: 'The Loop', stage_order: 1, artist: 'Bashkka & Roi Perez', start: '16:00', end: '18:00', rating: 'hot' },
-  { festival: 'Dekmantel - Saturday', date: '2025-08-02', stage: 'The Loop', stage_order: 1, artist: 'Steffi & Virginia', start: '18:00', end: '19:00', rating: 'ok' },
-  { festival: 'Dekmantel - Saturday', date: '2025-08-02', stage: 'The Loop', stage_order: 1, artist: 'Call Super', start: '19:00', end: '21:00', rating: 'ok' },
-  { festival: 'Dekmantel - Saturday', date: '2025-08-02', stage: 'The Loop', stage_order: 1, artist: 'Honey Dijon', start: '21:00', end: '23:00', rating: 'blazing' },
-];
+import React from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
+import { useHeatmaps } from '@/hooks/useHeatmaps';
+import { HeatmapTile } from '@/components/heatmaps/HeatmapTile';
 
 export default function HeatmapsPage() {
-  const DEFAULT_CSV =
-    'https://docs.google.com/spreadsheets/d/e/2PACX-1vRexqa-1vfj-JdFSSFUjWycho-00d5rLdS76eBgvCbruyvtcVIIom-VM52SvfuhLg-CeHLRp2I6k5B2/pub?gid=116583245&single=true&output=csv';
-  const CSV_URL =
-    typeof window !== 'undefined'
-      ? new URLSearchParams(location.search).get('csv') || DEFAULT_CSV
-      : DEFAULT_CSV;
+  const { groups, loading, error } = useHeatmaps();
 
-  // curated data fetched from the default CSV (existing behavior)
-  const [rows, setRows] = useState<Row[]>([]);
-  // user-provided preview rows (ephemeral)
-  const [userRows, setUserRows] = useState<Row[]>([]);
-  const [uploadOpen, setUploadOpen] = useState(false);
-  // Fixed density (removed slider)
-  const pxPerMin = 1.0;
-  const [err, setErr] = useState<string | null>(null);
-  const refs = useRef<Record<string, HTMLDivElement | null>>({});
-
-  useEffect(() => {
-    let cancelled = false;
-    (async () => {
-      const Papa = await loadPapa();
-      Papa.parse<Row>(CSV_URL, {
-        download: true,
-        header: true,
-        skipEmptyLines: true,
-        complete: (res: ParseResult<Row>) => {
-          if (cancelled) return;
-          const clean = (res.data || [])
-            .map(r => ({
-              festival: norm(r.festival),
-              date: norm(r.date),
-              stage: norm(r.stage),
-              stage_order: Number(r.stage_order ?? 9999),
-              artist: norm(r.artist),
-              start: norm(r.start),
-              end: norm(r.end),
-              rating: norm(r.rating || ''),
-            }))
-            .filter(r => r.festival && r.date && r.stage && r.artist && r.start && r.end);
-          setRows(clean);
-        },
-      });
-    })();
-    return () => {
-      cancelled = true;
-    };
-  }, [CSV_URL]);
-
-  const groups: Group[] = useMemo(() => {
-    const map = new Map<string, Group>();
-    for (const r of rows) {
-      const key = `${r.festival}__${r.date}`;
-      if (!map.has(key)) map.set(key, { title: r.festival, date: r.date, rows: [], key });
-      map.get(key)!.rows.push(r);
+  const container = {
+    hidden: { opacity: 0 },
+    show: {
+      opacity: 1,
+      transition: {
+        staggerChildren: 0.1
+      }
     }
-    return Array.from(map.values()).sort((a, b) => parseDate(b.date) - parseDate(a.date));
-  }, [rows]);
-
-  const userGroups: Group[] = useMemo(() => {
-    if (!userRows.length) return [];
-    const map = new Map<string, Group>();
-    for (const r of userRows) {
-      const key = `${r.festival}__${r.date}`;
-      if (!map.has(key)) map.set(key, { title: r.festival, date: r.date, rows: [], key });
-      map.get(key)!.rows.push(r);
-    }
-    return Array.from(map.values()).sort((a, b) => parseDate(a.date) - parseDate(b.date));
-  }, [userRows]);
-
-  const slugify = (s: string) => s
-    .toLowerCase()
-    .replace(/[^a-z0-9]+/g, '-')
-    .replace(/^-+|-+$/g, '')
-    .slice(0, 120);
-
-  async function exportPng(key: string, title: string) {
-    const el = refs.current[key]; if (!el) return;
-    setErr(null);
-    try {
-      const htmlToImage = await loadHtmlToImage();
-      const dataUrl = await htmlToImage.toPng(el, {
-        pixelRatio: 2, backgroundColor: '#ffffff', cacheBust: true, skipFonts: true
-      });
-      try { (window as unknown as { plausible?: (e: string) => void }).plausible?.('heatmap_download_png'); } catch {}
-      const a = document.createElement('a'); a.href = dataUrl; a.download = `${slugify(title)}-heatmap.png`; a.click();
-    } catch (e: unknown) { setErr(e instanceof Error ? e.message : 'Export failed'); console.error(e); }
-  }
-
-  return (
-    <div className="mx-auto max-w-6xl px-6 py-6">
-      <CreateHeatmapModal
-        open={uploadOpen}
-        onClose={() => setUploadOpen(false)}
-        onApply={(rows) => { setUserRows(rows); setUploadOpen(false); }}
-      />
-      {/* Hero CTA: dominant primary action */}
-      <div className="mb-10 rounded-2xl border border-neutral-200 bg-white p-6 sm:p-10 shadow-sm">
-        <div className="grid items-center gap-6 sm:grid-cols-[1fr_auto]">
-          <div>
-            <h1 className="text-2xl sm:text-4xl font-semibold tracking-wide text-neutral-900">Create your own heatmap</h1>
-            <p className="mt-2 text-sm sm:text-base text-neutral-600">Upload a CSV, preview instantly, and download a PNG. All processing stays in your browser.</p>
-          </div>
-          <div className="flex flex-wrap items-center gap-3">
-            <motion.button
-              className="h-12 rounded-md bg-neutral-900 px-6 text-white shadow hover:bg-neutral-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-black/30"
-              onClick={() => setUploadOpen(true)}
-              whileHover={{ y: -1, scale: 1.01 }}
-              whileTap={{ y: 0, scale: 0.99 }}
-            >
-              Create your own heatmap
-            </motion.button>
-            <motion.button
-              className="h-12 rounded-md border border-neutral-300 bg-white px-4 text-sm hover:bg-neutral-50"
-              onClick={() => {
-                const templateCsv = `\uFEFF${normalizeUtf8(TEMPLATE_CSV_DEKMANTEL_SAT)}`;
-                const blob = new Blob([templateCsv], { type: 'text/csv;charset=utf-8' });
-                const url = URL.createObjectURL(blob);
-                const a = document.createElement('a'); a.href = url; a.download = 'heatmap-template.csv'; a.click();
-                URL.revokeObjectURL(url);
-              }}
-              whileHover={{ y: -1, scale: 1.01 }}
-              whileTap={{ y: 0, scale: 0.99 }}
-            >
-              CSV template
-            </motion.button>
-          </div>
-        </div>
-      </div>
-
-      {err && <div className="mb-4 rounded-md border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">{err}</div>}
-
-      {/* user preview above curated heatmaps */}
-      {userGroups.length > 0 && (
-        <div className="mb-10 space-y-8">
-          <div className="mb-1 flex items-center justify-between">
-            <h2 className="text-3xl font-semibold tracking-wide text-neutral-900">Your preview</h2>
-            <div className="flex items-center gap-2">
-              <motion.button
-                className="rounded-md border border-neutral-300 bg-white px-3 py-2 text-sm hover:bg-neutral-50"
-                onClick={() => setUserRows([])}
-                whileHover={{ y: -1, scale: 1.01 }}
-                whileTap={{ y: 0, scale: 0.99 }}
-              >
-                Clear preview
-              </motion.button>
-            </div>
-          </div>
-          {userGroups.map(g => (
-            <Heatmap
-              key={'user__' + g.key}
-              groupKey={'user__' + g.key}
-              title={g.title}
-              date={g.date}
-              rows={g.rows}
-              pxPerMin={pxPerMin}
-              registerRef={el => (refs.current['user__' + g.key] = el)}
-              onExport={() => exportPng('user__' + g.key, `${g.title}-${g.date}`)}
-            />
-          ))}
-        </div>
-      )}
-
-      {/* curated examples */}
-      <h2 className="mb-4 text-3xl font-semibold tracking-wide text-neutral-900">Example heatmaps</h2>
-      <div className="space-y-12">
-        {groups.map(g => (
-          <Heatmap
-            key={g.key}
-            groupKey={g.key}
-            title={g.title}
-            date={g.date}
-            rows={g.rows}
-            pxPerMin={pxPerMin}
-            registerRef={el => (refs.current[g.key] = el)}
-            onExport={() => exportPng(g.key, `${g.title}-${g.date}`)}
-          />
-        ))}
-      </div>
-    </div>
-  );
-}
-
-/* one heatmap */
-function Heatmap({
-  groupKey, title, date, rows, pxPerMin, registerRef, onExport,
-}: {
-  groupKey: string; title: string; date: string; rows: Row[];
-  pxPerMin: number; registerRef: (el: HTMLDivElement | null) => void; onExport: () => void;
-}) {
-  const stages = useMemo(() => {
-    const map = new Map<string, number>();
-    rows.forEach(r => {
-      const ord = Number(r.stage_order ?? 9999);
-      map.set(r.stage, Math.min(map.get(r.stage) ?? ord, ord));
-    });
-    return Array.from(map.entries()).sort((a, b) => a[1] - b[1]).map(([s]) => s);
-  }, [rows]);
-
-  // midnight handling with 10:00 cutoff
-  const DAY = 24 * 60;
-  const NIGHT_CUTOFF_H = 10;           // anything earlier is treated as next day
-  const CUTOFF = NIGHT_CUTOFF_H * 60;
-
-  const startMin = React.useCallback((r: Row) => {
-    const s = toMin(r.start);
-    return s < CUTOFF ? s + DAY : s;
-  }, [CUTOFF, DAY]);
-  const endMin = React.useCallback((r: Row) => {
-    const s = startMin(r);
-    let e = toMin(r.end);
-    e = e < CUTOFF ? e + DAY : e;
-    if (e <= s) e += DAY; // safety for 22:00→01:00 and odd cases
-    return e;
-  }, [startMin, CUTOFF, DAY]);
-  const fmtHour = (mins: number) => {
-    const hr = Math.floor((((mins % DAY) + DAY) % DAY) / 60);
-    return String(hr).padStart(2, '0') + ':00';
   };
 
-  const minStart = useMemo(() => Math.min(...rows.map(r => startMin(r))), [rows, startMin]);
-  const maxEnd   = useMemo(() => Math.max(...rows.map(r => endMin(r))),   [rows, endMin]);
-  const totalMin = clamp(Math.max(60, maxEnd - minStart), 60, 20 * 60);
-  const heightPx = Math.round(totalMin * pxPerMin);
-
-  const hours = useMemo(() => {
-    const s = Math.floor(minStart / 60), e = Math.ceil(maxEnd / 60);
-    return Array.from({ length: Math.max(0, e - s + 1) }, (_, i) => (s + i) * 60);
-  }, [minStart, maxEnd]);
+  const item = {
+    hidden: { opacity: 0, y: 20 },
+    show: { opacity: 1, y: 0 }
+  };
 
   return (
-    <section aria-labelledby={`h-${groupKey}`}>
-      <div className="mb-2 flex items-center justify-between">
-        <h2 id={`h-${groupKey}`} className="text-2xl font-semibold tracking-wide text-neutral-900">
-          {title}
-        </h2>
-        <div className="flex items-center gap-3">
-          <span className="text-sm text-neutral-500">{date}</span>
-          <motion.button
-            className="rounded-md bg-neutral-900 px-3 py-2 text-sm text-white hover:bg-neutral-800"
-            onClick={onExport}
-            whileHover={{ y: -1, scale: 1.01 }}
-            whileTap={{ y: 0, scale: 0.99 }}
+    <div className="min-h-screen bg-white pb-24 pt-12">
+      <div className="mx-auto max-w-7xl px-6">
+        <header className="mb-16">
+          <motion.h1 
+            initial={{ opacity: 0, x: -20 }}
+            animate={{ opacity: 1, x: 0 }}
+            className="text-6xl font-black tracking-tighter text-neutral-900 sm:text-8xl"
           >
-            Export PNG
-          </motion.button>
-        </div>
-      </div>
+            Heatmaps.
+          </motion.h1>
+          <motion.p 
+            initial={{ opacity: 0, x: -20 }}
+            animate={{ opacity: 1, x: 0 }}
+            transition={{ delay: 0.1 }}
+            className="mt-4 max-w-2xl text-xl font-medium text-neutral-500 sm:text-2xl"
+          >
+            A collection of visual set-times from the world&apos;s best electronic music festivals.
+          </motion.p>
+        </header>
 
-      {/* wrapper has no background */}
-      <div ref={registerRef} className="rounded-xl border border-neutral-200 p-4">
-        {/* legend above stage names */}
-        <div className="mb-2 flex flex-wrap items-center gap-5 text-sm text-neutral-700">
-          <span className="inline-flex items-center gap-2"><i className="inline-block h-3 w-6 rounded" style={{ backgroundColor: COLORS.nahh }} /> nahh</span>
-          <span className="inline-flex items-center gap-2"><i className="inline-block h-3 w-6 rounded" style={{ backgroundColor: COLORS.ok }} /> ok</span>
-          <span className="inline-flex items-center gap-2"><i className="inline-block h-3 w-6 rounded" style={{ backgroundColor: COLORS.hot }} /> hot</span>
-          <span className="inline-flex items-center gap-2"><i className="inline-block h-3 w-6 rounded" style={{ backgroundColor: COLORS.blazing }} /> blazing</span>
-        </div>
-        {/* headers with vertical black dividers */}
-        <div className="flex items-stretch">
-          <div style={{ width: TIME_W }} />
-          <div className="grid w-full gap-0" style={{ gridTemplateColumns: `repeat(${stages.length}, minmax(0, 1fr))` }}>
-            {stages.map((s, i) => (
-              <div
-                key={s}
-                className={`text-center text-[16px] font-bold text-neutral-900 border-r border-black ${i === stages.length - 1 ? 'border-r-0' : ''} py-1`}
-              >
-                {s}
-              </div>
-            ))}
+        {loading ? (
+          <div className="flex h-64 items-center justify-center">
+            <div className="h-12 w-12 animate-spin rounded-full border-4 border-neutral-200 border-t-neutral-900" />
           </div>
-        </div>
-
-        {/* body */}
-        <div className="mt-2 flex items-stretch">
-          {/* time rail with ticks and labels */}
-          <div className="relative" style={{ width: TIME_W, height: heightPx }}>
-            {hours.map(h => (
-              <div
-                key={`tick-${h}`}
-                className="absolute right-0 h-px bg-black"
-                style={{ top: (h - minStart) * pxPerMin, width: TICK_W }}
-              />
-            ))}
-            {hours.map(h => (
-              <div
-                key={`lab-${h}`}
-                className="absolute -translate-y-3 text-[16px] font-bold tabular-nums text-neutral-900"
-                style={{ top: (h - minStart) * pxPerMin, right: TICK_W + LABEL_GAP }}
-              >
-                {fmtHour(h)}
-              </div>
-            ))}
+        ) : error ? (
+          <div className="rounded-2xl border border-red-200 bg-red-50 p-8 text-center text-red-700 shadow-sm">
+            <h2 className="text-xl font-bold">Failed to load heatmaps</h2>
+            <p className="mt-2 text-sm">{error}</p>
           </div>
-
-          {/* stage area with global grid lines */}
-          <div className="relative w-full" style={{ height: heightPx }}>
-            {/* black horizontal lines across all stages */}
-            <div className="pointer-events-none absolute inset-0">
-              {hours.map(h => (
-                <div
-                  key={`hline-${h}`}
-                  className="absolute left-0 right-0 h-px bg-black"
-                  style={{ top: (h - minStart) * pxPerMin }}
-                />
+        ) : (
+          <motion.div 
+            variants={container}
+            initial="hidden"
+            animate="show"
+            className="grid grid-cols-1 gap-8 sm:grid-cols-2 lg:grid-cols-3"
+          >
+            <AnimatePresence>
+              {groups.map((g) => (
+                <motion.div key={g.key} variants={item}>
+                  <HeatmapTile 
+                    title={g.title} 
+                    date={g.date} 
+                  />
+                </motion.div>
               ))}
-            </div>
-
-            {/* columns with black vertical separators */}
-            <div className="relative grid h-full gap-0" style={{ gridTemplateColumns: `repeat(${stages.length}, minmax(0, 1fr))` }}>
-              {stages.map((stage, idx) => {
-                const sets = rows
-                  .filter(r => r.stage === stage)
-                  .sort((a, b) => startMin(a) - startMin(b));
-
-                // Build basic event list with computed minutes
-                type Ev = { r: Row; i: number; s: number; e: number };
-                const events: Ev[] = sets.map((r, i) => ({ r, i, s: startMin(r), e: endMin(r) }));
-
-                // Partition into clusters of mutually overlapping intervals
-                const clusters: Ev[][] = [];
-                let cur: Ev[] = [];
-                let curEnd = -Infinity;
-                for (const ev of events) {
-                  if (!cur.length || ev.s < curEnd) {
-                    cur.push(ev);
-                    if (ev.e > curEnd) curEnd = ev.e;
-                  } else {
-                    clusters.push(cur);
-                    cur = [ev];
-                    curEnd = ev.e;
-                  }
-                }
-                if (cur.length) clusters.push(cur);
-
-                // For each cluster, assign a column index (interval partitioning)
-                const placement: Record<number, { col: number; cols: number }> = {};
-                for (const cluster of clusters) {
-                  const colEnds: number[] = [];
-                  type Placed = { idx: number; col: number };
-                  const placed: Placed[] = [];
-                  for (const ev of cluster) {
-                    let col = colEnds.findIndex(end => end <= ev.s);
-                    if (col === -1) { colEnds.push(ev.e); col = colEnds.length - 1; }
-                    else { colEnds[col] = ev.e; }
-                    placed.push({ idx: ev.i, col });
-                  }
-                  const cols = colEnds.length;
-                  for (const p of placed) placement[p.idx] = { col: p.col, cols };
-                }
-
-                return (
-                  <div key={stage} className={`relative border-r border-black ${idx === stages.length - 1 ? 'border-r-0' : ''}`}>
-                    {sets.map((r, i) => {
-                      const s = startMin(r);
-                      const e = endMin(r);
-                      const naturalTop = (s - minStart) * pxPerMin;
-                      const naturalH   = Math.max(28, (e - s) * pxPerMin);
-                      const innerH = naturalH * 0.95;                  // 95% height
-                      const top = naturalTop + (naturalH - innerH) / 2;
-
-                      const bucket = bucketFromRating(r.rating);
-                      const bg = bucket ? COLORS[bucket] : COLORS.unrated;
-                      const txt = (bucket === 'ok' || bucket === '') ? '#111827' : '#FFFFFF';
-
-                      const place = placement[i] || { col: 0, cols: 1 };
-                      const n = Math.max(1, place.cols);
-                      const c = Math.max(0, Math.min(place.col, n - 1));
-                      const width = `calc((100% - ${(n - 1) * SLOT_GAP_PX}px) / ${n})`;
-                      const left  = `calc(${c} * (100% - ${(n - 1) * SLOT_GAP_PX}px) / ${n} + ${c * SLOT_GAP_PX}px)`;
-
-                      return (
-                        <div key={stage + '-' + i} className="absolute left-2 right-2" style={{ top }}>
-                          <div className="relative" style={{ height: innerH }}>
-                            <div
-                              className={`${CARD_BORDER} absolute inset-y-0 flex items-center justify-center text-center px-2`}
-                              style={{ left, width, height: '100%', backgroundColor: bg, color: txt }}
-                            >
-                              <div className="text-[13px] leading-snug">{r.artist}</div>
-                            </div>
-                          </div>
-                        </div>
-                      );
-                    })}
-                  </div>
-                );
-              })}
-            </div>
-          </div>
-        </div>
-      </div>
-    </section>
-  );
-}
-
-/* Upload modal */
-function CreateHeatmapModal({
-  open, onClose, onApply,
-}: {
-  open: boolean;
-  onClose: () => void;
-  onApply: (rows: Row[]) => void;
-}) {
-  const dialogRef = useRef<HTMLDivElement | null>(null);
-  const [errors, setErrors] = useState<string[]>([]);
-  const [parsedRows, setParsedRows] = useState<Row[] | null>(null);
-
-  // focus trap + esc close
-  useEffect(() => {
-    if (!open) return;
-    const dialog = dialogRef.current;
-    const prev = document.activeElement as HTMLElement | null;
-    const focusables = () => Array.from(dialog?.querySelectorAll<HTMLElement>(
-      'a[href], button, textarea, input, select, [tabindex]:not([tabindex="-1"])'
-    ) || []).filter(el => !el.hasAttribute('disabled'));
-    const first = () => focusables()[0];
-    const last = () => focusables()[focusables().length - 1];
-    const onKey = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') { e.preventDefault(); onClose(); }
-      if (e.key === 'Tab') {
-        const f = focusables(); if (!f.length) return;
-        const current = document.activeElement as HTMLElement | null;
-        if (e.shiftKey) {
-          if (current === f[0] || !dialog?.contains(current)) { e.preventDefault(); last()?.focus(); }
-        } else {
-          if (current === f[f.length - 1] || !dialog?.contains(current)) { e.preventDefault(); first()?.focus(); }
-        }
-      }
-    };
-    document.addEventListener('keydown', onKey);
-    // initial focus
-    setTimeout(() => first()?.focus(), 0);
-    return () => {
-      document.removeEventListener('keydown', onKey);
-      prev?.focus();
-    };
-  }, [open, onClose]);
-
-  const normalizeTime = (t: string) => {
-    const s = (t || '').trim();
-    const m = s.match(/^(\d{1,2}):(\d{2})$/);
-    if (!m) return null;
-    const hh = String(Math.max(0, Math.min(29, parseInt(m[1], 10)))).padStart(2, '0');
-    const mm = String(Math.max(0, Math.min(59, parseInt(m[2], 10)))).padStart(2, '0');
-    return `${hh}:${mm}`;
-  };
-
-  const validateAndParse = useCallback(async (text: string) => {
-    const errs: string[] = [];
-    const bytes = new Blob([text]).size;
-    if (bytes > 1_000_000) errs.push('File is larger than 1 MB.');
-
-    const Papa = await loadPapa();
-    const res = await new Promise<ParseResult<Record<string, unknown>>>((resolve) => {
-      Papa.parse(text, { header: true, skipEmptyLines: true, complete: resolve });
-    });
-
-    const fields = (res.meta.fields || []).map(f => (f || '').trim().toLowerCase());
-    const required = ['festival','date','stage','artist','start','end','rating'];
-    const missing = required.filter(r => !fields.includes(r));
-    if (missing.length) errs.push(`Missing required columns: ${missing.join(', ')}`);
-
-    const rawRows = (res.data || []) as Array<Record<string, unknown>>;
-    if (rawRows.length > 200) errs.push('Too many rows. Maximum is 200.');
-
-    const cleanRows: Row[] = [];
-    const dateRe = /^\d{4}-\d{2}-\d{2}$/;
-    rawRows.forEach((r, idx) => {
-      const rowNum = idx + 2; // header is row 1
-      const g = (k: string) => (r?.[k] ?? '').toString();
-
-      const festival = norm(g('festival'));
-      const date = norm(g('date'));
-      const stage = norm(g('stage'));
-      const artist = norm(g('artist'));
-      const start = norm(g('start'));
-      const end = norm(g('end'));
-      let rating = norm(g('rating')).toLowerCase();
-      const stage_order_raw = g('stage_order');
-
-      if (!festival) errs.push(`Row ${rowNum} is missing festival.`);
-      if (!date || !dateRe.test(date)) errs.push(`Row ${rowNum} has an invalid date. Use YYYY-MM-DD like 2025-07-31.`);
-      if (!stage) errs.push(`Row ${rowNum} is missing stage.`);
-      if (!artist) errs.push(`Row ${rowNum} is missing artist.`);
-
-      const ns = normalizeTime(start);
-      const ne = normalizeTime(end);
-      if (!ns) errs.push(`Row ${rowNum} has an invalid time. Use HH:MM like 23:45.`);
-      if (!ne) errs.push(`Row ${rowNum} has an invalid time. Use HH:MM like 23:45.`);
-
-      if (rating === 'empty') rating = '';
-      const allowedRating = ['','nahh','ok','hot','blazing'];
-      if (!allowedRating.includes(rating)) errs.push(`Row ${rowNum} has an invalid rating. Use nahh|ok|hot|blazing|empty.`);
-
-      let stage_order: number | undefined = undefined;
-      const so = norm(stage_order_raw);
-      if (so) {
-        const n = Number(so);
-        if (!Number.isFinite(n)) errs.push(`Row ${rowNum} has an invalid stage_order. Use a number like 1, 2, 3.`);
-        else stage_order = n;
-      }
-
-      if (festival && date && stage && artist && ns && ne && allowedRating.includes(rating)) {
-        cleanRows.push({ festival, date, stage, stage_order, artist, start: ns, end: ne, rating });
-      }
-    });
-
-    setErrors(errs);
-    if (errs.length) { setParsedRows(null); return null; }
-    setParsedRows(cleanRows);
-    return cleanRows;
-  }, []);
-
-  const onFile = useCallback(async (file: File) => {
-    setErrors([]); setParsedRows(null);
-    try {
-      if (file.size > 1_000_000) { setErrors(['File is larger than 1 MB.']); return; }
-      const lower = (file.name || '').toLowerCase();
-      const looksCsv = lower.endsWith('.csv') || /(^text\/csv$|csv)/i.test(file.type || '');
-      if (!looksCsv) { setErrors(['Only CSV files are supported.']); return; }
-      const text = await file.text();
-      await validateAndParse(text);
-      // optional analytics
-      try { (window as unknown as { plausible?: (e: string) => void }).plausible?.('heatmap_upload_success'); } catch {}
-    } finally {
-      // no-op
-    }
-  }, [validateAndParse]);
-
-  const apply = useCallback(() => {
-    if (!parsedRows || parsedRows.length === 0) return;
-    onApply(parsedRows);
-    onClose();
-  }, [parsedRows, onApply, onClose]);
-
-  if (!open) return null;
-  return (
-    <div className="fixed inset-0 z-50">
-      <div className="absolute inset-0 bg-black/50" onClick={onClose} aria-hidden />
-      <div
-        ref={dialogRef}
-        role="dialog" aria-modal="true" aria-labelledby="csv-title" aria-describedby="csv-desc"
-        className="absolute inset-x-0 top-6 mx-auto w-[min(800px,92vw)] rounded-xl border border-neutral-200 bg-white p-4 shadow-2xl"
-        onClick={e => e.stopPropagation()}
-      >
-        <div className="mb-3 flex items-start justify-between gap-3">
-          <div>
-            <h2 id="csv-title" className="text-lg font-semibold tracking-wide text-neutral-900">Create your own heatmap</h2>
-            <p id="csv-desc" className="text-sm text-neutral-600">
-              Upload a CSV. Required columns: festival, date (YYYY-MM-DD), stage, artist, start (HH:MM), end (HH:MM), rating (nahh|ok|hot|blazing|empty).
-            </p>
-          </div>
-        </div>
-
-        <div className="grid gap-3 sm:grid-cols-2">
-          <div className="rounded-lg border border-neutral-200 p-3">
-            <label className="mb-2 block text-sm font-medium text-neutral-800">Upload CSV</label>
-            <input
-              type="file" accept=".csv,text/csv" onChange={e => { const f = (e.target as HTMLInputElement).files?.[0]; if (f) onFile(f); }}
-              className="block w-full text-sm file:mr-3 file:rounded-md file:border file:border-neutral-900 file:bg-neutral-900 file:text-white file:px-3 file:py-1.5 file:text-sm file:hover:bg-neutral-800"
-            />
-            <p className="mt-2 text-xs text-neutral-500">Max 1 MB, 200 rows. CSV delimiters , or ; are supported.</p>
-          </div>
-
-          {/* Example table: first 5 rows */}
-          <div className="rounded-lg border border-neutral-200 p-3 overflow-x-auto">
-            <label className="mb-2 block text-sm font-medium text-neutral-800">Format example (first 5 rows)</label>
-            <table className="w-full text-xs">
-              <thead>
-                <tr className="text-left text-neutral-600">
-                  <th className="px-2 py-1">festival</th>
-                  <th className="px-2 py-1">date</th>
-                  <th className="px-2 py-1">stage</th>
-                  <th className="px-2 py-1">stage_order</th>
-                  <th className="px-2 py-1">artist</th>
-                  <th className="px-2 py-1">start</th>
-                  <th className="px-2 py-1">end</th>
-                  <th className="px-2 py-1">rating</th>
-                </tr>
-              </thead>
-              <tbody>
-                {TEMPLATE_FIRST5.map((r, i) => (
-                  <tr key={i} className="border-t border-neutral-200">
-                    <td className="px-2 py-1 whitespace-nowrap">{r.festival}</td>
-                    <td className="px-2 py-1 whitespace-nowrap">{r.date}</td>
-                    <td className="px-2 py-1 whitespace-nowrap">{r.stage}</td>
-                    <td className="px-2 py-1 whitespace-nowrap">{String(r.stage_order ?? '')}</td>
-                    <td className="px-2 py-1 whitespace-nowrap">{r.artist}</td>
-                    <td className="px-2 py-1 whitespace-nowrap">{r.start}</td>
-                    <td className="px-2 py-1 whitespace-nowrap">{r.end}</td>
-                    <td className="px-2 py-1 whitespace-nowrap">{r.rating}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        </div>
-
-        {errors.length > 0 && (
-          <div className="mt-3 rounded-md border border-red-200 bg-red-50 p-3 text-sm text-red-700">
-            <ul className="list-disc pl-5">
-              {errors.map((e, i) => <li key={i}>{e}</li>)}
-            </ul>
-          </div>
+              <motion.div variants={item}>
+                <HeatmapTile 
+                  title="Make your own" 
+                  date="Tool"
+                  isCustom
+                />
+              </motion.div>
+            </AnimatePresence>
+          </motion.div>
         )}
-
-        {parsedRows && errors.length === 0 && (
-          <div className="mt-3 rounded-md border border-emerald-200 bg-emerald-50 p-3 text-sm text-emerald-800">
-            Looks good! Parsed {parsedRows.length} rows. Click &quot;Add preview&quot; to render above.
-          </div>
-        )}
-
-        <div className="mt-4 flex items-center justify-end gap-2">
-          <motion.button className="rounded-md border border-neutral-300 bg-white px-3 py-2 text-sm hover:bg-neutral-50" onClick={onClose}
-            whileHover={{ y: -1, scale: 1.01 }} whileTap={{ y: 0, scale: 0.99 }}
-          >Cancel</motion.button>
-          <motion.button
-            className="rounded-md bg-neutral-900 px-3 py-2 text-sm text-white disabled:opacity-50"
-            onClick={apply}
-            disabled={!parsedRows || !!errors.length}
-            whileHover={{ y: -1, scale: 1.01 }} whileTap={{ y: 0, scale: 0.99 }}
-          >
-            Add preview
-          </motion.button>
-        </div>
-      </div>
-
-      {/* inline legend per heatmap */}
-      <div className="mb-2 flex flex-wrap items-center gap-5 text-sm text-neutral-700">
-        <span className="inline-flex items-center gap-2"><i className="inline-block h-3 w-6 rounded" style={{ backgroundColor: COLORS.nahh }} /> nahh</span>
-        <span className="inline-flex items-center gap-2"><i className="inline-block h-3 w-6 rounded" style={{ backgroundColor: COLORS.ok }} /> ok</span>
-        <span className="inline-flex items-center gap-2"><i className="inline-block h-3 w-6 rounded" style={{ backgroundColor: COLORS.hot }} /> hot</span>
-        <span className="inline-flex items-center gap-2"><i className="inline-block h-3 w-6 rounded" style={{ backgroundColor: COLORS.blazing }} /> blazing</span>
       </div>
     </div>
   );
