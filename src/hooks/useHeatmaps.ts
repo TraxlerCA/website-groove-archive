@@ -29,8 +29,8 @@ export function useHeatmaps() {
               stage: norm(r.stage),
               stage_order: Number(r.stage_order ?? 9999),
               artist: norm(r.artist),
-              start: norm(r.start),
-              end: norm(r.end),
+              start: norm(r.start_time),
+              end: norm(r.end_time),
               rating: norm(r.rating || ''),
             }))
             .filter(r => r.festival && r.date && r.stage && r.artist && r.start && r.end);

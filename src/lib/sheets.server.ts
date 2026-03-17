@@ -72,6 +72,7 @@ export const getListRows = cache(async (): Promise<Row[]> => {
 });
 
 // New function for heatmaps
+// No functional changes needed here as it returns raw data, but keeping it consistent with hook's intent
 export const getFestivalSets = cache(async () => {
   const { data, error } = await supabase
     .from('heatmaps')
