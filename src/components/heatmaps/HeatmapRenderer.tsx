@@ -36,6 +36,29 @@ export function HeatmapRenderer({
   onExport,
   showExport = true,
 }: HeatmapRendererProps) {
+  const [isFitScreen, setIsFitScreen] = React.useState(false);
+  const [now, setNow] = React.useState<number | null>(null);
+
+  React.useEffect(() => {
+    const updateNow = () => {
+      const d = new Date();
+      const todayStr = d.toISOString().split('T')[0];
+      if (todayStr === date) {
+        const mins = d.getHours() * 60 + d.getMinutes();
+        // handling 10:00 cutoff like in startMin/endMin
+        const NIGHT_CUTOFF_H = 10;
+        const CUTOFF = NIGHT_CUTOFF_H * 60;
+        const DAY = 24 * 60;
+        setNow(mins < CUTOFF ? mins + DAY : mins);
+      } else {
+        setNow(null);
+      }
+    };
+    updateNow();
+    const interval = setInterval(updateNow, 60000);
+    return () => clearInterval(interval);
+  }, [date]);
+
   const stages = useMemo(() => {
     const map = new Map<string, number>();
     rows.forEach(r => {
@@ -87,39 +110,62 @@ export function HeatmapRenderer({
           </h2>
           <p className="text-sm font-medium text-neutral-500">{date}</p>
         </div>
-        {showExport && (
-          <motion.button
-            className="self-start rounded-full bg-neutral-900 px-6 py-2.5 text-sm font-semibold text-white shadow-lg hover:bg-neutral-800 transition-colors"
-            onClick={onExport}
-            whileHover={{ y: -2, scale: 1.02 }}
-            whileTap={{ y: 0, scale: 0.98 }}
+        <div className="flex items-center gap-3">
+          <button
+            onClick={() => setIsFitScreen(!isFitScreen)}
+            className="flex items-center gap-2 rounded-full border border-neutral-200 bg-white px-4 py-2 text-sm font-bold text-neutral-600 shadow-sm hover:bg-neutral-50 transition-colors"
           >
-            Export PNG
-          </motion.button>
-        )}
+            {isFitScreen ? (
+              <>
+                <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0zM10 7v3m0 0v3m0-3h3m-3 0H7" />
+                </svg>
+                Zoom In
+              </>
+            ) : (
+              <>
+                <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M4 8V4m0 0h4M4 4l5 5m11-1V4m0 0h-4m4 0l-5 5M4 16v4m0 0h4m-4 0l5-5m11 5l-5-5m5 5v-4m0 4h-4" />
+                </svg>
+                Fit Width
+              </>
+            )}
+          </button>
+          
+          {showExport && (
+            <motion.button
+              className="rounded-full bg-neutral-900 px-6 py-2.5 text-sm font-semibold text-white shadow-lg hover:bg-neutral-800 transition-colors"
+              onClick={onExport}
+              whileHover={{ y: -2, scale: 1.02 }}
+              whileTap={{ y: 0, scale: 0.98 }}
+            >
+              Export PNG
+            </motion.button>
+          )}
+        </div>
       </div>
 
       <div 
         ref={registerRef} 
-        className="rounded-2xl border border-neutral-200 bg-white p-4 sm:p-6 shadow-xl overflow-x-auto scrollbar-hide"
+        className="rounded-2xl border border-neutral-200 bg-white p-2 sm:p-4 shadow-xl overflow-x-auto scrollbar-hide"
       >
         {/* legend */}
-        <div className="mb-6 flex flex-wrap items-center gap-6 text-xs font-bold uppercase tracking-widest text-neutral-500">
+        <div className="mb-6 flex flex-wrap items-center gap-4 sm:gap-6 text-[10px] sm:text-xs font-bold uppercase tracking-widest text-neutral-500">
           <span className="inline-flex items-center gap-2"><i className="inline-block h-3 w-6 rounded-sm" style={{ backgroundColor: COLORS.nahh }} /> nahh</span>
           <span className="inline-flex items-center gap-2"><i className="inline-block h-3 w-6 rounded-sm" style={{ backgroundColor: COLORS.ok }} /> ok</span>
           <span className="inline-flex items-center gap-2"><i className="inline-block h-3 w-6 rounded-sm" style={{ backgroundColor: COLORS.hot }} /> hot</span>
           <span className="inline-flex items-center gap-2"><i className="inline-block h-3 w-6 rounded-sm" style={{ backgroundColor: COLORS.blazing }} /> blazing</span>
         </div>
 
-        <div className="min-w-[800px]">
+        <div className={isFitScreen ? 'w-full' : 'min-w-[800px]'}>
           {/* headers */}
-          <div className="flex items-stretch">
-            <div style={{ width: TIME_W }} />
+          <div className="sticky top-0 z-30 flex items-stretch bg-white border-b border-neutral-200">
+            <div className="sticky left-0 z-40 bg-white" style={{ width: TIME_W }} />
             <div className="grid w-full gap-0" style={{ gridTemplateColumns: `repeat(${stages.length}, minmax(0, 1fr))` }}>
               {stages.map((s, i) => (
                 <div
                   key={s}
-                  className={`text-center text-sm font-black uppercase tracking-tighter text-neutral-900 border-r border-neutral-200 ${i === stages.length - 1 ? 'border-r-0' : ''} py-2`}
+                  className={`text-center text-[10px] sm:text-sm font-black uppercase tracking-tighter text-neutral-900 border-r border-neutral-100 ${i === stages.length - 1 ? 'border-r-0' : ''} py-2`}
                 >
                   {s}
                 </div>
@@ -128,9 +174,9 @@ export function HeatmapRenderer({
           </div>
 
           {/* body */}
-          <div className="mt-4 flex items-stretch">
+          <div className="relative mt-2 flex items-stretch">
             {/* time rail */}
-            <div className="relative" style={{ width: TIME_W, height: heightPx }}>
+            <div className="sticky left-0 z-20 bg-white/95 backdrop-blur-sm" style={{ width: TIME_W, height: heightPx }}>
               {hours.map(h => (
                 <div
                   key={`tick-${h}`}
@@ -141,7 +187,7 @@ export function HeatmapRenderer({
               {hours.map(h => (
                 <div
                   key={`lab-${h}`}
-                  className="absolute -translate-y-3 text-sm font-black tabular-nums text-neutral-400"
+                  className="absolute -translate-y-3 text-[10px] sm:text-sm font-black tabular-nums text-neutral-400"
                   style={{ top: (h - minStart) * pxPerMin, right: TICK_W + LABEL_GAP }}
                 >
                   {fmtHour(h)}
@@ -155,10 +201,21 @@ export function HeatmapRenderer({
                 {hours.map(h => (
                   <div
                     key={`hline-${h}`}
-                    className="absolute left-0 right-0 h-px bg-neutral-100"
+                    className="absolute left-0 right-0 h-px bg-neutral-50"
                     style={{ top: (h - minStart) * pxPerMin }}
                   />
                 ))}
+                
+                {/* Now Indicator line */}
+                {now !== null && now >= minStart && now <= maxEnd && (
+                  <div 
+                    className="absolute left-0 right-0 z-40 flex items-center"
+                    style={{ top: (now - minStart) * pxPerMin }}
+                  >
+                    <div className="h-0.5 w-full bg-red-500 shadow-[0_0_8px_rgba(239,68,68,0.5)]" />
+                    <div className="absolute -left-1.5 h-3 w-3 rounded-full border-2 border-white bg-red-500 shadow-md" />
+                  </div>
+                )}
               </div>
 
               <div className="relative grid h-full gap-0" style={{ gridTemplateColumns: `repeat(${stages.length}, minmax(0, 1fr))` }}>
@@ -201,12 +258,12 @@ export function HeatmapRenderer({
                   }
 
                   return (
-                    <div key={stage} className={`relative border-r border-neutral-100 ${idx === stages.length - 1 ? 'border-r-0' : ''}`}>
+                    <div key={stage} className={`relative border-r border-neutral-100/50 ${idx === stages.length - 1 ? 'border-r-0' : ''}`}>
                       {sets.map((r, i) => {
                         const s = startMin(r);
                         const e = endMin(r);
                         const naturalTop = (s - minStart) * pxPerMin;
-                        const naturalH   = Math.max(32, (e - s) * pxPerMin);
+                        const naturalH   = Math.max(isFitScreen ? 12 : 32, (e - s) * pxPerMin);
                         const innerH = naturalH * 0.94;
                         const top = naturalTop + (naturalH - innerH) / 2;
 
@@ -218,17 +275,21 @@ export function HeatmapRenderer({
                         const place = placement[i] || { col: 0, cols: 1 };
                         const n = Math.max(1, place.cols);
                         const c = Math.max(0, Math.min(place.col, n - 1));
-                        const width = `calc((100% - ${(n - 1) * SLOT_GAP_PX}px) / ${n})`;
-                        const left  = `calc(${c} * (100% - ${(n - 1) * SLOT_GAP_PX}px) / ${n} + ${c * SLOT_GAP_PX}px)`;
+                        
+                        // use simpler width/left calc for cleaner mobile view
+                        const width = `calc((100% - ${(n - 1) * (isFitScreen ? 2 : SLOT_GAP_PX)}px) / ${n})`;
+                        const left  = `calc(${c} * (100% - ${(n - 1) * (isFitScreen ? 2 : SLOT_GAP_PX)}px) / ${n} + ${c * (isFitScreen ? 2 : SLOT_GAP_PX)}px)`;
 
                         return (
                           <div key={stage + '-' + i} className="absolute left-1 right-1" style={{ top }}>
                             <div className="relative" style={{ height: innerH }}>
                               <div
-                                className={`${CARD_BORDER} absolute inset-y-0 flex flex-col items-center justify-center text-center px-2 transition-all hover:scale-[1.02] hover:shadow-lg z-10`}
+                                className={`${CARD_BORDER} absolute inset-y-0 flex flex-col items-center justify-center text-center px-1 sm:px-2 transition-all hover:scale-[1.02] hover:shadow-lg z-10 overflow-hidden`}
                                 style={{ left, width, height: '100%', backgroundColor: bg, color: txt }}
                               >
-                                <div className="text-[11px] sm:text-[13px] font-black leading-tight truncate w-full">{r.artist}</div>
+                                <div className={`${isFitScreen ? 'text-[6px]' : 'text-[10px]'} sm:text-[13px] font-black leading-tight truncate w-full`}>
+                                  {r.artist}
+                                </div>
                               </div>
                             </div>
                           </div>
