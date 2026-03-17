@@ -1,9 +1,10 @@
 'use client';
 
 import { useState, useEffect, useMemo } from 'react';
-import { Row, Group, DEFAULT_CSV, loadPapa, norm, parseDate, slugify } from '@/lib/heatmaps';
+import { supabase } from '@/lib/supabase';
+import { Row, Group, norm, parseDate, slugify } from '@/lib/heatmaps';
 
-export function useHeatmaps(csvUrl: string = DEFAULT_CSV) {
+export function useHeatmaps() {
   const [rows, setRows] = useState<Row[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -13,44 +14,41 @@ export function useHeatmaps(csvUrl: string = DEFAULT_CSV) {
     (async () => {
       try {
         setLoading(true);
-        const Papa = await loadPapa();
-        Papa.parse<Row>(csvUrl, {
-          download: true,
-          header: true,
-          skipEmptyLines: true,
-          complete: (res) => {
-            if (cancelled) return;
-            const clean = (res.data || [])
-              .map(r => ({
-                festival: norm(r.festival),
-                date: norm(r.date),
-                stage: norm(r.stage),
-                stage_order: Number(r.stage_order ?? 9999),
-                artist: norm(r.artist),
-                start: norm(r.start),
-                end: norm(r.end),
-                rating: norm(r.rating || ''),
-              }))
-              .filter(r => r.festival && r.date && r.stage && r.artist && r.start && r.end);
-            setRows(clean);
-            setLoading(false);
-          },
-          error: (err) => {
-            if (cancelled) return;
-            setError(err.message);
-            setLoading(false);
-          }
-        });
+        const { data, error: sbError } = await supabase
+          .from('heatmaps')
+          .select('*')
+          .order('date', { ascending: false });
+
+        if (sbError) throw sbError;
+
+        if (!cancelled) {
+          const clean = (data || [])
+            .map(r => ({
+              festival: norm(r.festival),
+              date: norm(r.date),
+              stage: norm(r.stage),
+              stage_order: Number(r.stage_order ?? 9999),
+              artist: norm(r.artist),
+              start: norm(r.start),
+              end: norm(r.end),
+              rating: norm(r.rating || ''),
+            }))
+            .filter(r => r.festival && r.date && r.stage && r.artist && r.start && r.end);
+          
+          setRows(clean);
+          setLoading(false);
+        }
       } catch (e) {
-        if (cancelled) return;
-        setError(e instanceof Error ? e.message : 'Failed to load heatmaps');
-        setLoading(false);
+        if (!cancelled) {
+          setError(e instanceof Error ? e.message : 'Failed to load heatmaps');
+          setLoading(false);
+        }
       }
     })();
     return () => {
       cancelled = true;
     };
-  }, [csvUrl]);
+  }, []);
 
   const groups: Group[] = useMemo(() => {
     const map = new Map<string, Group>();
@@ -59,6 +57,7 @@ export function useHeatmaps(csvUrl: string = DEFAULT_CSV) {
       if (!map.has(key)) map.set(key, { title: r.festival, date: r.date, rows: [], key });
       map.get(key)!.rows.push(r);
     }
+    // Already sorted by Supabase query, but ensuring group ordering here too
     return Array.from(map.values()).sort((a, b) => parseDate(b.date) - parseDate(a.date));
   }, [rows]);
 

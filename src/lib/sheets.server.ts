@@ -74,7 +74,7 @@ export const getListRows = cache(async (): Promise<Row[]> => {
 // New function for heatmaps
 export const getFestivalSets = cache(async () => {
   const { data, error } = await supabase
-    .from('festival_sets')
+    .from('heatmaps')
     .select('*')
     .order('date', { ascending: false });
 
