@@ -44,6 +44,7 @@ export function HeatmapRenderer({
   const [now, setNow] = React.useState<number | null>(null);
   const [scale, setScale] = React.useState(1);
   const [isMobile, setIsMobile] = React.useState(false);
+  const [transform, setTransform] = React.useState({ x: 0, y: 0, s: 1 });
 
   React.useEffect(() => {
     const updateNow = () => {
@@ -154,23 +155,29 @@ export function HeatmapRenderer({
     <>
         {/* legend */}
         {!isSnapshotting && (
-          <div className="mb-8 flex flex-wrap items-center gap-4 sm:gap-8 text-[10px] sm:text-xs font-black uppercase tracking-[0.2em] text-neutral-400">
-            <span className="inline-flex items-center gap-2.5"><i className="inline-block h-2.5 w-6 rounded-full" style={{ backgroundColor: COLORS.nahh }} /> nahh</span>
-            <span className="inline-flex items-center gap-2.5"><i className="inline-block h-2.5 w-6 rounded-full" style={{ backgroundColor: COLORS.ok }} /> ok</span>
-            <span className="inline-flex items-center gap-2.5"><i className="inline-block h-2.5 w-6 rounded-full" style={{ backgroundColor: COLORS.hot }} /> hot</span>
-            <span className="inline-flex items-center gap-2.5"><i className="inline-block h-2.5 w-6 rounded-full" style={{ backgroundColor: COLORS.blazing }} /> blazing</span>
+          <div className="mb-2 flex flex-wrap items-center gap-3 sm:gap-8 text-[16px] sm:text-xs font-black uppercase tracking-[0.1em] text-neutral-900">
+            <span className="inline-flex items-center gap-1.5"><i className="inline-block h-4 w-10" style={{ backgroundColor: COLORS.nahh }} /> nahh</span>
+            <span className="inline-flex items-center gap-1.5"><i className="inline-block h-4 w-10" style={{ backgroundColor: COLORS.ok }} /> ok</span>
+            <span className="inline-flex items-center gap-1.5"><i className="inline-block h-4 w-10" style={{ backgroundColor: COLORS.hot }} /> hot</span>
+            <span className="inline-flex items-center gap-1.5"><i className="inline-block h-4 w-10" style={{ backgroundColor: COLORS.blazing }} /> blazing</span>
           </div>
         )}
 
         <div className="min-w-[1000px] lg:min-w-full">
           {/* headers */}
-          <div className="sticky top-0 z-30 flex items-stretch bg-white/90 backdrop-blur-md border-b border-neutral-100">
+          <div 
+            className="sticky top-0 z-30 flex items-stretch bg-white/90 backdrop-blur-md border-b border-neutral-100"
+            style={isMobile ? { 
+              transform: `translateY(${-transform.y / transform.s}px)`,
+              transition: 'none'
+            } : undefined}
+          >
             <div className="sticky left-0 z-40 bg-white/90" style={{ width: TIME_W }} />
             <div className="grid w-full gap-0" style={{ gridTemplateColumns: `repeat(${stages.length}, minmax(0, 1fr))` }}>
               {stages.map((s, i) => (
                 <div
                   key={s}
-                  className={`text-center text-[11px] sm:text-sm font-black uppercase tracking-tighter text-neutral-900 border-r border-neutral-50 ${i === stages.length - 1 ? 'border-r-0' : ''} py-4`}
+                  className={`text-center text-[22px] sm:text-sm font-black uppercase tracking-tighter text-neutral-900 border-r border-neutral-100 ${i === stages.length - 1 ? 'border-r-0' : ''} py-4`}
                 >
                   {s}
                 </div>
@@ -181,7 +188,15 @@ export function HeatmapRenderer({
           {/* body */}
           <div className="relative mt-4 flex items-stretch">
             {/* time rail */}
-            <div className="sticky left-0 z-20 bg-white/80 backdrop-blur-sm" style={{ width: TIME_W, height: heightPx }}>
+            <div 
+              className="sticky left-0 z-20 bg-white/80 backdrop-blur-sm" 
+              style={isMobile ? { 
+                width: TIME_W, 
+                height: heightPx,
+                transform: `translateX(${-transform.x / transform.s}px)`,
+                transition: 'none'
+              } : { width: TIME_W, height: heightPx }}
+            >
               {hours.map(h => (
                 <div
                   key={`tick-${h}`}
@@ -192,8 +207,8 @@ export function HeatmapRenderer({
               {hours.map(h => (
                 <div
                   key={`lab-${h}`}
-                  className="absolute -translate-y-3 text-[11px] sm:text-sm font-black tabular-nums text-neutral-300"
-                  style={{ top: (h - minStart) * pxPerMin, right: TICK_W + LABEL_GAP }}
+                  className="absolute -translate-y-3 text-[22px] sm:text-sm font-black tabular-nums text-neutral-900"
+                  style={{ top: (h - minStart) * pxPerMin, left: 4 }}
                 >
                   {fmtHour(h)}
                 </div>
@@ -291,7 +306,7 @@ export function HeatmapRenderer({
                                 className={`${CARD_BORDER} absolute inset-y-0 flex flex-col items-center justify-center text-center px-2 transition-all hover:ring-2 hover:ring-black/5 hover:scale-[1.01] hover:shadow-xl z-10 overflow-hidden group`}
                                 style={{ left, width, height: '100%', backgroundColor: bg, color: txt }}
                               >
-                                <div className="text-[11px] sm:text-[13px] font-black leading-tight truncate w-full tracking-tighter">
+                                <div className="text-[22px] sm:text-[13px] font-black leading-tight truncate w-full tracking-tighter">
                                   {r.artist}
                                 </div>
                                 {!isSnapshotting && (
@@ -341,10 +356,16 @@ export function HeatmapRenderer({
 
       {/* Standard desktop / Pinch-to-zoom Mobile */}
       {isMobile ? (
-        <div style={{ height: (heightPx + 150) * scale }} className="relative w-full rounded-3xl overflow-hidden shadow-2xl border border-neutral-200">
-          <TransformWrapper initialScale={scale} minScale={scale} maxScale={3} centerOnInit>
+        <div style={{ height: (heightPx + 150) * scale }} className="relative w-full overflow-hidden shadow-2xl border border-neutral-200">
+          <TransformWrapper 
+            initialScale={scale} 
+            minScale={scale} 
+            maxScale={3} 
+            centerOnInit
+            onTransformed={(ref) => setTransform({ x: ref.state.positionX, y: ref.state.positionY, s: ref.state.scale })}
+          >
             <TransformComponent wrapperStyle={{ width: '100%', height: '100%' }} contentStyle={{ width: '1000px', backgroundColor: '#fff' }}>
-              <div ref={registerRef} data-heatmap={groupKey} className="relative bg-white p-2 sm:p-6 w-full h-full">
+              <div ref={registerRef} data-heatmap={groupKey} className="relative bg-white p-0 sm:p-6 w-full h-full">
                 {renderContent()}
               </div>
             </TransformComponent>
