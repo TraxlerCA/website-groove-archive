@@ -153,15 +153,7 @@ export function HeatmapRenderer({
 
   const renderContent = () => (
     <>
-        {/* legend */}
-        {!isSnapshotting && (
-          <div className="mb-2 flex flex-wrap items-center gap-3 sm:gap-8 text-[16px] sm:text-xs font-black uppercase tracking-[0.1em] text-neutral-900">
-            <span className="inline-flex items-center gap-1.5"><i className="inline-block h-4 w-10" style={{ backgroundColor: COLORS.nahh }} /> nahh</span>
-            <span className="inline-flex items-center gap-1.5"><i className="inline-block h-4 w-10" style={{ backgroundColor: COLORS.ok }} /> ok</span>
-            <span className="inline-flex items-center gap-1.5"><i className="inline-block h-4 w-10" style={{ backgroundColor: COLORS.hot }} /> hot</span>
-            <span className="inline-flex items-center gap-1.5"><i className="inline-block h-4 w-10" style={{ backgroundColor: COLORS.blazing }} /> blazing</span>
-          </div>
-        )}
+
 
         <div className="min-w-[1000px] lg:min-w-full">
           {/* headers */}
@@ -186,7 +178,7 @@ export function HeatmapRenderer({
           </div>
 
           {/* body */}
-          <div className="relative mt-4 flex items-stretch">
+          <div className="relative mt-0 flex items-stretch">
             {/* time rail */}
             <div 
               className="sticky left-0 z-20 bg-white/80 backdrop-blur-sm" 
@@ -354,32 +346,52 @@ export function HeatmapRenderer({
         </div>
       </div>
 
-      {/* Standard desktop / Pinch-to-zoom Mobile */}
-      {isMobile ? (
-        <div style={{ height: (heightPx + 150) * scale }} className="relative w-full overflow-hidden shadow-2xl border border-neutral-200">
-          <TransformWrapper 
-            initialScale={scale} 
-            minScale={scale} 
-            maxScale={3} 
-            centerOnInit
-            onTransformed={(ref) => setTransform({ x: ref.state.positionX, y: ref.state.positionY, s: ref.state.scale })}
+      <div ref={registerRef} data-heatmap={groupKey} className="bg-white">
+        {/* Legend - Outside zoom container but inside snapshot ref */}
+        <div className="mb-6 flex flex-wrap items-center gap-4 sm:gap-8 px-4 sm:px-0">
+          <div className="flex items-center gap-3">
+            <div className="h-6 w-12 border border-neutral-100 shadow-sm" style={{ backgroundColor: COLORS.nahh }} />
+            <span className="text-sm sm:text-base font-black uppercase tracking-widest text-neutral-900">nahh</span>
+          </div>
+          <div className="flex items-center gap-3">
+            <div className="h-6 w-12 border border-neutral-100 shadow-sm" style={{ backgroundColor: COLORS.ok }} />
+            <span className="text-sm sm:text-base font-black uppercase tracking-widest text-neutral-900">ok</span>
+          </div>
+          <div className="flex items-center gap-3">
+            <div className="h-6 w-12 border border-neutral-100 shadow-sm" style={{ backgroundColor: COLORS.hot }} />
+            <span className="text-sm sm:text-base font-black uppercase tracking-widest text-neutral-900">hot</span>
+          </div>
+          <div className="flex items-center gap-3">
+            <div className="h-6 w-12 border border-neutral-100 shadow-sm" style={{ backgroundColor: COLORS.blazing }} />
+            <span className="text-sm sm:text-base font-black uppercase tracking-widest text-neutral-900">blazing</span>
+          </div>
+        </div>
+
+        {/* Standard desktop / Pinch-to-zoom Mobile */}
+        {isMobile ? (
+          <div style={{ height: (heightPx + 80) * scale }} className="relative w-full overflow-hidden shadow-2xl border border-neutral-200">
+            <TransformWrapper 
+              initialScale={scale} 
+              minScale={scale} 
+              maxScale={3} 
+              centerOnInit
+              onTransformed={(ref) => setTransform({ x: ref.state.positionX, y: ref.state.positionY, s: ref.state.scale })}
+            >
+              <TransformComponent wrapperStyle={{ width: '100%', height: '100%' }} contentStyle={{ width: '1000px', backgroundColor: '#fff' }}>
+                <div className="relative bg-white p-0 sm:p-6 w-full h-full">
+                  {renderContent()}
+                </div>
+              </TransformComponent>
+            </TransformWrapper>
+          </div>
+        ) : (
+          <div 
+            className="relative rounded-3xl border border-neutral-200 bg-white p-2 sm:p-6 shadow-2xl overflow-x-auto scrollbar-hide touch-pan-x"
           >
-            <TransformComponent wrapperStyle={{ width: '100%', height: '100%' }} contentStyle={{ width: '1000px', backgroundColor: '#fff' }}>
-              <div ref={registerRef} data-heatmap={groupKey} className="relative bg-white p-0 sm:p-6 w-full h-full">
-                {renderContent()}
-              </div>
-            </TransformComponent>
-          </TransformWrapper>
-        </div>
-      ) : (
-        <div 
-          ref={registerRef}
-          data-heatmap={groupKey}
-          className="relative rounded-3xl border border-neutral-200 bg-white p-2 sm:p-6 shadow-2xl overflow-x-auto scrollbar-hide touch-pan-x"
-        >
-          {renderContent()}
-        </div>
-      )}
+            {renderContent()}
+          </div>
+        )}
+      </div>
 
       {/* Snapshot Lightbox */}
       <AnimatePresence>
