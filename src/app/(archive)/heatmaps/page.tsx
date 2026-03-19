@@ -38,14 +38,6 @@ export default function HeatmapsPage() {
           >
             Heatmaps.
           </motion.h1>
-          <motion.p 
-            initial={{ opacity: 0, x: -20 }}
-            animate={{ opacity: 1, x: 0 }}
-            transition={{ delay: 0.1 }}
-            className="mt-4 max-w-2xl text-xl font-medium text-neutral-500 sm:text-2xl"
-          >
-            A collection of visual set-times from the world&apos;s best electronic music festivals.
-          </motion.p>
         </header>
 
         {loading ? (

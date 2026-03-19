@@ -76,11 +76,7 @@ export default function HeatmapDetailPage() {
             Gallery
           </Link>
           
-          <div className="flex items-center gap-4">
-            <span className="hidden sm:inline-block rounded-full bg-neutral-200 px-4 py-1.5 text-xs font-black uppercase tracking-widest text-neutral-600">
-              {heatmap.rows.length} Artists
-            </span>
-          </div>
+
         </div>
 
         <AnimatePresence mode="wait">

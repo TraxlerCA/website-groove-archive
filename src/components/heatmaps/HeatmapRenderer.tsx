@@ -2,6 +2,7 @@
 
 import React, { useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { TransformWrapper, TransformComponent } from 'react-zoom-pan-pinch';
 import {
   Row,
   COLORS,
@@ -41,6 +42,8 @@ export function HeatmapRenderer({
   const [isSnapshotting, setIsSnapshotting] = React.useState(false);
   const [snapshotUrl, setSnapshotUrl] = React.useState<string | null>(null);
   const [now, setNow] = React.useState<number | null>(null);
+  const [scale, setScale] = React.useState(1);
+  const [isMobile, setIsMobile] = React.useState(false);
 
   React.useEffect(() => {
     const updateNow = () => {
@@ -60,6 +63,26 @@ export function HeatmapRenderer({
     const interval = setInterval(updateNow, 60000);
     return () => clearInterval(interval);
   }, [date]);
+
+  const sectionRef = React.useRef<HTMLElement>(null);
+
+  React.useEffect(() => {
+    const updateScale = () => {
+      if (!sectionRef.current) return;
+      const sw = window.innerWidth;
+      if (sw >= 640) {
+        setIsMobile(false);
+        setScale(1);
+      } else {
+        setIsMobile(true);
+        const availableW = sectionRef.current.clientWidth;
+        setScale(availableW / 1000);
+      }
+    };
+    updateScale();
+    window.addEventListener('resize', updateScale);
+    return () => window.removeEventListener('resize', updateScale);
+  }, []);
 
   const stages = useMemo(() => {
     const map = new Map<string, number>();
@@ -127,57 +150,8 @@ export function HeatmapRenderer({
     }
   };
 
-  return (
-    <section aria-labelledby={`h-${groupKey}`} className="w-full">
-      <div className="mb-4 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-        <div>
-          <h2 id={`h-${groupKey}`} className="text-2xl sm:text-3xl font-bold tracking-tight text-neutral-900">
-            {title}
-          </h2>
-          <div className="flex items-center gap-2">
-            <p className="text-sm font-medium text-neutral-500">{date}</p>
-            <span className="h-1 w-1 rounded-full bg-neutral-300" />
-            <p className="text-sm font-bold text-neutral-400 uppercase tracking-widest">{stages.length} Stages</p>
-          </div>
-        </div>
-        <div className="flex items-center gap-3">
-          <button
-            onClick={handleSnapshot}
-            disabled={isSnapshotting}
-            className="flex items-center gap-2 rounded-full border border-neutral-200 bg-white px-5 py-2.5 text-sm font-bold text-neutral-700 shadow-sm hover:bg-neutral-50 active:scale-95 transition-all disabled:opacity-50"
-          >
-            {isSnapshotting ? (
-              <div className="h-4 w-4 animate-spin rounded-full border-2 border-neutral-300 border-t-neutral-600" />
-            ) : (
-              <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z" />
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M15 13a3 3 0 11-6 0 3 3 0 016 0z" />
-              </svg>
-            )}
-            View Snapshot
-          </button>
-          
-          {showExport && !isSnapshotting && (
-            <motion.button
-              className="hidden sm:flex items-center gap-2 rounded-full bg-neutral-900 px-6 py-2.5 text-sm font-semibold text-white shadow-lg hover:bg-neutral-800 transition-colors"
-              onClick={onExport}
-              whileHover={{ y: -2 }}
-              whileTap={{ scale: 0.98 }}
-            >
-              <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
-              </svg>
-              PNG
-            </motion.button>
-          )}
-        </div>
-      </div>
-
-      <div 
-        ref={registerRef}
-        data-heatmap={groupKey}
-        className="relative rounded-3xl border border-neutral-200 bg-white p-2 sm:p-6 shadow-2xl overflow-x-auto scrollbar-hide touch-pan-x"
-      >
+  const renderContent = () => (
+    <>
         {/* legend */}
         {!isSnapshotting && (
           <div className="mb-8 flex flex-wrap items-center gap-4 sm:gap-8 text-[10px] sm:text-xs font-black uppercase tracking-[0.2em] text-neutral-400">
@@ -337,7 +311,54 @@ export function HeatmapRenderer({
             </div>
           </div>
         </div>
+    </>
+  );
+
+  return (
+    <section ref={sectionRef} aria-labelledby={`h-${groupKey}`} className="w-full">
+      <div className="mb-4 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <div>
+          <h2 id={`h-${groupKey}`} className="text-2xl sm:text-3xl font-bold tracking-tight text-neutral-900">
+            {title}
+          </h2>
+        </div>
+        <div className="flex items-center gap-3">
+          {showExport && !isSnapshotting && (
+            <motion.button
+              className="hidden sm:flex items-center gap-2 rounded-full bg-neutral-900 px-6 py-2.5 text-sm font-semibold text-white shadow-lg hover:bg-neutral-800 transition-colors"
+              onClick={onExport}
+              whileHover={{ y: -2 }}
+              whileTap={{ scale: 0.98 }}
+            >
+              <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+              </svg>
+              PNG
+            </motion.button>
+          )}
+        </div>
       </div>
+
+      {/* Standard desktop / Pinch-to-zoom Mobile */}
+      {isMobile ? (
+        <div style={{ height: (heightPx + 150) * scale }} className="relative w-full rounded-3xl overflow-hidden shadow-2xl border border-neutral-200">
+          <TransformWrapper initialScale={scale} minScale={scale} maxScale={3} centerOnInit>
+            <TransformComponent wrapperStyle={{ width: '100%', height: '100%' }} contentStyle={{ width: '1000px', backgroundColor: '#fff' }}>
+              <div ref={registerRef} data-heatmap={groupKey} className="relative bg-white p-2 sm:p-6 w-full h-full">
+                {renderContent()}
+              </div>
+            </TransformComponent>
+          </TransformWrapper>
+        </div>
+      ) : (
+        <div 
+          ref={registerRef}
+          data-heatmap={groupKey}
+          className="relative rounded-3xl border border-neutral-200 bg-white p-2 sm:p-6 shadow-2xl overflow-x-auto scrollbar-hide touch-pan-x"
+        >
+          {renderContent()}
+        </div>
+      )}
 
       {/* Snapshot Lightbox */}
       <AnimatePresence>

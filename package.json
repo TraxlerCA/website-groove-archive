@@ -23,7 +23,8 @@
     "next": "16.1.6",
     "papaparse": "^5.5.3",
     "react": "19.2.4",
-    "react-dom": "19.2.4"
+    "react-dom": "19.2.4",
+    "react-zoom-pan-pinch": "^3.7.0"
   },
   "devDependencies": {
     "@playwright/test": "^1.58.2",
