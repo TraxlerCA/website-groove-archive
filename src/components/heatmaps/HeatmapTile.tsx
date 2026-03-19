@@ -19,7 +19,7 @@ export function HeatmapTile({ title, date, isCustom = false }: HeatmapTileProps)
     <motion.div
       whileHover={{ y: -8, scale: 1.02 }}
       whileTap={{ scale: 0.98 }}
-      className="group relative h-64 w-full overflow-hidden rounded-3xl shadow-lg transition-all hover:shadow-2xl"
+      className="group relative h-64 w-full overflow-hidden sm:rounded-3xl rounded-none shadow-lg transition-all hover:shadow-2xl"
     >
       <Link href={href} className="flex h-full w-full flex-col">
         <div 
