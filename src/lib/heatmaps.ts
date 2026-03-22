@@ -24,7 +24,8 @@ export const COLORS = {
 };
 
 // rails and ticks
-export const TIME_W = 96;          // width of the left time rail
+export const TIME_W = 100;         // width of the left time rail
+export const HEADER_H = 60;         // height of the top stage rail
 export const TICK_W = 12;          // horizontal tick length inside time rail
 export const LABEL_GAP = 10;       // space between tick end and time label
 
