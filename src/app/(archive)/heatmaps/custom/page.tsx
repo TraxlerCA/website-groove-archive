@@ -3,21 +3,13 @@
 import React, { useState, useRef, useCallback } from 'react';
 import Link from 'next/link';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Row, loadPapa, norm, normalizeUtf8, loadHtmlToImage, slugify, COLORS } from '@/lib/heatmaps';
+import { Row, loadPapa, norm, loadHtmlToImage } from '@/lib/heatmaps';
 import { HeatmapRenderer } from '@/components/heatmaps/HeatmapRenderer';
 
-const TEMPLATE_FIRST5: Row[] = [
-  { festival: 'Example Festival', date: '2025-08-02', stage: 'Main Stage', stage_order: 1, artist: 'Top Artist', start: '21:00', end: '23:00', rating: 'blazing' },
-  { festival: 'Example Festival', date: '2025-08-02', stage: 'Main Stage', stage_order: 1, artist: 'Rising Star', start: '19:00', end: '21:00', rating: 'hot' },
-  { festival: 'Example Festival', date: '2025-08-02', stage: 'Second Stage', stage_order: 2, artist: 'Local DJ', start: '18:00', end: '20:00', rating: 'ok' },
-  { festival: 'Example Festival', date: '2025-08-02', stage: 'Second Stage', stage_order: 2, artist: 'Discovery', start: '20:00', end: '22:00', rating: 'nahh' },
-  { festival: 'Example Festival', date: '2025-08-02', stage: 'Main Stage', stage_order: 1, artist: 'Opener', start: '16:00', end: '18:00', rating: 'ok' },
-];
 
 export default function CustomHeatmapPage() {
   const [rows, setRows] = useState<Row[]>([]);
   const [errors, setErrors] = useState<string[]>([]);
-  const [exportError, setExportError] = useState<string | null>(null);
   const heatmapRef = useRef<HTMLDivElement | null>(null);
 
   const normalizeTime = (t: string) => {
@@ -32,7 +24,7 @@ export default function CustomHeatmapPage() {
   const validateAndParse = useCallback(async (text: string) => {
     const errs: string[] = [];
     const Papa = await loadPapa();
-    const res = await new Promise<any>((resolve) => {
+    const res = await new Promise<{ meta: { fields?: string[] }; data: Record<string, string>[] }>((resolve) => {
       Papa.parse(text, { header: true, skipEmptyLines: true, complete: resolve });
     });
 
@@ -41,7 +33,7 @@ export default function CustomHeatmapPage() {
     const missing = required.filter(r => !fields.includes(r));
     if (missing.length) errs.push(`Missing columns: ${missing.join(', ')}`);
 
-    const rawRows = (res.data || []) as Array<Record<string, any>>;
+    const rawRows = (res.data || []) as Array<Record<string, string>>;
     if (rawRows.length > 300) errs.push('Too many rows. Maximum is 300.');
 
     const cleanRows: Row[] = [];
@@ -104,7 +96,6 @@ export default function CustomHeatmapPage() {
 
   async function handleExport() {
     if (!rows.length || !heatmapRef.current) return;
-    setExportError(null);
     try {
       const htmlToImage = await loadHtmlToImage();
       const dataUrl = await htmlToImage.toPng(heatmapRef.current, {
@@ -114,7 +105,7 @@ export default function CustomHeatmapPage() {
       a.href = dataUrl; 
       a.download = `custom-heatmap.png`; 
       a.click();
-    } catch (e: unknown) { setExportError('Export failed'); }
+    } catch { /* export failed silently */ }
   }
 
   return (

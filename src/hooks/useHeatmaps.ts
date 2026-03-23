@@ -18,8 +18,8 @@ export function useHeatmaps(csvUrl?: string | null) {
         stage: norm(r.stage),
         stage_order: Number(r.stage_order ?? 9999),
         artist: norm(r.artist),
-        start: norm(r.start || (r as any).start_time), // handle both field names for safety
-        end: norm(r.end || (r as any).end_time),
+        start: norm(r.start || (r as Row & Record<string, string>).start_time), // handle both field names for safety
+        end: norm(r.end || (r as Row & Record<string, string>).end_time),
         rating: norm(r.rating || ''),
       }))
       .filter(r => r.festival && r.date && r.stage && r.artist && r.start && r.end);

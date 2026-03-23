@@ -2,7 +2,7 @@
 
 import React, { useRef, useState } from 'react';
 import Link from 'next/link';
-import { useParams, useRouter } from 'next/navigation';
+import { useParams } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useHeatmaps } from '@/hooks/useHeatmaps';
 import { HeatmapRenderer } from '@/components/heatmaps/HeatmapRenderer';
@@ -10,7 +10,6 @@ import { loadHtmlToImage, slugify } from '@/lib/heatmaps';
 
 export default function HeatmapDetailPage() {
   const params = useParams();
-  const router = useRouter();
   const slug = params.slug as string;
   const { getBySlug, loading, error } = useHeatmaps();
   const heatmap = getBySlug(slug);

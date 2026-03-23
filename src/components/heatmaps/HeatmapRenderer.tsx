@@ -5,10 +5,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import {
   Row,
   COLORS,
-  TIME_W,
-  HEADER_H,
   TICK_W,
-  LABEL_GAP,
   CARD_BORDER,
   SLOT_GAP_PX,
   toMin,
