@@ -185,7 +185,7 @@ export function HeatmapRenderer({
         {hours.map(h => (
           <div
             key={`hline-${h}`}
-            className="absolute left-0 right-0 h-px bg-neutral-50/50"
+            className="absolute left-0 right-0 border-t border-dashed border-neutral-400/40"
             style={{ top: (h - minStart) * pxPerMin }}
           />
         ))}
