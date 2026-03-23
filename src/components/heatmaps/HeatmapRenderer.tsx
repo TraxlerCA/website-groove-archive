@@ -2,7 +2,6 @@
 
 import React, { useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { TransformWrapper, TransformComponent } from 'react-zoom-pan-pinch';
 import {
   Row,
   COLORS,
@@ -45,7 +44,6 @@ export function HeatmapRenderer({
   const [now, setNow] = React.useState<number | null>(null);
   const [scale, setScale] = React.useState(1);
   const [isMobile, setIsMobile] = React.useState(false);
-  const [transform, setTransform] = React.useState({ x: 0, y: 0, s: 1 });
 
   React.useEffect(() => {
     const updateNow = () => {
@@ -153,7 +151,7 @@ export function HeatmapRenderer({
       {stages.map((s, i) => (
         <div
           key={s}
-          className={`flex items-center justify-center text-center text-[22px] sm:text-sm font-black uppercase tracking-tighter text-neutral-900 border-r border-neutral-100 ${i === stages.length - 1 ? 'border-r-0' : ''} px-2`}
+          className={`flex items-center justify-center text-center text-[11px] sm:text-sm font-black uppercase tracking-tighter text-black border-r border-neutral-100 ${i === stages.length - 1 ? 'border-r-0' : ''} px-1 sm:px-2`}
         >
           {s}
         </div>
@@ -170,8 +168,8 @@ export function HeatmapRenderer({
             style={{ top: (h - minStart) * pxPerMin, width: TICK_W }}
           />
           <div
-            className="absolute -translate-y-3 text-[22px] sm:text-sm font-black tabular-nums text-neutral-900"
-            style={{ top: (h - minStart) * pxPerMin, left: 8 }}
+            className="absolute -translate-y-2.5 text-[10px] sm:text-sm font-black tabular-nums text-black"
+            style={{ top: (h - minStart) * pxPerMin, left: isMobile ? 4 : 8 }}
           >
             {fmtHour(h)}
           </div>
@@ -197,8 +195,8 @@ export function HeatmapRenderer({
             className="absolute left-0 right-0 z-40 flex items-center"
             style={{ top: (now - minStart) * pxPerMin }}
           >
-            <div className="h-0.5 w-full bg-red-500 shadow-[0_0_12px_rgba(239,68,68,0.6)]" />
-            <div className="absolute -left-1.5 h-3.5 w-3.5 rounded-full border-2 border-white bg-red-500 shadow-lg ring-4 ring-red-500/20" />
+            <div className="h-px w-full bg-red-600 shadow-[0_0_8px_rgba(220,38,38,0.4)]" />
+            <div className="absolute -left-1 h-2.5 w-2.5 rounded-full border border-white bg-red-600 shadow-sm" />
           </div>
         )}
       </div>
@@ -271,14 +269,9 @@ export function HeatmapRenderer({
                         className={`${CARD_BORDER} absolute inset-y-0 flex flex-col items-center justify-center text-center px-1 transition-all z-10 overflow-hidden`}
                         style={{ left, width, height: '100%', backgroundColor: bg, color: txt }}
                       >
-                        <div className="text-[22px] sm:text-[13px] font-black leading-tight truncate w-full tracking-tighter">
+                        <div className="text-[11px] sm:text-[13px] font-black leading-[1.1] truncate w-full tracking-tighter">
                           {r.artist}
                         </div>
-                        {!isSnapshotting && (
-                          <div className="mt-0.5 opacity-60 text-[8px] font-bold uppercase">
-                            {r.start} — {r.end}
-                          </div>
-                        )}
                       </div>
                     </div>
                   </div>
@@ -318,7 +311,7 @@ export function HeatmapRenderer({
 
       <div className="bg-white">
         {/* Legend - Static Header */}
-        <div className="mb-6 flex flex-wrap items-center gap-4 sm:gap-8 px-4 sm:px-0">
+        <div className="mb-10 flex flex-wrap items-center gap-6 sm:gap-10 px-4 sm:px-0">
           <div className="flex items-center gap-3">
             <div className="h-5 w-10 border border-neutral-100" style={{ backgroundColor: COLORS.nahh }} />
             <span className="text-xs sm:text-sm font-black uppercase tracking-widest text-neutral-900">nahh</span>
@@ -337,79 +330,40 @@ export function HeatmapRenderer({
           </div>
         </div>
 
-        {/* Sync-Scroll Heatmap Container */}
-        {isMobile ? (
-          <div className="relative flex flex-col border border-neutral-200 overflow-hidden shadow-2xl">
-            {/* Top Axis */}
-            <div className="flex bg-white h-[60px] shrink-0 border-b border-neutral-100 overflow-hidden">
-              <div className="w-[100px] shrink-0 border-r border-neutral-100 bg-neutral-50/50" />
-              <div className="flex-1 relative overflow-hidden h-full">
-                <div 
-                  className="absolute inset-0"
-                  style={{ 
-                    width: `${1000 * transform.s}px`,
-                    transform: `translateX(${transform.x}px)`,
-                  }}
-                >
-                  {renderHeadersContent()}
-                </div>
+        {/* Unified Sticky Heatmap Container */}
+        <div 
+          className="relative rounded-xl sm:rounded-3xl border border-neutral-200 bg-white shadow-2xl overflow-auto scrollbar-hide touch-pan-x touch-pan-y"
+          style={{ maxHeight: '85vh' }}
+        >
+          <div className="relative" style={{ minWidth: Math.max(600, stages.length * (isMobile ? 120 : 180)) }}>
+            {/* Top Header - Stages */}
+            <div className="sticky top-0 z-30 flex items-stretch bg-white/95 backdrop-blur-md border-b border-neutral-100 h-[50px] sm:h-[60px]">
+              {/* Top-Left intersection spacer */}
+              <div 
+                className="sticky left-0 z-40 bg-white border-r border-neutral-100 shrink-0" 
+                style={{ width: isMobile ? 45 : 80 }} 
+              />
+              <div className="flex-1">
+                {renderHeadersContent()}
               </div>
             </div>
 
-            <div className="flex flex-1 min-h-0">
-              {/* Side Axis */}
-              <div className="w-[100px] shrink-0 border-r border-neutral-100 bg-neutral-50/20 overflow-hidden">
-                <div 
-                  className="w-full relative"
-                  style={{ 
-                    height: `${heightPx * transform.s}px`,
-                    transform: `translateY(${transform.y}px)`,
-                  }}
-                >
-                  {renderTimeRailContent()}
-                </div>
+            <div className="relative flex items-stretch">
+              {/* Left Column - Time */}
+              <div 
+                className="sticky left-0 z-20 bg-white/95 backdrop-blur-sm border-r border-neutral-100 shrink-0" 
+                style={{ width: isMobile ? 45 : 80, height: heightPx }}
+              >
+                {renderTimeRailContent()}
               </div>
-
-              {/* Viewport (The Data) */}
-              <div className="flex-1 relative bg-white overflow-hidden" style={{ height: (heightPx + 50) * scale }}>
-                <TransformWrapper 
-                  initialScale={scale} 
-                  minScale={scale} 
-                  maxScale={3} 
-                  centerOnInit={false}
-                  initialPositionX={0}
-                  initialPositionY={0}
-                  onTransformed={(ref) => setTransform({ x: ref.state.positionX, y: ref.state.positionY, s: ref.state.scale })}
-                >
-                  <TransformComponent wrapperStyle={{ width: '100%', height: '100%' }} contentStyle={{ width: '1000px', backgroundColor: '#fff' }}>
-                    <div className="relative bg-white p-0 w-full h-full">
-                      {renderSetsContent()}
-                    </div>
-                  </TransformComponent>
-                </TransformWrapper>
+              
+              {/* Main Grid Content */}
+              <div className="flex-1">
+                {renderSetsContent()}
               </div>
             </div>
           </div>
-        ) : (
-          <div 
-            className="relative rounded-3xl border border-neutral-200 bg-white p-2 sm:p-6 shadow-2xl overflow-x-auto scrollbar-hide touch-pan-x"
-          >
-             <div className="min-w-[1000px] lg:min-w-full">
-               <div className="sticky top-0 z-30 flex items-stretch bg-white/90 backdrop-blur-md border-b border-neutral-100">
-                 <div className="sticky left-0 z-40 bg-white/90" style={{ width: TIME_W }} />
-                 {renderHeadersContent()}
-               </div>
-               <div className="relative flex items-stretch mt-0">
-                 <div className="sticky left-0 z-20 bg-white/80 backdrop-blur-sm" style={{ width: TIME_W, height: heightPx }}>
-                    {renderTimeRailContent()}
-                 </div>
-                 <div className="flex-1">
-                    {renderSetsContent()}
-                 </div>
-               </div>
-             </div>
-          </div>
-        )}
+        </div>
       </div>
 
       {/* Snapshot Lightbox */}
