@@ -335,7 +335,7 @@ export function HeatmapRenderer({
           className="relative rounded-xl sm:rounded-3xl border border-neutral-200 bg-white shadow-2xl overflow-auto scrollbar-hide touch-pan-x touch-pan-y"
           style={{ maxHeight: '85vh' }}
         >
-          <div className="relative" style={{ minWidth: Math.max(600, stages.length * (isMobile ? 120 : 180)) }}>
+          <div className="relative" style={{ minWidth: Math.max(800, stages.length * (isMobile ? 170 : 250)) }}>
             {/* Top Header - Stages */}
             <div className="sticky top-0 z-30 flex items-stretch bg-white/95 backdrop-blur-md border-b border-neutral-100 h-[50px] sm:h-[60px]">
               {/* Top-Left intersection spacer */}
