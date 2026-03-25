@@ -19,6 +19,7 @@ interface HeatmapRendererProps {
   date: string;
   rows: Row[];
   pxPerMin: number;
+  registerRef?: (el: HTMLDivElement | null) => void;
   onExport?: () => void;
   showExport?: boolean;
 }
@@ -29,6 +30,7 @@ export function HeatmapRenderer({
   date,
   rows,
   pxPerMin,
+  registerRef,
   onExport,
   showExport = true,
 }: HeatmapRendererProps) {
@@ -253,7 +255,14 @@ export function HeatmapRenderer({
   );
 
   return (
-    <section ref={sectionRef} aria-labelledby={`h-${groupKey}`} className="w-full">
+    <section 
+      ref={(node) => {
+        (sectionRef as any).current = node;
+        if (registerRef) registerRef(node as any);
+      }}
+      aria-labelledby={`h-${groupKey}`} 
+      className="w-full"
+    >
       <div className="mb-4 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
           <h2 id={`h-${groupKey}`} className="text-2xl sm:text-3xl font-bold tracking-tight text-neutral-900">
