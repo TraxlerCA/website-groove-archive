@@ -17,7 +17,7 @@ test('primary routes render their key UI', async ({ page }) => {
   await expect(page.locator('main')).toBeVisible();
 
   await page.goto('/heatmaps');
-  await expect(page.getByRole('heading', { name: 'Create your own heatmap' })).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Heatmaps.' })).toBeVisible();
 
   await page.goto('/suggest');
   await expect(page.getByRole('heading', { name: 'Suggest a set' })).toBeVisible();
