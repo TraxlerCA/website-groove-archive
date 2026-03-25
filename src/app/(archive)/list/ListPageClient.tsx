@@ -22,12 +22,15 @@ export default function ListPageClient({ rows, genres }: Props) {
   const { play } = usePlayerActions();
   const searchParams = useSearchParams();
 
-  const [q, setQ] = useState(() => searchParams.get("q") ?? "");
+  const searchQ = searchParams.get("q") ?? "";
+  const [q, setQ] = useState(searchQ);
+  const [prevSearchQ, setPrevSearchQ] = useState(searchQ);
   const [genre, setGenre] = useState("any");
-  useEffect(() => {
-    const next = searchParams.get("q") ?? "";
-    setQ(prev => (prev === next ? prev : next));
-  }, [searchParams]);
+
+  if (searchQ !== prevSearchQ) {
+    setQ(searchQ);
+    setPrevSearchQ(searchQ);
+  }
 
   const genreOptions = useMemo(() => {
     const s = new Set<string>();

@@ -18,9 +18,9 @@ export default function CommandBar({ rows, onNavigate }: { rows: Row[]; onNaviga
       if(!typing) setOpen(v=>!v);
       return;
     }
-    if(e.key==="Escape") setOpen(false);
+    if(e.key==="Escape") { setOpen(false); setQ(""); setSel(0); }
   }; window.addEventListener("keydown",onKey); return()=>window.removeEventListener("keydown",onKey);},[]);
-  useEffect(()=>{if(open) setTimeout(()=>inputRef.current?.focus(),0); else{setQ("");setSel(0);}},[open]);
+  useEffect(()=>{ if(open) setTimeout(()=>inputRef.current?.focus(),0); },[open]);
   const filtered=useMemo(()=>{const term=q.toLowerCase().trim(); const base=term?rows.filter(r=>r.set.toLowerCase().includes(term)||(r.classification||"").toLowerCase().includes(term)):rows; return base.slice(0,8);},[q,rows]);
   const pageActions=useMemo(()=>[
     {label:"The list",action:()=>onNavigate("list")},
@@ -43,7 +43,7 @@ export default function CommandBar({ rows, onNavigate }: { rows: Row[]; onNaviga
       }
       if(!hasPlayable) return;
       play(row);
-      setOpen(false);
+      setOpen(false); setQ(""); setSel(0);
     }
   };
   return (
@@ -55,7 +55,7 @@ export default function CommandBar({ rows, onNavigate }: { rows: Row[]; onNaviga
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
-          onClick={() => setOpen(false)}
+          onClick={() => { setOpen(false); setQ(""); setSel(0); }}
         >
           <motion.div
             className="mx-auto mt-24 w-[92vw] max-w-2xl rounded-2xl border border-white/10 bg-black/75 backdrop-blur-xl overflow-hidden"
@@ -82,7 +82,7 @@ export default function CommandBar({ rows, onNavigate }: { rows: Row[]; onNaviga
                 {pageActions.map(it => (
                   <button
                     key={it.label}
-                    onClick={() => { it.action(); setOpen(false); }}
+                    onClick={() => { it.action(); setOpen(false); setQ(""); setSel(0); }}
                     className="w-full text-left px-4 py-2 hover:bg-white/10 hover-lift"
                   >
                     {it.label}

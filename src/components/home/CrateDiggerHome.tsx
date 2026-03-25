@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useMemo, useState } from 'react';
+import { useMemo, useState } from 'react';
 import CrateStack from '@/components/home/CrateStack';
 import { getSoundcloudEligibleRows, normalizeLabel } from '@/components/home/homeMap.logic';
 import { usePlayerActions } from '@/context/PlayerProvider';
@@ -29,15 +29,12 @@ export default function CrateDiggerHome() {
     return rows.filter(row => normalizeLabel(row.classification) === target);
   }, [genreFilter, rows]);
 
-  useEffect(() => {
-    if (filteredRows.length === 0) {
-      setActiveIndex(0);
-      return;
-    }
-    if (activeIndex >= filteredRows.length) {
-      setActiveIndex(0);
-    }
-  }, [activeIndex, filteredRows.length]);
+  const [prevFilteredCount, setPrevFilteredCount] = useState(filteredRows.length);
+
+  if (filteredRows.length !== prevFilteredCount) {
+    setActiveIndex(0);
+    setPrevFilteredCount(filteredRows.length);
+  }
 
   return (
     <main className="container mx-auto max-w-6xl px-6 pt-7 pb-12 sm:pt-12">

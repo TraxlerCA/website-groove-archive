@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useMemo } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion } from 'framer-motion';
 import {
   Row,
   COLORS,
@@ -11,8 +11,6 @@ import {
   toMin,
   clamp,
   bucketFromRating,
-  loadHtmlToImage,
-  slugify,
 } from '@/lib/heatmaps';
 
 interface HeatmapRendererProps {
@@ -21,7 +19,6 @@ interface HeatmapRendererProps {
   date: string;
   rows: Row[];
   pxPerMin: number;
-  registerRef?: (el: HTMLDivElement | null) => void;
   onExport?: () => void;
   showExport?: boolean;
 }
@@ -32,14 +29,11 @@ export function HeatmapRenderer({
   date,
   rows,
   pxPerMin,
-  registerRef,
   onExport,
   showExport = true,
 }: HeatmapRendererProps) {
-  const [isSnapshotting, setIsSnapshotting] = React.useState(false);
-  const [snapshotUrl, setSnapshotUrl] = React.useState<string | null>(null);
+
   const [now, setNow] = React.useState<number | null>(null);
-  const [scale, setScale] = React.useState(1);
   const [isMobile, setIsMobile] = React.useState(false);
 
   React.useEffect(() => {
@@ -69,11 +63,8 @@ export function HeatmapRenderer({
       const sw = window.innerWidth;
       if (sw >= 640) {
         setIsMobile(false);
-        setScale(1);
       } else {
         setIsMobile(true);
-        const availableW = sectionRef.current.clientWidth;
-        setScale(availableW / 1000);
       }
     };
     updateScale();
@@ -122,26 +113,6 @@ export function HeatmapRenderer({
     return Array.from({ length: Math.max(0, e - s + 1) }, (_, i) => (s + i) * 60);
   }, [minStart, maxEnd]);
 
-  const handleSnapshot = async () => {
-    if (!registerRef) return;
-    setIsSnapshotting(true);
-    try {
-      const htmlToImage = await loadHtmlToImage();
-      const el = sectionRef.current;
-      if (!el) return;
-      
-      const dataUrl = await htmlToImage.toPng(el, {
-        pixelRatio: 2,
-        backgroundColor: '#ffffff',
-        cacheBust: true,
-      });
-      setSnapshotUrl(dataUrl);
-    } catch (e) {
-      console.error('Snapshot failed:', e);
-    } finally {
-      setIsSnapshotting(false);
-    }
-  };
 
   const renderHeadersContent = () => (
     <div className="grid h-full" style={{ gridTemplateColumns: `repeat(${stages.length}, 1fr)` }}>
@@ -290,7 +261,7 @@ export function HeatmapRenderer({
           </h2>
         </div>
         <div className="flex items-center gap-3">
-          {showExport && !isSnapshotting && (
+          {showExport && (
             <motion.button
               className="hidden sm:flex items-center gap-2 rounded-full bg-neutral-900 px-6 py-2.5 text-sm font-semibold text-white shadow-lg hover:bg-neutral-800 transition-colors"
               onClick={onExport}
@@ -363,57 +334,7 @@ export function HeatmapRenderer({
         </div>
       </div>
 
-      {/* Snapshot Lightbox */}
-      <AnimatePresence>
-        {snapshotUrl && (
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            className="fixed inset-0 z-[100] flex flex-col bg-black/95 p-4 sm:p-10 backdrop-blur-xl"
-          >
-            <div className="flex items-center justify-between mb-6">
-              <div className="text-white">
-                <h3 className="text-xl font-black tracking-tight">{title}</h3>
-                <p className="text-sm font-medium text-neutral-400">Pinch or double-tap to zoom</p>
-              </div>
-              <button 
-                onClick={() => setSnapshotUrl(null)}
-                className="h-12 w-12 flex items-center justify-center rounded-full bg-white/10 text-white hover:bg-white/20 transition-colors"
-              >
-                <svg className="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M6 18L18 6M6 6l12 12" />
-                </svg>
-              </button>
-            </div>
-            
-            <div className="relative flex-1 overflow-auto rounded-2xl bg-white/5 cursor-zoom-in">
-              <motion.img 
-                src={snapshotUrl} 
-                alt="Heatmap snapshot"
-                initial={{ scale: 0.9, opacity: 0 }}
-                animate={{ scale: 1, opacity: 1 }}
-                className="min-h-full min-w-full object-contain"
-                drag
-                dragConstraints={{ left: -2000, right: 2000, top: -2000, bottom: 2000 }}
-              />
-            </div>
 
-            <div className="mt-6 flex justify-center gap-4">
-              <a 
-                href={snapshotUrl} 
-                download={`${slugify(title)}-poster.png`}
-                className="flex items-center gap-2 rounded-full bg-white px-8 py-4 text-sm font-black text-black shadow-2xl active:scale-95 transition-transform"
-              >
-                <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
-                </svg>
-                Save to Photos
-              </a>
-            </div>
-          </motion.div>
-        )}
-      </AnimatePresence>
     </section>
   );
 }

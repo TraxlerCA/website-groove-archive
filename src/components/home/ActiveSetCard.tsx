@@ -131,16 +131,17 @@ export default function ActiveSetCard({
 function SCArtwork({ url, compact = false }: { url: string; compact?: boolean }) {
   const [art, setArt] = useState<string | null>(null);
   const [failed, setFailed] = useState(false);
+  const [prevUrl, setPrevUrl] = useState(url);
+
+  if (url !== prevUrl) {
+    setArt(null);
+    setFailed(false);
+    setPrevUrl(url);
+  }
 
   useEffect(() => {
     let active = true;
-    setArt(null);
-    setFailed(false);
-    if (!url) {
-      return () => {
-        active = false;
-      };
-    }
+    if (!url) return;
 
     (async () => {
       try {

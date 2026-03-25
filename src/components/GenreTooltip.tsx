@@ -61,7 +61,7 @@ export function GenreTooltip({
       <button
         type="button"
         className="inline-flex items-center bg-transparent p-0 text-inherit focus-visible:outline-none border-0 cursor-help"
-        ref={refs.setReference}
+        ref={(node) => { refs.setReference(node); }}
         aria-describedby={showTip ? id : undefined}
         {...getReferenceProps()}
       >
@@ -73,7 +73,7 @@ export function GenreTooltip({
             {open && x != null && y != null && (
               <motion.div
                 key="tooltip"
-                ref={refs.setFloating}
+                ref={(node) => { refs.setFloating(node); }}
                 style={floatingStyles}
                 {...getFloatingProps()}
                 initial={{ opacity: 0, y: 4 }}

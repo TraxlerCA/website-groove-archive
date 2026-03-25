@@ -1,4 +1,4 @@
-import { useMemo, useState, useEffect, useRef } from 'react';
+import { useMemo, useState, useEffect } from 'react';
 import { motion, AnimatePresence, useAnimationFrame } from 'framer-motion';
 import { usePlayerActions } from '@/context/PlayerProvider';
 import { useSiteData } from '@/context/SiteDataContext';
@@ -7,7 +7,6 @@ import { MAP_ZONES } from '@/components/home/mapZones';
 import type { Row } from '@/lib/types';
 import { stableHash, trackEvent } from '@/lib/analytics';
 import { sanitizeMediaUrl } from '@/lib/sanitize';
-import Link from 'next/link';
 
 type Ping = {
   id: string;
@@ -32,7 +31,7 @@ export default function RadarHome() {
   const [lastScannedMap, setLastScannedMap] = useState<Record<string, number>>({});
 
   useEffect(() => {
-    setMounted(true);
+    setTimeout(() => setMounted(true), 0);
   }, []);
 
   // Update sweep angle smoothly
@@ -59,10 +58,10 @@ export default function RadarHome() {
       const color = zone?.accent || '#ADB5BD';
 
       // 2. RADIAL MAPPING (Energy -> Radius)
-      // Energy is usually 1-5. Map 1 (chill) to center, 5 (rave) to rim.
       const energy = parseInt(row.energie || '3') || 3;
       // Radius between 15% and 90% (to stay within radar)
-      const r = 15 + ((energy - 1) / 4) * 70 + (Math.random() * 5); 
+      const seed = parseInt(stableHash(row.set).slice(0, 4), 16) / 0xffff;
+      const r = 15 + ((energy - 1) / 4) * 70 + (seed * 5); 
 
       // 3. ANGULAR MAPPING (Recency -> Angle)
       // We'll use the hash of the set name but attempt to cluster by "era" if date found
@@ -95,7 +94,7 @@ export default function RadarHome() {
   useEffect(() => {
     if (!mounted) return;
     
-    const newScanned = { ...lastScannedMap };
+    const updates: Record<string, number> = {};
     let changed = false;
 
     pings.forEach(ping => {
@@ -105,12 +104,16 @@ export default function RadarHome() {
       const wraparoundDiff = 360 - diff;
       
       if (diff < 3 || wraparoundDiff < 3) {
-        newScanned[ping.id] = Date.now();
+        updates[ping.id] = Date.now();
         changed = true;
       }
     });
 
-    if (changed) setLastScannedMap(newScanned);
+    if (changed) {
+      setTimeout(() => {
+        setLastScannedMap(prev => ({ ...prev, ...updates }));
+      }, 0);
+    }
   }, [sweepAngle, pings, mounted]);
 
   const handlePlay = (row: Row) => {
@@ -177,70 +180,16 @@ export default function RadarHome() {
         </div>
 
         {/* Pings */}
-        {mounted && pings.map((ping) => {
-          const lastScanned = lastScannedMap[ping.id] || 0;
-          const timeSinceScan = Date.now() - lastScanned;
-          const isGlowing = timeSinceScan < 2000;
-          const glowIntensity = Math.max(0, 1 - (timeSinceScan / 2000));
-
-          return (
-            <div
-              key={ping.id}
-              className="absolute z-10 -translate-x-1/2 -translate-y-1/2"
-              style={{ left: `${ping.x}%`, top: `${ping.y}%` }}
-            >
-              <button
-                type="button"
-                className="group relative flex h-10 w-10 items-center justify-center focus-visible:outline-none"
-                onClick={() => setActivePing(ping === activePing ? null : ping)}
-                onMouseEnter={() => setHoveredPing(ping)}
-                onMouseLeave={() => setHoveredPing(null)}
-              >
-                {/* Detection Ring */}
-                {ping.isStarred && (
-                  <motion.span
-                    animate={{ rotate: 360 }}
-                    transition={{ repeat: Infinity, duration: 8, ease: 'linear' }}
-                    className="absolute h-8 w-8 rounded-full border border-dashed border-white/10"
-                  />
-                )}
-                
-                {/* The Core Signal */}
-                <span 
-                  className="absolute h-2 w-2 rounded-full transition-all duration-300 group-hover:scale-150" 
-                  style={{ 
-                    backgroundColor: ping.color,
-                    boxShadow: isGlowing ? `0 0 ${10 + glowIntensity * 15}px ${ping.color}` : 'none',
-                    opacity: isGlowing ? 0.9 : 0.4
-                  }}
-                />
-                
-                {/* Binary Satellite */}
-                {ping.isStarred && (
-                  <motion.span 
-                    animate={{ rotate: 360 }}
-                    transition={{ repeat: Infinity, duration: 4, ease: 'linear' }}
-                    className="absolute h-full w-full"
-                  >
-                    <span className="absolute right-0 top-1/2 h-1 w-1 -translate-y-1/2 rounded-full bg-white opacity-40 shadow-[0_0_8px_white]" />
-                  </motion.span>
-                )}
-
-                {/* Sweep Flash Ripple */}
-                <AnimatePresence>
-                  {isGlowing && (
-                    <motion.span 
-                      initial={{ scale: 0.5, opacity: 0.5 }}
-                      animate={{ scale: 2.5, opacity: 0 }}
-                      className="absolute h-full w-full rounded-full"
-                      style={{ backgroundColor: ping.color }}
-                    />
-                  )}
-                </AnimatePresence>
-              </button>
-            </div>
-          );
-        })}
+        {mounted && pings.map((ping) => (
+          <RadarPing
+            key={ping.id}
+            ping={ping}
+            lastScanned={lastScannedMap[ping.id] || 0}
+            activePing={activePing}
+            setActivePing={setActivePing}
+            setHoveredPing={setHoveredPing}
+          />
+        ))}
       </div>
 
       {/* Branding */}
@@ -389,4 +338,85 @@ function SCArtwork({ url }: { url: string }) {
   );
 }
 
+function RadarPing({ 
+  ping, 
+  lastScanned, 
+  activePing, 
+  setActivePing, 
+  setHoveredPing 
+}: { 
+  ping: Ping; 
+  lastScanned: number; 
+  activePing: Ping | null; 
+  setActivePing: (p: Ping | null) => void;
+  setHoveredPing: (p: Ping | null) => void;
+}) {
+  const [glowIntensity, setGlowIntensity] = useState(0);
+
+  useEffect(() => {
+    if (!lastScanned) return;
+    const update = () => {
+      const timeSince = Date.now() - lastScanned;
+      const intensity = Math.max(0, 1 - (timeSince / 2000));
+      setGlowIntensity(intensity);
+      if (intensity > 0) requestAnimationFrame(update);
+    };
+    update();
+  }, [lastScanned]);
+
+  const isGlowing = glowIntensity > 0;
+
+  return (
+    <div
+      className="absolute z-10 -translate-x-1/2 -translate-y-1/2"
+      style={{ left: `${ping.x}%`, top: `${ping.y}%` }}
+    >
+      <button
+        type="button"
+        className="group relative flex h-10 w-10 items-center justify-center focus-visible:outline-none"
+        onClick={() => setActivePing(ping === activePing ? null : ping)}
+        onMouseEnter={() => setHoveredPing(ping)}
+        onMouseLeave={() => setHoveredPing(null)}
+      >
+        {ping.isStarred && (
+          <motion.span
+            animate={{ rotate: 360 }}
+            transition={{ repeat: Infinity, duration: 8, ease: 'linear' }}
+            className="absolute h-8 w-8 rounded-full border border-dashed border-white/10"
+          />
+        )}
+        
+        <span 
+          className="absolute h-2 w-2 rounded-full transition-all duration-300 group-hover:scale-150" 
+          style={{ 
+            backgroundColor: ping.color,
+            boxShadow: isGlowing ? `0 0 ${10 + glowIntensity * 15}px ${ping.color}` : 'none',
+            opacity: isGlowing ? 0.9 : 0.4
+          }}
+        />
+        
+        {ping.isStarred && (
+          <motion.span 
+            animate={{ rotate: 360 }}
+            transition={{ repeat: Infinity, duration: 4, ease: 'linear' }}
+            className="absolute h-full w-full"
+          >
+            <span className="absolute right-0 top-1/2 h-1 w-1 -translate-y-1/2 rounded-full bg-white opacity-40 shadow-[0_0_8px_white]" />
+          </motion.span>
+        )}
+
+        <AnimatePresence>
+          {isGlowing && (
+            <motion.span 
+              initial={{ scale: 0.5, opacity: 0.5 }}
+              animate={{ scale: 2.5, opacity: 0 }}
+              className="absolute h-full w-full rounded-full"
+              style={{ backgroundColor: ping.color }}
+            />
+          )}
+        </AnimatePresence>
+      </button>
+    </div>
+  );
+}
 

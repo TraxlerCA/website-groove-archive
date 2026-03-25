@@ -31,7 +31,7 @@ export default function CabraPage() {
         className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_bottom_right,rgba(23,22,20,0.08),transparent_36%)]"
       />
 
-      <CabraCountdown initialNow={Date.now()} />
+      <CabraCountdown />
     </main>
   );
 }

@@ -1,4 +1,3 @@
-import type { ParseResult } from 'papaparse';
 
 export type Rating = 'nahh' | 'ok' | 'hot' | 'blazing' | '';
 

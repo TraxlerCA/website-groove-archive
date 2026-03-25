@@ -69,16 +69,17 @@ export default function CrateCard({
 function CrateArtwork({ url }: { url: string }) {
   const [art, setArt] = useState<string | null>(null);
   const [failed, setFailed] = useState(false);
+  const [prevUrl, setPrevUrl] = useState(url);
+
+  if (url !== prevUrl) {
+    setArt(null);
+    setFailed(false);
+    setPrevUrl(url);
+  }
 
   useEffect(() => {
     let mounted = true;
-    setArt(null);
-    setFailed(false);
-    if (!url) {
-      return () => {
-        mounted = false;
-      };
-    }
+    if (!url) return;
 
     (async () => {
       try {

@@ -3,7 +3,6 @@
 import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import Link from 'next/link';
-import { useSiteData } from '@/context/SiteDataContext';
 
 const MENU_ITEMS = [
   { id: 'heatmaps', label: 'HEATMAPS', href: '/heatmaps', bgImage: 'radial-gradient(ellipse at 50% 50%, rgba(220, 38, 38, 0.15), rgba(0,0,0,1))' },

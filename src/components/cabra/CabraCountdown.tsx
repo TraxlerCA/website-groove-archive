@@ -10,7 +10,7 @@ import {
 } from '@/lib/cabraCountdown';
 
 type CabraCountdownProps = {
-  initialNow: number;
+  initialNow?: number;
 };
 
 const MODES: Array<{ id: CountdownMode; label: string }> = [
@@ -23,19 +23,19 @@ const SWISS_EASE = [0.16, 1, 0.3, 1] as const;
 
 export default function CabraCountdown({ initialNow }: CabraCountdownProps) {
   const [mode, setMode] = useState<CountdownMode>('days');
-  const [now, setNow] = useState(initialNow);
+  const [now, setNow] = useState(initialNow ?? 0);
   const shouldReduceMotion = useReducedMotion();
 
   useEffect(() => {
-    setNow(Date.now());
-    const intervalId = window.setInterval(() => {
-      setNow(Date.now());
-    }, 1000);
+    const sync = () => setNow(Date.now());
+    if (!initialNow) sync();
+    
+    const intervalId = window.setInterval(sync, 1000);
 
     return () => {
       window.clearInterval(intervalId);
     };
-  }, []);
+  }, [initialNow]);
 
   const countdown = getCabraCountdown(now);
   const isComplete = countdown.isComplete;

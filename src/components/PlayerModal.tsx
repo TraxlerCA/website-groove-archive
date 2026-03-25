@@ -67,7 +67,7 @@ function YouTubeEmbed({ url }: { url: string }){
   const { registerController, setProgressAbs, setPlayingState } = usePlayerActions();
   const id = ytid(url) || '';
   const idRef = useRef(id);
-  idRef.current = id;
+  useEffect(() => { idRef.current = id; }, [id]);
 
   const attachController = useCallback(() => {
     const player = playerRef.current;
@@ -157,7 +157,7 @@ function SoundCloudEmbed({ url }: { url: string }){
   const durationPollRef = useRef<ReturnType<typeof setInterval>|undefined>(undefined);
   const { registerController, setProgressAbs, setPlayingState } = usePlayerActions();
   const urlRef = useRef(url);
-  urlRef.current = url;
+  useEffect(() => { urlRef.current = url; }, [url]);
 
   const onPlay = useCallback(() => setPlayingState(true), [setPlayingState]);
   const onPause = useCallback(() => setPlayingState(false), [setPlayingState]);
