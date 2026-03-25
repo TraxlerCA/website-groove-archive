@@ -263,18 +263,30 @@ export function HeatmapRenderer({
       aria-labelledby={`h-${groupKey}`} 
       className="w-full"
     >
-      <div className="mb-4 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-        <div>
-          <h2 id={`h-${groupKey}`} className="text-2xl sm:text-3xl font-bold tracking-tight text-neutral-900">
+      <div className="mb-8 flex flex-col gap-6 sm:flex-row sm:items-start justify-between">
+        <div className="flex flex-col gap-5">
+          <h1 id={`h-${groupKey}`} className="text-4xl sm:text-5xl font-black tracking-tighter text-neutral-900 leading-[0.9]">
             {title}
-          </h2>
+          </h1>
+          {/* Legend - Pill Style */}
+          <div className="flex flex-wrap items-center gap-2">
+            {(['nahh', 'ok', 'hot', 'blazing'] as const).map((lvl) => (
+              <div key={lvl} className="inline-flex items-center gap-2 rounded-full border border-neutral-100 bg-neutral-50/50 px-3 py-1.5 text-[10px] font-black uppercase tracking-widest text-neutral-500 shadow-sm transition-all hover:bg-white hover:shadow-md">
+                <div 
+                  className="h-2 w-2 rounded-full" 
+                  style={{ backgroundColor: COLORS[lvl] }} 
+                />
+                {lvl}
+              </div>
+            ))}
+          </div>
         </div>
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-3 shrink-0">
           {showExport && (
             <motion.button
-              className="hidden sm:flex items-center gap-2 rounded-full bg-neutral-900 px-6 py-2.5 text-sm font-semibold text-white shadow-lg hover:bg-neutral-800 transition-colors"
+              className="flex items-center gap-2 rounded-full bg-neutral-900 px-6 py-3 text-sm font-semibold text-white shadow-[0_8px_16px_rgba(0,0,0,0.15)] hover:bg-neutral-800 transition-all"
               onClick={onExport}
-              whileHover={{ y: -2 }}
+              whileHover={{ y: -2, boxShadow: '0 12px 24px rgba(0,0,0,0.2)' }}
               whileTap={{ scale: 0.98 }}
             >
               <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -288,24 +300,7 @@ export function HeatmapRenderer({
 
       <div className="bg-white">
         {/* Legend - Static Header */}
-        <div className="mb-10 flex flex-wrap items-center gap-6 sm:gap-10 px-4 sm:px-6">
-          <div className="flex items-center gap-3">
-            <div className="h-5 w-10 border border-neutral-100" style={{ backgroundColor: COLORS.nahh }} />
-            <span className="text-xs sm:text-sm font-black uppercase tracking-widest text-neutral-900">nahh</span>
-          </div>
-          <div className="flex items-center gap-3">
-            <div className="h-5 w-10 border border-neutral-100" style={{ backgroundColor: COLORS.ok }} />
-            <span className="text-xs sm:text-sm font-black uppercase tracking-widest text-neutral-900">ok</span>
-          </div>
-          <div className="flex items-center gap-3">
-            <div className="h-5 w-10 border border-neutral-100" style={{ backgroundColor: COLORS.hot }} />
-            <span className="text-xs sm:text-sm font-black uppercase tracking-widest text-neutral-900">hot</span>
-          </div>
-          <div className="flex items-center gap-3">
-            <div className="h-5 w-10 border border-neutral-100" style={{ backgroundColor: COLORS.blazing }} />
-            <span className="text-xs sm:text-sm font-black uppercase tracking-widest text-neutral-900">blazing</span>
-          </div>
-        </div>
+
 
         {/* Unified Sticky Heatmap Container */}
         <div 
