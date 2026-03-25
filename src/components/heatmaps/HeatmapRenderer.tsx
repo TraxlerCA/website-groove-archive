@@ -288,7 +288,7 @@ export function HeatmapRenderer({
 
       <div className="bg-white">
         {/* Legend - Static Header */}
-        <div className="mb-10 flex flex-wrap items-center gap-6 sm:gap-10 px-4 sm:px-0">
+        <div className="mb-10 flex flex-wrap items-center gap-6 sm:gap-10 px-4 sm:px-6">
           <div className="flex items-center gap-3">
             <div className="h-5 w-10 border border-neutral-100" style={{ backgroundColor: COLORS.nahh }} />
             <span className="text-xs sm:text-sm font-black uppercase tracking-widest text-neutral-900">nahh</span>
@@ -310,7 +310,7 @@ export function HeatmapRenderer({
         {/* Unified Sticky Heatmap Container */}
         <div 
           className="relative rounded-xl sm:rounded-3xl border border-neutral-200 bg-white shadow-2xl overflow-auto scrollbar-hide touch-pan-x touch-pan-y"
-          style={{ maxHeight: '85vh' }}
+          style={{ maxHeight: isMobile ? '85vh' : '92vh' }}
         >
           <div className="relative" style={{ minWidth: Math.max(800, stages.length * (isMobile ? 170 : 180)) }}>
             {/* Top Header - Stages */}
@@ -325,7 +325,7 @@ export function HeatmapRenderer({
               </div>
             </div>
 
-            <div className="relative flex items-stretch">
+            <div className="relative flex items-stretch pt-3 pb-6">
               {/* Left Column - Time */}
               <div 
                 className="sticky left-0 z-20 bg-white/95 backdrop-blur-sm border-r border-neutral-100 shrink-0" 
