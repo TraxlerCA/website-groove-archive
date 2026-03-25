@@ -281,7 +281,7 @@ export function HeatmapRenderer({
         </div>
       </div>
 
-      <div ref={registerRef} className="bg-white">
+      <div ref={registerRef} className="">
         {/* Legend - Pill Style */}
         <div className="mb-8 flex flex-wrap items-center gap-2 px-1">
           {(['nahh', 'ok', 'hot', 'blazing'] as const).map((lvl) => (
