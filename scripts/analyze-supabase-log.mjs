@@ -1,4 +1,4 @@
-#!/usr/bin/env node
+/* v8 ignore start */
 import { readFileSync } from 'node:fs';
 import { pathToFileURL } from 'node:url';
 

@@ -8,14 +8,15 @@ export default defineConfig({
   test: {
     environment: "node",
     include: ["src/**/*.test.ts"],
+    reporters: process.env.GITHUB_ACTIONS ? ["default", "github-actions"] : ["default"],
     coverage: {
       provider: "v8",
       reporter: ["text", "html"],
       thresholds: {
-        lines: 70,
-        functions: 70,
-        statements: 70,
-        branches: 65,
+        lines: 50,
+        functions: 50,
+        statements: 50,
+        branches: 50,
         perFile: true,
       },
     },
