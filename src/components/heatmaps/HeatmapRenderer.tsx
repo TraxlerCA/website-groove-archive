@@ -19,7 +19,7 @@ interface HeatmapRendererProps {
   date: string;
   rows: Row[];
   pxPerMin: number;
-  registerRef?: (el: HTMLElement | null) => void;
+  registerRef?: (el: HTMLDivElement | null) => void;
   onExport?: () => void;
   showExport?: boolean;
 }
@@ -57,7 +57,7 @@ export function HeatmapRenderer({
     return () => clearInterval(interval);
   }, [date]);
 
-  const sectionRef = React.useRef<HTMLElement | null>(null);
+  const sectionRef = React.useRef<HTMLDivElement | null>(null);
 
   React.useEffect(() => {
     const updateScale = () => {
@@ -255,7 +255,7 @@ export function HeatmapRenderer({
   );
 
   return (
-    <section 
+    <div 
       ref={(node) => {
         sectionRef.current = node;
         if (registerRef) registerRef(node);
@@ -344,6 +344,6 @@ export function HeatmapRenderer({
       </div>
 
 
-    </section>
+    </div>
   );
 }
