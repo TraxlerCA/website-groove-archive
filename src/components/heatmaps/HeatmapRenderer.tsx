@@ -256,31 +256,14 @@ export function HeatmapRenderer({
 
   return (
     <div 
-      ref={(node) => {
-        sectionRef.current = node;
-        if (registerRef) registerRef(node);
-      }}
+      ref={sectionRef}
       aria-labelledby={`h-${groupKey}`} 
       className="w-full"
     >
       <div className="mb-8 flex flex-col gap-6 sm:flex-row sm:items-start justify-between">
-        <div className="flex flex-col gap-5">
-          <h1 id={`h-${groupKey}`} className="text-4xl sm:text-5xl font-black tracking-tighter text-neutral-900 leading-[0.9]">
-            {title}
-          </h1>
-          {/* Legend - Pill Style */}
-          <div className="flex flex-wrap items-center gap-2">
-            {(['nahh', 'ok', 'hot', 'blazing'] as const).map((lvl) => (
-              <div key={lvl} className="inline-flex items-center gap-2 rounded-full border border-neutral-100 bg-neutral-50/50 px-3 py-1.5 text-[10px] font-black uppercase tracking-widest text-neutral-500 shadow-sm transition-all hover:bg-white hover:shadow-md">
-                <div 
-                  className="h-2 w-2 rounded-full" 
-                  style={{ backgroundColor: COLORS[lvl] }} 
-                />
-                {lvl}
-              </div>
-            ))}
-          </div>
-        </div>
+        <h1 id={`h-${groupKey}`} className="text-4xl sm:text-5xl font-black tracking-tighter text-neutral-900 leading-[0.9]">
+          {title}
+        </h1>
         <div className="flex items-center gap-3 shrink-0">
           {showExport && (
             <motion.button
@@ -298,18 +281,28 @@ export function HeatmapRenderer({
         </div>
       </div>
 
-      <div className="bg-white">
-        {/* Legend - Static Header */}
-
+      <div ref={registerRef} className="bg-white">
+        {/* Legend - Pill Style */}
+        <div className="mb-8 flex flex-wrap items-center gap-2 px-1">
+          {(['nahh', 'ok', 'hot', 'blazing'] as const).map((lvl) => (
+            <div 
+              key={lvl} 
+              className="inline-flex items-center rounded-full px-4 py-1.5 text-[11px] font-black uppercase tracking-widest text-white shadow-md transition-all hover:scale-105 active:scale-95"
+              style={{ backgroundColor: COLORS[lvl] }}
+            >
+              {lvl}
+            </div>
+          ))}
+        </div>
 
         {/* Unified Sticky Heatmap Container */}
         <div 
-          className="relative rounded-xl sm:rounded-3xl border border-neutral-200 bg-white shadow-2xl overflow-auto scrollbar-hide touch-pan-x touch-pan-y"
+          className="relative rounded-2xl sm:rounded-[2rem] border border-neutral-200 bg-white shadow-2xl overflow-hidden scrollbar-hide touch-pan-x touch-pan-y"
           style={{ maxHeight: isMobile ? '85vh' : '92vh' }}
         >
-          <div className="relative" style={{ minWidth: Math.max(800, stages.length * (isMobile ? 170 : 180)) }}>
+          <div className="relative overflow-auto h-full scrollbar-hide" style={{ minWidth: Math.max(800, stages.length * (isMobile ? 170 : 180)) }}>
             {/* Top Header - Stages */}
-            <div className="sticky top-0 z-30 flex items-stretch bg-white/95 backdrop-blur-md border-b border-neutral-100 h-[50px] sm:h-[60px]">
+            <div className="sticky top-0 z-30 flex items-stretch bg-white/95 backdrop-blur-md border-b border-neutral-100 h-[50px] sm:h-[60px] rounded-t-2xl sm:rounded-t-[2rem]">
               {/* Top-Left intersection spacer */}
               <div 
                 className="sticky left-0 z-40 bg-white border-r border-neutral-100 shrink-0" 
@@ -337,8 +330,6 @@ export function HeatmapRenderer({
           </div>
         </div>
       </div>
-
-
     </div>
   );
 }
