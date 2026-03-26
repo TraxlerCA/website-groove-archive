@@ -1,7 +1,8 @@
 'use client';
 
-import React, { useMemo } from 'react';
-import { motion } from 'framer-motion';
+import React, { useMemo, useState, useEffect, useRef, useCallback } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
+import { TransformWrapper, TransformComponent } from 'react-zoom-pan-pinch';
 import {
   Row,
   COLORS,
@@ -35,10 +36,10 @@ export function HeatmapRenderer({
   showExport = true,
 }: HeatmapRendererProps) {
 
-  const [now, setNow] = React.useState<number | null>(null);
-  const [isMobile, setIsMobile] = React.useState(false);
+  const [now, setNow] = useState<number | null>(null);
+  const [isMobile, setIsMobile] = useState(false);
 
-  React.useEffect(() => {
+  useEffect(() => {
     const updateNow = () => {
       const d = new Date();
       const todayStr = d.toISOString().split('T')[0];
@@ -57,17 +58,13 @@ export function HeatmapRenderer({
     return () => clearInterval(interval);
   }, [date]);
 
-  const sectionRef = React.useRef<HTMLDivElement | null>(null);
+  const sectionRef = useRef<HTMLDivElement | null>(null);
 
-  React.useEffect(() => {
+  useEffect(() => {
     const updateScale = () => {
       if (!sectionRef.current) return;
       const sw = window.innerWidth;
-      if (sw >= 640) {
-        setIsMobile(false);
-      } else {
-        setIsMobile(true);
-      }
+      setIsMobile(sw < 640);
     };
     updateScale();
     window.addEventListener('resize', updateScale);
@@ -87,12 +84,12 @@ export function HeatmapRenderer({
   const NIGHT_CUTOFF_H = 10;
   const CUTOFF = NIGHT_CUTOFF_H * 60;
 
-  const startMin = React.useCallback((r: Row) => {
+  const startMin = useCallback((r: Row) => {
     const s = toMin(r.start);
     return s < CUTOFF ? s + DAY : s;
   }, [CUTOFF, DAY]);
 
-  const endMin = React.useCallback((r: Row) => {
+  const endMin = useCallback((r: Row) => {
     const s = startMin(r);
     let e = toMin(r.end);
     e = e < CUTOFF ? e + DAY : e;
@@ -115,13 +112,12 @@ export function HeatmapRenderer({
     return Array.from({ length: Math.max(0, e - s + 1) }, (_, i) => (s + i) * 60);
   }, [minStart, maxEnd]);
 
-
   const renderHeadersContent = () => (
     <div className="grid h-full" style={{ gridTemplateColumns: `repeat(${stages.length}, 1fr)` }}>
       {stages.map((s, i) => (
         <div
           key={s}
-          className={`flex items-center justify-center text-center text-[11px] sm:text-sm font-black uppercase tracking-tighter text-black border-r border-neutral-100 ${i === stages.length - 1 ? 'border-r-0' : ''} px-1 sm:px-2`}
+          className={`flex items-center justify-center text-center text-[10px] sm:text-sm font-black uppercase tracking-tighter text-black border-r border-neutral-100 ${i === stages.length - 1 ? 'border-r-0' : ''} px-1 sm:px-2`}
         >
           {s}
         </div>
@@ -150,7 +146,6 @@ export function HeatmapRenderer({
 
   const renderSetsContent = () => (
     <div className="relative w-full" style={{ height: heightPx }}>
-      {/* h-lines */}
       <div className="pointer-events-none absolute inset-0">
         {hours.map(h => (
           <div
@@ -159,7 +154,6 @@ export function HeatmapRenderer({
             style={{ top: (h - minStart) * pxPerMin }}
           />
         ))}
-        {/* Now Indicator line */}
         {now !== null && now >= minStart && now <= maxEnd && (
           <div 
             className="absolute left-0 right-0 z-40 flex items-center"
@@ -236,10 +230,10 @@ export function HeatmapRenderer({
                   <div key={stage + '-' + i} className="absolute left-1.5 right-1.5" style={{ top }}>
                     <div className="relative" style={{ height: innerH }}>
                       <div
-                        className={`${CARD_BORDER} absolute inset-y-0 flex flex-col items-center justify-center text-center px-1 transition-all z-10 overflow-hidden`}
+                        className={`${CARD_BORDER} absolute inset-y-0 flex flex-col items-center justify-center text-center px-1 transition-all z-10 overflow-hidden shadow-sm`}
                         style={{ left, width, height: '100%', backgroundColor: bg, color: txt }}
                       >
-                        <div className="text-[11px] sm:text-[13px] font-black leading-[1.1] truncate w-full tracking-tighter">
+                        <div className="text-[10px] sm:text-[12px] font-black leading-[1.1] truncate w-full tracking-tighter">
                           {r.artist}
                         </div>
                       </div>
@@ -295,39 +289,58 @@ export function HeatmapRenderer({
           ))}
         </div>
 
-        {/* Unified Sticky Heatmap Container */}
+        {/* Unified Sticky + Scalable Heatmap Container */}
         <div 
-          className="relative rounded-2xl sm:rounded-[2rem] border border-neutral-200 bg-white shadow-2xl overflow-hidden scrollbar-hide touch-pan-x touch-pan-y"
-          style={{ maxHeight: isMobile ? '85vh' : '92vh' }}
+          className="relative rounded-2xl sm:rounded-[2rem] border border-neutral-200 bg-white shadow-2xl overflow-hidden"
+          style={{ maxHeight: isMobile ? '80vh' : '92vh' }}
         >
-          <div className="relative overflow-auto h-full scrollbar-hide" style={{ minWidth: Math.max(800, stages.length * (isMobile ? 170 : 180)) }}>
-            {/* Top Header - Stages */}
-            <div className="sticky top-0 z-30 flex items-stretch bg-white/95 backdrop-blur-md border-b border-neutral-100 h-[50px] sm:h-[60px] rounded-t-2xl sm:rounded-t-[2rem]">
-              {/* Top-Left intersection spacer */}
+          <TransformWrapper
+            initialScale={1}
+            minScale={0.4}
+            maxScale={4}
+            centerOnInit={false}
+            disabled={!isMobile}
+            doubleClick={{ disabled: true }}
+            panning={{ velocityDisabled: false }}
+            wheel={{ step: 0.1 }}
+          >
+            <TransformComponent
+              wrapperClass="!w-full !h-full"
+              contentClass="!w-full !h-full"
+            >
               <div 
-                className="sticky left-0 z-40 bg-white border-r border-neutral-100 shrink-0" 
-                style={{ width: isMobile ? 45 : 80 }} 
-              />
-              <div className="flex-1">
-                {renderHeadersContent()}
-              </div>
-            </div>
-
-            <div className="relative flex items-stretch pt-3 pb-6">
-              {/* Left Column - Time */}
-              <div 
-                className="sticky left-0 z-20 bg-white/95 backdrop-blur-sm border-r border-neutral-100 shrink-0" 
-                style={{ width: isMobile ? 45 : 80, height: heightPx }}
+                className="relative overflow-auto scrollbar-hide touch-pan-x touch-pan-y" 
+                style={{ 
+                  minWidth: Math.max(800, stages.length * (isMobile ? 150 : 180)),
+                  height: '100%' 
+                }}
               >
-                {renderTimeRailContent()}
+                {/* Top Header - Stages */}
+                <div className="sticky top-0 z-30 flex items-stretch bg-white/95 backdrop-blur-md border-b border-neutral-100 h-[50px] sm:h-[60px] rounded-t-2xl sm:rounded-t-[2rem]">
+                  <div 
+                    className="sticky left-0 z-40 bg-white border-r border-neutral-100 shrink-0" 
+                    style={{ width: isMobile ? 45 : 80 }} 
+                  />
+                  <div className="flex-1">
+                    {renderHeadersContent()}
+                  </div>
+                </div>
+
+                <div className="relative flex items-stretch pt-3 pb-6">
+                  <div 
+                    className="sticky left-0 z-20 bg-white/95 backdrop-blur-sm border-r border-neutral-100 shrink-0" 
+                    style={{ width: isMobile ? 45 : 80, height: heightPx }}
+                  >
+                    {renderTimeRailContent()}
+                  </div>
+                  
+                  <div className="flex-1">
+                    {renderSetsContent()}
+                  </div>
+                </div>
               </div>
-              
-              {/* Main Grid Content */}
-              <div className="flex-1">
-                {renderSetsContent()}
-              </div>
-            </div>
-          </div>
+            </TransformComponent>
+          </TransformWrapper>
         </div>
       </div>
     </div>
