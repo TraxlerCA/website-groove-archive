@@ -24,13 +24,11 @@ export default function ListPageClient({ rows, genres }: Props) {
 
   const searchQ = searchParams.get("q") ?? "";
   const [q, setQ] = useState(searchQ);
-  const [prevSearchQ, setPrevSearchQ] = useState(searchQ);
   const [genre, setGenre] = useState("any");
 
-  if (searchQ !== prevSearchQ) {
+  useEffect(() => {
     setQ(searchQ);
-    setPrevSearchQ(searchQ);
-  }
+  }, [searchQ]);
 
   const genreOptions = useMemo(() => {
     const s = new Set<string>();

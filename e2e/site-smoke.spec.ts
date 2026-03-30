@@ -41,3 +41,13 @@ test('header navigation updates active route state', async ({ page }) => {
   await page.getByRole('link', { name: 'Suggest' }).first().click();
   await expect(page).toHaveURL(/\/suggest$/);
 });
+
+test('list query param stays in sync with the filter input', async ({ page }) => {
+  await page.goto('/list?q=house');
+
+  const filterInput = page.getByPlaceholder('Type to filter');
+  await expect(filterInput).toHaveValue('house');
+
+  await page.goto('/list?q=techno');
+  await expect(filterInput).toHaveValue('techno');
+});

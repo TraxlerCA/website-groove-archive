@@ -17,6 +17,7 @@ export default function CrateCard({
   onPlay,
   onOutboundClick,
 }: CrateCardProps) {
+  const soundcloudUrl = row.soundcloud || '';
   const href = useMemo(() => sanitizeMediaUrl(row.soundcloud), [row.soundcloud]);
 
   return (
@@ -36,7 +37,7 @@ export default function CrateCard({
         className="group block w-full overflow-hidden rounded-2xl border border-white/20 transition hover:border-white/60 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-cyan-200/70"
         aria-label={`Play ${row.set}`}
       >
-        <CrateArtwork url={row.soundcloud || ''} />
+        <CrateArtwork key={soundcloudUrl} url={soundcloudUrl} />
       </button>
 
       <h2 className="mt-4 line-clamp-2 text-lg font-semibold leading-tight">{row.set}</h2>
@@ -69,34 +70,29 @@ export default function CrateCard({
 function CrateArtwork({ url }: { url: string }) {
   const [art, setArt] = useState<string | null>(null);
   const [failed, setFailed] = useState(false);
-  const [prevUrl, setPrevUrl] = useState(url);
-
-  if (url !== prevUrl) {
-    setArt(null);
-    setFailed(false);
-    setPrevUrl(url);
-  }
 
   useEffect(() => {
-    let mounted = true;
-    if (!url) return;
+    const controller = new AbortController();
+
+    if (!url) return () => controller.abort();
 
     (async () => {
       try {
         const response = await fetch(
           `/api/soundcloud-artwork?url=${encodeURIComponent(url)}`,
-          { cache: 'no-store' },
+          { cache: 'no-store', signal: controller.signal },
         );
         const payload = await response.json();
-        if (mounted) setArt(payload?.artwork || null);
-      } catch {
-        if (mounted) setArt(null);
+        setArt(payload?.artwork || null);
+      } catch (error) {
+        if (error instanceof DOMException && error.name === 'AbortError') {
+          return;
+        }
+        setArt(null);
       }
     })();
 
-    return () => {
-      mounted = false;
-    };
+    return () => controller.abort();
   }, [url]);
 
   if (!art || failed) {

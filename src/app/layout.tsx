@@ -2,7 +2,7 @@
 import './globals.css';
 import type { ReactNode } from 'react';
 import type { Metadata } from 'next';
-import { Urbanist } from 'next/font/google';
+import localFont from 'next/font/local';
 
 const TITLE = 'The Groove Archive';
 const DESCRIPTION =
@@ -40,9 +40,14 @@ export const metadata: Metadata = {
   },
 };
 
-const urbanist = Urbanist({
-  subsets: ['latin'],
-  weight: ['400', '500', '600', '700'],
+const urbanist = localFont({
+  src: [
+    {
+      path: './fonts/Urbanist-latin-wght-normal.woff2',
+      weight: '100 900',
+      style: 'normal',
+    },
+  ],
   display: 'swap',
   variable: '--font-urbanist',
 });

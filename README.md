@@ -56,6 +56,10 @@ NEXT_PUBLIC_HOME_EXPERIENCE=map
 - `npm run build`: create a production build
 - `npm run start`: start the production server
 
+## Fonts
+
+Urbanist is vendored locally via `next/font/local` so builds do not depend on fetching Google Fonts at build time. Keep the checked-in font asset and its OFL license file together under `src/app/fonts/`.
+
 ## App Structure
 
 - `src/app/layout.tsx` defines global metadata, fonts, and the root HTML shell.

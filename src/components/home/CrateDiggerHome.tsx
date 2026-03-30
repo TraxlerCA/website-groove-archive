@@ -6,12 +6,12 @@ import { getSoundcloudEligibleRows, normalizeLabel } from '@/components/home/hom
 import { usePlayerActions } from '@/context/PlayerProvider';
 import { useSiteData } from '@/context/SiteDataContext';
 import { stableHash, trackEvent } from '@/lib/analytics';
+import type { Row } from '@/lib/types';
 
 export default function CrateDiggerHome() {
   const siteData = useSiteData();
   const { play } = usePlayerActions();
   const rows = useMemo(() => getSoundcloudEligibleRows(siteData.rows), [siteData.rows]);
-  const [activeIndex, setActiveIndex] = useState(0);
   const [genreFilter, setGenreFilter] = useState('all');
 
   const genreOptions = useMemo(() => {
@@ -28,13 +28,6 @@ export default function CrateDiggerHome() {
     const target = normalizeLabel(genreFilter);
     return rows.filter(row => normalizeLabel(row.classification) === target);
   }, [genreFilter, rows]);
-
-  const [prevFilteredCount, setPrevFilteredCount] = useState(filteredRows.length);
-
-  if (filteredRows.length !== prevFilteredCount) {
-    setActiveIndex(0);
-    setPrevFilteredCount(filteredRows.length);
-  }
 
   return (
     <main className="container mx-auto max-w-6xl px-6 pt-7 pb-12 sm:pt-12">
@@ -72,10 +65,9 @@ export default function CrateDiggerHome() {
             </select>
           </div>
 
-          <CrateStack
+          <CrateDeck
+            key={filteredRows.length}
             rows={filteredRows}
-            activeIndex={activeIndex}
-            onChangeActiveIndex={setActiveIndex}
             onPlay={row => {
               play(row, 'soundcloud');
               trackEvent('home_crate_play_clicked', {
@@ -93,6 +85,26 @@ export default function CrateDiggerHome() {
         </div>
       </section>
     </main>
+  );
+}
+
+type CrateDeckProps = {
+  rows: Row[];
+  onPlay: (row: Row) => void;
+  onOutboundClick: (href: string, row: Row) => void;
+};
+
+function CrateDeck({ rows, onPlay, onOutboundClick }: CrateDeckProps) {
+  const [activeIndex, setActiveIndex] = useState(0);
+
+  return (
+    <CrateStack
+      rows={rows}
+      activeIndex={activeIndex}
+      onChangeActiveIndex={setActiveIndex}
+      onPlay={onPlay}
+      onOutboundClick={onOutboundClick}
+    />
   );
 }
 
