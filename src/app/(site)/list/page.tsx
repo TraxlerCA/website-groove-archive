@@ -1,12 +1,16 @@
 import { Suspense } from 'react';
-import type { Genre, Row } from '@/lib/types';
+import DataUnavailableState from '@/components/DataUnavailableState';
 import { getSheets } from '@/lib/sheets.server';
 import ListPageClient from './ListPageClient';
 
 export default async function ListPage() {
-  const sheets = await getSheets();
-  const rows = (sheets.data.list ?? []) as Row[];
-  const genres = (sheets.data.genres ?? []) as Genre[];
+  const sheets = await getSheets(['list', 'genres']);
+  if (!sheets.ok) {
+    return <DataUnavailableState />;
+  }
+
+  const rows = sheets.data.list ?? [];
+  const genres = sheets.data.genres ?? [];
 
   return (
     <Suspense fallback={<div className="min-h-screen flex items-center justify-center">Loading...</div>}>

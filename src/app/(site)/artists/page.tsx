@@ -1,13 +1,17 @@
-import { getArtists } from '@/lib/sheets.server';
+import DataUnavailableState from '@/components/DataUnavailableState';
+import { getSheets } from '@/lib/sheets.server';
 import type { Artist } from '@/lib/types';
 import ArtistsPageClient from './ArtistsPageClient';
 
 export const revalidate = 300;
 
-
-
 export default async function ArtistsPage() {
-  const artists = await getArtists();
+  const sheets = await getSheets(['artists']);
+  if (!sheets.ok) {
+    return <DataUnavailableState />;
+  }
+
+  const artists = sheets.data.artists ?? [];
 
   const grouped: Record<Artist['rating'], Artist[]> = {
     blazing: [],

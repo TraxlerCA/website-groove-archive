@@ -48,7 +48,7 @@ describe('supabase config guards', () => {
 });
 
 describe('sheets server fallbacks', () => {
-  it('returns empty fallback data and logs the disabled config once', async () => {
+  it('returns an unavailable payload and logs the disabled config once', async () => {
     process.env.NEXT_PUBLIC_SUPABASE_URL = 'https://example.supabase.co';
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY = 'your_supabase_anon_key';
 
@@ -56,12 +56,11 @@ describe('sheets server fallbacks', () => {
     const { getFestivalSets, getSheets } = await importSheetsServerModule();
 
     await expect(getSheets(['list', 'genres', 'artists'])).resolves.toMatchObject({
-      data: {
-        artists: [],
-        genres: [],
-        list: [],
+      ok: false,
+      error: {
+        code: 'supabase_disabled',
+        failedTab: 'list',
       },
-      ok: true,
     });
     await expect(getFestivalSets()).resolves.toEqual([]);
     expect(warnSpy).toHaveBeenCalledTimes(1);

@@ -10,6 +10,42 @@ import type { Artist, Genre, Row } from '@/lib/types';
 // Re-export types for compatibility
 export type { Artist, Genre, Row };
 
+const SHEET_TABS = ['list', 'genres', 'artists'] as const;
+
+export type SheetTab = (typeof SHEET_TABS)[number];
+export type SheetsData = { list?: Row[]; genres?: Genre[]; artists?: Artist[] } & Record<string, unknown>;
+export type SheetsUnavailableCode = 'supabase_disabled' | 'query_failed';
+export type SheetsUnavailablePayload = {
+  ok: false;
+  updatedAt: string;
+  error: {
+    code: SheetsUnavailableCode;
+    message: string;
+    failedTab: SheetTab;
+  };
+};
+export type SheetsSuccessPayload = { ok: true; updatedAt: string; data: SheetsData };
+export type SheetsPayload = SheetsSuccessPayload | SheetsUnavailablePayload;
+
+type LoadSuccess<T> = { ok: true; data: T };
+type LoadFailure = {
+  ok: false;
+  code: SheetsUnavailableCode;
+  message: string;
+  failedTab: SheetTab;
+};
+type LoadResult<T> = LoadSuccess<T> | LoadFailure;
+
+type RawGenre = { label: string; explanation: string };
+type RawArtist = { artist: string; rating: Artist['rating'] };
+type RawSetRow = {
+  title: string;
+  rating: string | null;
+  soundcloud_url: string | null;
+  youtube_url: string | null;
+  genres: Array<{ label: string }> | { label: string } | null;
+};
+
 let hasLoggedDisabledSupabase = false;
 
 function logSupabaseDisabledOnce() {
@@ -17,7 +53,7 @@ function logSupabaseDisabledOnce() {
 
   hasLoggedDisabledSupabase = true;
   console.warn(
-    `Supabase data fetches disabled: ${supabaseDisabledReason ?? 'configuration unavailable'}. Returning empty fallback data.`,
+    `Supabase data fetches disabled: ${supabaseDisabledReason ?? 'configuration unavailable'}.`,
   );
 }
 
@@ -30,63 +66,95 @@ function shouldSkipSupabaseFetches() {
   return true;
 }
 
-export const getGenres = cache(async (): Promise<Genre[]> => {
+function normalizeRequestedTabs(tabs?: string[]): SheetTab[] {
+  const requested = tabs && tabs.length ? tabs : [...SHEET_TABS];
+
+  return requested.filter((tab): tab is SheetTab =>
+    SHEET_TABS.includes(tab as SheetTab),
+  );
+}
+
+function createUnavailableResult(
+  failedTab: SheetTab,
+  code: SheetsUnavailableCode,
+): LoadFailure {
+  const message =
+    code === 'supabase_disabled'
+      ? 'Archive data is temporarily unavailable.'
+      : 'Archive data could not be loaded.';
+
+  return {
+    ok: false,
+    code,
+    message,
+    failedTab,
+  };
+}
+
+function getSheetsClientOrFailure(
+  failedTab: SheetTab,
+): LoadSuccess<NonNullable<typeof supabase>> | LoadFailure {
   if (shouldSkipSupabaseFetches()) {
-    return [];
+    return createUnavailableResult(failedTab, 'supabase_disabled');
   }
 
-  const client = supabase;
-  if (!client) {
-    return [];
+  if (!supabase) {
+    logSupabaseDisabledOnce();
+    return createUnavailableResult(failedTab, 'supabase_disabled');
   }
 
-  const { data, error } = await client
+  return { ok: true, data: supabase };
+}
+
+async function loadGenresForSheets(): Promise<LoadResult<Genre[]>> {
+  const clientResult = getSheetsClientOrFailure('genres');
+  if (!clientResult.ok) {
+    return clientResult;
+  }
+
+  const { data, error } = await clientResult.data
     .from('genres')
     .select('label, explanation');
 
   if (error) {
     console.error('Error fetching genres:', error);
-    return [];
-  }
-  return data || [];
-});
-
-export const getArtists = cache(async (): Promise<Artist[]> => {
-  if (shouldSkipSupabaseFetches()) {
-    return [];
+    return createUnavailableResult('genres', 'query_failed');
   }
 
-  const client = supabase;
-  if (!client) {
-    return [];
+  return { ok: true, data: (data ?? []) as RawGenre[] };
+}
+
+async function loadArtistsForSheets(): Promise<LoadResult<Artist[]>> {
+  const clientResult = getSheetsClientOrFailure('artists');
+  if (!clientResult.ok) {
+    return clientResult;
   }
 
-  const { data, error } = await client
+  const { data, error } = await clientResult.data
     .from('artists')
     .select('artist, rating');
 
   if (error) {
     console.error('Error fetching artists:', JSON.stringify(error, null, 2));
-    return [];
+    return createUnavailableResult('artists', 'query_failed');
   }
 
-  return (data || []).map((a: { artist: string; rating: Artist['rating'] }) => ({
-    name: a.artist,
-    rating: a.rating,
-  })) as unknown as Artist[];
-});
+  return {
+    ok: true,
+    data: ((data ?? []) as RawArtist[]).map((artist) => ({
+      name: artist.artist,
+      rating: artist.rating,
+    })),
+  };
+}
 
-export const getListRows = cache(async (): Promise<Row[]> => {
-  if (shouldSkipSupabaseFetches()) {
-    return [];
+async function loadListRowsForSheets(): Promise<LoadResult<Row[]>> {
+  const clientResult = getSheetsClientOrFailure('list');
+  if (!clientResult.ok) {
+    return clientResult;
   }
 
-  const client = supabase;
-  if (!client) {
-    return [];
-  }
-
-  const { data, error } = await client
+  const { data, error } = await clientResult.data
     .from('sets')
     .select(`
       title,
@@ -98,28 +166,38 @@ export const getListRows = cache(async (): Promise<Row[]> => {
 
   if (error) {
     console.error('Error fetching sets:', error);
-    return [];
+    return createUnavailableResult('list', 'query_failed');
   }
 
-  // Define a type for the raw Supabase response
-  type SetRow = {
-    title: string;
-    rating: string;
-    soundcloud_url: string | null;
-    youtube_url: string | null;
-    genres: { label: string } | null;
-  };
+  return {
+    ok: true,
+    data: ((data ?? []) as RawSetRow[]).map((row) => {
+      const genre = Array.isArray(row.genres) ? row.genres[0] : row.genres;
 
-  return (data || []).map((item: unknown) => {
-    const row = item as SetRow;
-    return {
-      set: row.title,
-      classification: row.genres?.label ?? null,
-      soundcloud: row.soundcloud_url,
-      youtube: row.youtube_url,
-      tier: row.rating,
-    };
-  });
+      return {
+        set: row.title,
+        classification: genre?.label ?? null,
+        soundcloud: row.soundcloud_url,
+        youtube: row.youtube_url,
+        tier: row.rating,
+      };
+    }),
+  };
+}
+
+export const getGenres = cache(async (): Promise<Genre[]> => {
+  const result = await loadGenresForSheets();
+  return result.ok ? result.data : [];
+});
+
+export const getArtists = cache(async (): Promise<Artist[]> => {
+  const result = await loadArtistsForSheets();
+  return result.ok ? result.data : [];
+});
+
+export const getListRows = cache(async (): Promise<Row[]> => {
+  const result = await loadListRowsForSheets();
+  return result.ok ? result.data : [];
 });
 
 // New function for heatmaps
@@ -153,30 +231,67 @@ export const getFestivalSets = cache(async () => {
   return [];
 });
 
-// Deprecated/Compatibility exports
-// Some components might still call getSheets(['list']) etc.
-// We'll map them to the new functions.
-
-export type SheetsData = { list?: Row[]; genres?: Genre[]; artists?: Artist[] } & Record<string, unknown>;
-export type SheetsPayload = { ok: true; updatedAt: string; data: SheetsData };
-
 export const getSheets = cache(async (tabs?: string[]): Promise<SheetsPayload> => {
-  const wanted = tabs && tabs.length ? tabs : ['list', 'genres', 'artists'];
+  const wanted = normalizeRequestedTabs(tabs);
   const data: SheetsData = {};
+  const updatedAt = new Date().toISOString();
 
-  if (wanted.includes('list')) {
-    data.list = await getListRows();
-  }
-  if (wanted.includes('genres')) {
-    data.genres = await getGenres();
-  }
-  if (wanted.includes('artists')) {
-    data.artists = await getArtists();
+  for (const tab of wanted) {
+    if (tab === 'list') {
+      const result = await loadListRowsForSheets();
+      if (!result.ok) {
+        return {
+          ok: false,
+          updatedAt,
+          error: {
+            code: result.code,
+            message: result.message,
+            failedTab: result.failedTab,
+          },
+        };
+      }
+
+      data.list = result.data;
+      continue;
+    }
+
+    if (tab === 'genres') {
+      const result = await loadGenresForSheets();
+      if (!result.ok) {
+        return {
+          ok: false,
+          updatedAt,
+          error: {
+            code: result.code,
+            message: result.message,
+            failedTab: result.failedTab,
+          },
+        };
+      }
+
+      data.genres = result.data;
+      continue;
+    }
+
+    const result = await loadArtistsForSheets();
+    if (!result.ok) {
+      return {
+        ok: false,
+        updatedAt,
+        error: {
+          code: result.code,
+          message: result.message,
+          failedTab: result.failedTab,
+        },
+      };
+    }
+
+    data.artists = result.data;
   }
 
   return {
     ok: true,
-    updatedAt: new Date().toISOString(),
+    updatedAt,
     data,
   };
 });

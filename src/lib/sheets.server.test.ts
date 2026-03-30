@@ -71,7 +71,7 @@ afterEach(() => {
 });
 
 describe('sheets.server', () => {
-  it('returns empty fallback data and logs once when Supabase is disabled', async () => {
+  it('returns empty fallback arrays and logs once when Supabase is disabled', async () => {
     const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
     const mod = await importSheetsServerWithSupabaseMock({
       isEnabled: false,
@@ -144,7 +144,7 @@ describe('sheets.server', () => {
     ]);
   });
 
-  it('logs and returns empty arrays for query errors', async () => {
+  it('logs and returns empty arrays for query errors in compatibility getters', async () => {
     const errorSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
     const mod = await importSheetsServerWithSupabaseMock({
       results: {
@@ -168,6 +168,76 @@ describe('sheets.server', () => {
     await expect(mod.getListRows()).resolves.toEqual([]);
 
     expect(errorSpy).toHaveBeenCalledTimes(3);
+  });
+
+  it('returns an unavailable payload when Supabase is disabled', async () => {
+    const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
+    const mod = await importSheetsServerWithSupabaseMock({
+      isEnabled: false,
+      reason: 'placeholder config',
+      supabaseOverride: null,
+    });
+
+    await expect(mod.getSheets(['list'])).resolves.toEqual({
+      ok: false,
+      updatedAt: expect.any(String),
+      error: {
+        code: 'supabase_disabled',
+        message: 'Archive data is temporarily unavailable.',
+        failedTab: 'list',
+      },
+    });
+    expect(warnSpy).toHaveBeenCalledTimes(1);
+  });
+
+  it('returns an unavailable payload when a requested tab query fails', async () => {
+    const errorSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
+    const mod = await importSheetsServerWithSupabaseMock({
+      results: {
+        artists: {
+          data: null,
+          error: { message: 'artists down' },
+        },
+      },
+    });
+
+    await expect(mod.getSheets(['artists'])).resolves.toEqual({
+      ok: false,
+      updatedAt: expect.any(String),
+      error: {
+        code: 'query_failed',
+        message: 'Archive data could not be loaded.',
+        failedTab: 'artists',
+      },
+    });
+    expect(errorSpy).toHaveBeenCalledTimes(1);
+  });
+
+  it('stops without returning partial data when a later requested tab fails', async () => {
+    const errorSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
+    const mod = await importSheetsServerWithSupabaseMock({
+      results: {
+        genres: {
+          data: [{ label: 'House', explanation: '4/4' }],
+          error: null,
+        },
+        artists: {
+          data: null,
+          error: { message: 'artists down' },
+        },
+      },
+    });
+
+    await expect(mod.getSheets(['genres', 'artists'])).resolves.toEqual({
+      ok: false,
+      updatedAt: expect.any(String),
+      error: {
+        code: 'query_failed',
+        message: 'Archive data could not be loaded.',
+        failedTab: 'artists',
+      },
+    });
+    expect(errorSpy).toHaveBeenCalledTimes(1);
   });
 
   it('falls back from festival_sets to heatmaps and logs each failed table once', async () => {
@@ -213,7 +283,7 @@ describe('sheets.server', () => {
     );
   });
 
-  it('assembles sheet payloads with selected tabs only', async () => {
+  it('assembles successful sheet payloads with selected tabs only', async () => {
     const mod = await importSheetsServerWithSupabaseMock({
       results: {
         artists: {
@@ -231,18 +301,41 @@ describe('sheets.server', () => {
       },
     });
 
-    const artistsOnly = await mod.getSheets(['artists']);
-    expect(artistsOnly.ok).toBe(true);
-    expect(artistsOnly.data).toEqual({
-      artists: [{ name: 'DJ Test', rating: 'ok' }],
+    await expect(mod.getSheets(['artists'])).resolves.toEqual({
+      ok: true,
+      updatedAt: expect.any(String),
+      data: {
+        artists: [{ name: 'DJ Test', rating: 'ok' }],
+      },
     });
-    expect(typeof artistsOnly.updatedAt).toBe('string');
 
-    const allTabs = await mod.getSheets();
-    expect(allTabs.data).toEqual({
-      artists: [{ name: 'DJ Test', rating: 'ok' }],
-      genres: [{ explanation: '4/4', label: 'House' }],
-      list: [],
+    await expect(mod.getSheets()).resolves.toEqual({
+      ok: true,
+      updatedAt: expect.any(String),
+      data: {
+        artists: [{ name: 'DJ Test', rating: 'ok' }],
+        genres: [{ explanation: '4/4', label: 'House' }],
+        list: [],
+      },
+    });
+  });
+
+  it('ignores unknown tab names and preserves current tab filtering behavior', async () => {
+    const mod = await importSheetsServerWithSupabaseMock({
+      results: {
+        genres: {
+          data: [{ label: 'Ambient', explanation: 'Drifting' }],
+          error: null,
+        },
+      },
+    });
+
+    await expect(mod.getSheets(['unknown', 'genres'])).resolves.toEqual({
+      ok: true,
+      updatedAt: expect.any(String),
+      data: {
+        genres: [{ label: 'Ambient', explanation: 'Drifting' }],
+      },
     });
   });
 });
