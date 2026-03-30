@@ -9,7 +9,7 @@ Quality Check Fest,2026-03-30,Lounge,Artist E,13:15,13:55,hot,3
 Quality Check Fest,2026-03-30,Lounge,Artist F,14:10,15:40,blazing,3
 `;
 
-test('custom heatmap exports PNG and PDF', async ({ page, browserName }) => {
+test('custom heatmap exports PNG', async ({ page, browserName }) => {
   test.skip(browserName !== 'chromium', 'Downloads are verified in Chromium');
 
   await page.goto('/heatmaps/custom');
@@ -22,7 +22,7 @@ test('custom heatmap exports PNG and PDF', async ({ page, browserName }) => {
 
   await expect(page.getByRole('heading', { name: 'Quality Check Fest' })).toBeVisible();
   await expect(page.getByRole('button', { name: 'PNG' })).toBeVisible();
-  await expect(page.getByRole('button', { name: 'PDF' })).toBeVisible();
+  await expect(page.getByRole('button', { name: 'PDF' })).toHaveCount(0);
 
   const exportSurface = page.getByTestId('heatmap-export-surface');
   const bounds = await exportSurface.boundingBox();
@@ -33,9 +33,4 @@ test('custom heatmap exports PNG and PDF', async ({ page, browserName }) => {
   await page.getByRole('button', { name: 'PNG' }).click();
   const png = await pngDownload;
   expect(png.suggestedFilename()).toBe('quality-check-fest-heatmap.png');
-
-  const pdfDownload = page.waitForEvent('download');
-  await page.getByRole('button', { name: 'PDF' }).click();
-  const pdf = await pdfDownload;
-  expect(pdf.suggestedFilename()).toBe('quality-check-fest-heatmap.pdf');
 });
