@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useRef } from 'react';
+import Link from 'next/link';
 import { motion } from 'framer-motion';
 import type { Artist } from '@/lib/types';
 
@@ -9,6 +10,10 @@ type Rating = Artist['rating'];
 type ArtistsPageClientProps = {
   artistsByRating: Record<Rating, Artist[]>;
 };
+
+export function getArtistListHref(artistName: string) {
+  return `/list?q=${encodeURIComponent(artistName)}`;
+}
 
 export default function ArtistsPageClient({ artistsByRating }: ArtistsPageClientProps) {
   const containerRef = useRef<HTMLDivElement>(null);
@@ -40,9 +45,11 @@ export default function ArtistsPageClient({ artistsByRating }: ArtistsPageClient
                 transition={{ duration: 0.8, delay: i * 0.04, ease: "easeOut" }}
                 className="group relative cursor-pointer"
               >
-                <span className="relative z-10 block text-3xl sm:text-4xl md:text-5xl font-bold uppercase tracking-tight text-neutral-900 transition-all duration-300 group-hover:text-orange-600 group-hover:scale-105">
-                  {artist.name}
-                </span>
+                <Link href={getArtistListHref(artist.name)} className="block">
+                  <span className="relative z-10 block text-3xl sm:text-4xl md:text-5xl font-bold uppercase tracking-tight text-neutral-900 transition-all duration-300 group-hover:text-orange-600 group-hover:scale-105">
+                    {artist.name}
+                  </span>
+                </Link>
 
                 {/* Separator */}
                 <span className="absolute -right-3 top-1/2 -translate-y-1/2 text-xl text-neutral-300 opacity-0 last:hidden">
@@ -60,9 +67,14 @@ export default function ArtistsPageClient({ artistsByRating }: ArtistsPageClient
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
                 transition={{ duration: 0.8, delay: 0.5 + i * 0.02 }}
-                className="cursor-pointer text-lg md:text-xl font-semibold uppercase tracking-normal text-neutral-500 transition-all duration-300 hover:text-orange-600 hover:scale-105"
+                className="group"
               >
-                {artist.name}
+                <Link
+                  href={getArtistListHref(artist.name)}
+                  className="block cursor-pointer text-lg md:text-xl font-semibold uppercase tracking-normal text-neutral-500 transition-all duration-300 hover:text-orange-600 hover:scale-105"
+                >
+                  {artist.name}
+                </Link>
               </motion.span>
             ))}
           </div>
@@ -75,9 +87,14 @@ export default function ArtistsPageClient({ artistsByRating }: ArtistsPageClient
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
                 transition={{ duration: 0.8, delay: 1 + i * 0.01 }}
-                className="cursor-pointer text-xs font-medium uppercase tracking-wider text-neutral-400 transition-all duration-300 hover:text-orange-600 hover:scale-105"
+                className="group"
               >
-                {artist.name}
+                <Link
+                  href={getArtistListHref(artist.name)}
+                  className="block cursor-pointer text-xs font-medium uppercase tracking-wider text-neutral-400 transition-all duration-300 hover:text-orange-600 hover:scale-105"
+                >
+                  {artist.name}
+                </Link>
               </motion.span>
             ))}
           </div>
