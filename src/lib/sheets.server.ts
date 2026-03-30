@@ -1,13 +1,46 @@
 import 'server-only';
 import { cache } from 'react';
-import { supabase } from '@/lib/supabase';
+import {
+  isSupabaseEnabled,
+  supabase,
+  supabaseDisabledReason,
+} from '@/lib/supabase';
 import type { Artist, Genre, Row } from '@/lib/types';
 
 // Re-export types for compatibility
 export type { Artist, Genre, Row };
 
+let hasLoggedDisabledSupabase = false;
+
+function logSupabaseDisabledOnce() {
+  if (hasLoggedDisabledSupabase) return;
+
+  hasLoggedDisabledSupabase = true;
+  console.warn(
+    `Supabase data fetches disabled: ${supabaseDisabledReason ?? 'configuration unavailable'}. Returning empty fallback data.`,
+  );
+}
+
+function shouldSkipSupabaseFetches() {
+  if (isSupabaseEnabled && supabase) {
+    return false;
+  }
+
+  logSupabaseDisabledOnce();
+  return true;
+}
+
 export const getGenres = cache(async (): Promise<Genre[]> => {
-  const { data, error } = await supabase
+  if (shouldSkipSupabaseFetches()) {
+    return [];
+  }
+
+  const client = supabase;
+  if (!client) {
+    return [];
+  }
+
+  const { data, error } = await client
     .from('genres')
     .select('label, explanation');
 
@@ -19,7 +52,16 @@ export const getGenres = cache(async (): Promise<Genre[]> => {
 });
 
 export const getArtists = cache(async (): Promise<Artist[]> => {
-  const { data, error } = await supabase
+  if (shouldSkipSupabaseFetches()) {
+    return [];
+  }
+
+  const client = supabase;
+  if (!client) {
+    return [];
+  }
+
+  const { data, error } = await client
     .from('artists')
     .select('artist, rating');
 
@@ -35,7 +77,16 @@ export const getArtists = cache(async (): Promise<Artist[]> => {
 });
 
 export const getListRows = cache(async (): Promise<Row[]> => {
-  const { data, error } = await supabase
+  if (shouldSkipSupabaseFetches()) {
+    return [];
+  }
+
+  const client = supabase;
+  if (!client) {
+    return [];
+  }
+
+  const { data, error } = await client
     .from('sets')
     .select(`
       title,
@@ -74,10 +125,19 @@ export const getListRows = cache(async (): Promise<Row[]> => {
 // New function for heatmaps
 // No functional changes needed here as it returns raw data, but keeping it consistent with hook's intent
 export const getFestivalSets = cache(async () => {
+  if (shouldSkipSupabaseFetches()) {
+    return [];
+  }
+
+  const client = supabase;
+  if (!client) {
+    return [];
+  }
+
   const candidateTables = ['festival_sets', 'heatmaps'];
 
   for (const table of candidateTables) {
-    const { data, error } = await supabase
+    const { data, error } = await client
       .from(table)
       .select('*')
       .order('date', { ascending: false });
