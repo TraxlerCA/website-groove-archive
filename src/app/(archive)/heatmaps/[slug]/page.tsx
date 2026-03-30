@@ -5,8 +5,10 @@ import Link from 'next/link';
 import { useParams } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useHeatmaps } from '@/hooks/useHeatmaps';
+import { HeatmapExportRenderer } from '@/components/heatmaps/HeatmapExportRenderer';
 import { HeatmapRenderer } from '@/components/heatmaps/HeatmapRenderer';
-import { loadHtmlToImage, slugify } from '@/lib/heatmaps';
+import { exportHeatmapPdf, exportHeatmapPng } from '@/lib/heatmapExport';
+import { slugify } from '@/lib/heatmaps';
 
 export default function HeatmapDetailPage() {
   const params = useParams();
@@ -15,26 +17,33 @@ export default function HeatmapDetailPage() {
   const heatmap = getBySlug(slug);
   
   const [exportError, setExportError] = useState<string | null>(null);
-  const heatmapRef = useRef<HTMLDivElement | null>(null);
+  const [isExportingPng, setIsExportingPng] = useState(false);
+  const [isExportingPdf, setIsExportingPdf] = useState(false);
+  const exportRef = useRef<HTMLDivElement | null>(null);
 
-  async function handleExport() {
-    if (!heatmap || !heatmapRef.current) return;
+  async function handlePngExport() {
+    if (!heatmap || !exportRef.current) return;
     setExportError(null);
+    setIsExportingPng(true);
     try {
-      const htmlToImage = await loadHtmlToImage();
-      const dataUrl = await htmlToImage.toPng(heatmapRef.current, {
-        pixelRatio: 2, 
-        backgroundColor: '#ffffff', 
-        cacheBust: true, 
-        skipFonts: true
-      });
-      
-      const a = document.createElement('a');
-      a.href = dataUrl;
-      a.download = `${slugify(heatmap.title)}-heatmap.png`;
-      a.click();
+      await exportHeatmapPng(exportRef.current, `${slugify(heatmap.title)}-heatmap.png`);
     } catch (e: unknown) {
       setExportError(e instanceof Error ? e.message : 'Export failed');
+    } finally {
+      setIsExportingPng(false);
+    }
+  }
+
+  async function handlePdfExport() {
+    if (!heatmap || !exportRef.current) return;
+    setExportError(null);
+    setIsExportingPdf(true);
+    try {
+      await exportHeatmapPdf(exportRef.current, `${slugify(heatmap.title)}-heatmap.pdf`);
+    } catch (e: unknown) {
+      setExportError(e instanceof Error ? e.message : 'Export failed');
+    } finally {
+      setIsExportingPdf(false);
     }
   }
 
@@ -96,12 +105,30 @@ export default function HeatmapDetailPage() {
               date={heatmap.date}
               rows={heatmap.rows}
               pxPerMin={1.2}
-              registerRef={(el) => (heatmapRef.current = el)}
-              onExport={handleExport}
+              onExportPng={handlePngExport}
+              onExportPdf={handlePdfExport}
+              isExportingPng={isExportingPng}
+              isExportingPdf={isExportingPdf}
             />
           </motion.div>
         </AnimatePresence>
       </div>
+
+      {heatmap && (
+        <div
+          aria-hidden="true"
+          className="pointer-events-none fixed top-0"
+          style={{ left: -20000 }}
+        >
+          <HeatmapExportRenderer
+            ref={exportRef}
+            title={heatmap.title}
+            date={heatmap.date}
+            rows={heatmap.rows}
+            pxPerMin={1.2}
+          />
+        </div>
+      )}
     </div>
   );
 }

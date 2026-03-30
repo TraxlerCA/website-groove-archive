@@ -3,14 +3,19 @@
 import React, { useState, useRef, useCallback } from 'react';
 import Link from 'next/link';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Row, loadPapa, norm, loadHtmlToImage } from '@/lib/heatmaps';
+import { HeatmapExportRenderer } from '@/components/heatmaps/HeatmapExportRenderer';
 import { HeatmapRenderer } from '@/components/heatmaps/HeatmapRenderer';
+import { exportHeatmapPdf, exportHeatmapPng } from '@/lib/heatmapExport';
+import { Row, loadPapa, norm, slugify } from '@/lib/heatmaps';
 
 
 export default function CustomHeatmapPage() {
   const [rows, setRows] = useState<Row[]>([]);
   const [errors, setErrors] = useState<string[]>([]);
-  const heatmapRef = useRef<HTMLDivElement | null>(null);
+  const [exportError, setExportError] = useState<string | null>(null);
+  const [isExportingPng, setIsExportingPng] = useState(false);
+  const [isExportingPdf, setIsExportingPdf] = useState(false);
+  const exportRef = useRef<HTMLDivElement | null>(null);
 
   const normalizeTime = (t: string) => {
     const s = (t || '').trim();
@@ -86,6 +91,7 @@ export default function CustomHeatmapPage() {
     if (!file) return;
     setErrors([]);
     setRows([]);
+    setExportError(null);
     const reader = new FileReader();
     reader.onload = async (ev) => {
       const text = ev.target?.result as string;
@@ -94,18 +100,30 @@ export default function CustomHeatmapPage() {
     reader.readAsText(file);
   };
 
-  async function handleExport() {
-    if (!rows.length || !heatmapRef.current) return;
+  async function handlePngExport() {
+    if (!rows.length || !exportRef.current) return;
+    setExportError(null);
+    setIsExportingPng(true);
     try {
-      const htmlToImage = await loadHtmlToImage();
-      const dataUrl = await htmlToImage.toPng(heatmapRef.current, {
-        pixelRatio: 2, backgroundColor: '#ffffff', cacheBust: true, skipFonts: true
-      });
-      const a = document.createElement('a'); 
-      a.href = dataUrl; 
-      a.download = `custom-heatmap.png`; 
-      a.click();
-    } catch { /* export failed silently */ }
+      await exportHeatmapPng(exportRef.current, `${slugify(rows[0].festival)}-heatmap.png`);
+    } catch (e: unknown) {
+      setExportError(e instanceof Error ? e.message : 'Export failed');
+    } finally {
+      setIsExportingPng(false);
+    }
+  }
+
+  async function handlePdfExport() {
+    if (!rows.length || !exportRef.current) return;
+    setExportError(null);
+    setIsExportingPdf(true);
+    try {
+      await exportHeatmapPdf(exportRef.current, `${slugify(rows[0].festival)}-heatmap.pdf`);
+    } catch (e: unknown) {
+      setExportError(e instanceof Error ? e.message : 'Export failed');
+    } finally {
+      setIsExportingPdf(false);
+    }
   }
 
   return (
@@ -139,14 +157,21 @@ export default function CustomHeatmapPage() {
                   animate={{ opacity: 1, scale: 1 }}
                   exit={{ opacity: 0, scale: 0.98 }}
                 >
+                  {exportError && (
+                    <div className="mb-6 rounded-xl border border-red-200 bg-red-50 p-4 text-sm font-bold text-red-700 shadow-sm">
+                      {exportError}
+                    </div>
+                  )}
                   <HeatmapRenderer
                     groupKey="custom-preview"
                     title={rows[0].festival}
                     date={rows[0].date}
                     rows={rows}
                     pxPerMin={1.2}
-                    registerRef={(el) => (heatmapRef.current = el)}
-                    onExport={handleExport}
+                    onExportPng={handlePngExport}
+                    onExportPdf={handlePdfExport}
+                    isExportingPng={isExportingPng}
+                    isExportingPdf={isExportingPdf}
                   />
                 </motion.div>
               ) : (
@@ -212,6 +237,22 @@ export default function CustomHeatmapPage() {
           </aside>
         </div>
       </div>
+
+      {rows.length > 0 && (
+        <div
+          aria-hidden="true"
+          className="pointer-events-none fixed top-0"
+          style={{ left: -20000 }}
+        >
+          <HeatmapExportRenderer
+            ref={exportRef}
+            title={rows[0].festival}
+            date={rows[0].date}
+            rows={rows}
+            pxPerMin={1.2}
+          />
+        </div>
+      )}
     </div>
   );
 }

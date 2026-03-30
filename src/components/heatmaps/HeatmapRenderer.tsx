@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useMemo, useState, useEffect, useRef, useCallback } from 'react';
+import React, { useMemo, useState, useEffect, useRef } from 'react';
 import { motion } from 'framer-motion';
 import { TransformWrapper, TransformComponent } from 'react-zoom-pan-pinch';
 import {
@@ -9,10 +9,12 @@ import {
   TICK_W,
   CARD_BORDER,
   SLOT_GAP_PX,
-  toMin,
-  clamp,
-  bucketFromRating,
 } from '@/lib/heatmaps';
+import {
+  computeHeatmapLayout,
+  formatHeatmapHour,
+  getHeatmapNow,
+} from '@/lib/heatmapLayout';
 
 interface HeatmapRendererProps {
   groupKey: string;
@@ -22,7 +24,11 @@ interface HeatmapRendererProps {
   pxPerMin: number;
   registerRef?: (el: HTMLDivElement | null) => void;
   onExport?: () => void;
+  onExportPng?: () => void;
+  onExportPdf?: () => void;
   showExport?: boolean;
+  isExportingPng?: boolean;
+  isExportingPdf?: boolean;
 }
 
 export function HeatmapRenderer({
@@ -33,7 +39,11 @@ export function HeatmapRenderer({
   pxPerMin,
   registerRef,
   onExport,
+  onExportPng,
+  onExportPdf,
   showExport = true,
+  isExportingPng = false,
+  isExportingPdf = false,
 }: HeatmapRendererProps) {
 
   const [now, setNow] = useState<number | null>(null);
@@ -41,17 +51,7 @@ export function HeatmapRenderer({
 
   useEffect(() => {
     const updateNow = () => {
-      const d = new Date();
-      const todayStr = d.toISOString().split('T')[0];
-      if (todayStr === date) {
-        const mins = d.getHours() * 60 + d.getMinutes();
-        const NIGHT_CUTOFF_H = 10;
-        const CUTOFF = NIGHT_CUTOFF_H * 60;
-        const DAY = 24 * 60;
-        setNow(mins < CUTOFF ? mins + DAY : mins);
-      } else {
-        setNow(null);
-      }
+      setNow(getHeatmapNow(date));
     };
     updateNow();
     const interval = setInterval(updateNow, 60000);
@@ -71,53 +71,17 @@ export function HeatmapRenderer({
     return () => window.removeEventListener('resize', updateScale);
   }, []);
 
-  const stages = useMemo(() => {
-    const map = new Map<string, number>();
-    rows.forEach(r => {
-      const ord = Number(r.stage_order ?? 9999);
-      map.set(r.stage, Math.min(map.get(r.stage) ?? ord, ord));
-    });
-    return Array.from(map.entries()).sort((a, b) => a[1] - b[1]).map(([s]) => s);
-  }, [rows]);
-
-  const DAY = 24 * 60;
-  const NIGHT_CUTOFF_H = 10;
-  const CUTOFF = NIGHT_CUTOFF_H * 60;
-
-  const startMin = useCallback((r: Row) => {
-    const s = toMin(r.start);
-    return s < CUTOFF ? s + DAY : s;
-  }, [CUTOFF, DAY]);
-
-  const endMin = useCallback((r: Row) => {
-    const s = startMin(r);
-    let e = toMin(r.end);
-    e = e < CUTOFF ? e + DAY : e;
-    if (e <= s) e += DAY;
-    return e;
-  }, [startMin, CUTOFF, DAY]);
-
-  const fmtHour = (mins: number) => {
-    const hr = Math.floor((((mins % DAY) + DAY) % DAY) / 60);
-    return String(hr).padStart(2, '0') + ':00';
-  };
-
-  const minStart = useMemo(() => Math.min(...rows.map(r => startMin(r))), [rows, startMin]);
-  const maxEnd   = useMemo(() => Math.max(...rows.map(r => endMin(r))),   [rows, endMin]);
-  const totalMin = clamp(Math.max(60, maxEnd - minStart), 60, 20 * 60);
-  const heightPx = Math.round(totalMin * pxPerMin);
-
-  const hours = useMemo(() => {
-    const s = Math.floor(minStart / 60), e = Math.ceil(maxEnd / 60);
-    return Array.from({ length: Math.max(0, e - s + 1) }, (_, i) => (s + i) * 60);
-  }, [minStart, maxEnd]);
+  const layout = useMemo(
+    () => computeHeatmapLayout(rows, pxPerMin, { now }),
+    [rows, pxPerMin, now],
+  );
 
   const renderHeadersContent = () => (
-    <div className="grid h-full" style={{ gridTemplateColumns: `repeat(${stages.length}, 1fr)` }}>
-      {stages.map((s, i) => (
+    <div className="grid h-full" style={{ gridTemplateColumns: `repeat(${layout.stages.length}, 1fr)` }}>
+      {layout.stages.map((s, i) => (
         <div
           key={s}
-          className={`flex items-center justify-center text-center text-[10px] sm:text-sm font-black uppercase tracking-tighter text-black border-r border-neutral-100 ${i === stages.length - 1 ? 'border-r-0' : ''} px-1 sm:px-2`}
+          className={`flex items-center justify-center text-center text-[10px] sm:text-sm font-black uppercase tracking-tighter text-black border-r border-neutral-100 ${i === layout.stages.length - 1 ? 'border-r-0' : ''} px-1 sm:px-2`}
         >
           {s}
         </div>
@@ -127,17 +91,17 @@ export function HeatmapRenderer({
 
   const renderTimeRailContent = () => (
     <div className="relative w-full h-full">
-      {hours.map(h => (
+      {layout.hours.map(h => (
         <React.Fragment key={`time-${h}`}>
           <div
             className="absolute right-0 h-px bg-neutral-100"
-            style={{ top: (h - minStart) * pxPerMin, width: TICK_W }}
+            style={{ top: (h - layout.minStart) * pxPerMin, width: TICK_W }}
           />
           <div
             className="absolute -translate-y-2.5 text-[10px] sm:text-sm font-black tabular-nums text-black"
-            style={{ top: (h - minStart) * pxPerMin, left: isMobile ? 4 : 8 }}
+            style={{ top: (h - layout.minStart) * pxPerMin, left: isMobile ? 4 : 8 }}
           >
-            {fmtHour(h)}
+            {formatHeatmapHour(h)}
           </div>
         </React.Fragment>
       ))}
@@ -145,19 +109,19 @@ export function HeatmapRenderer({
   );
 
   const renderSetsContent = () => (
-    <div className="relative w-full" style={{ height: heightPx }}>
+    <div className="relative w-full" style={{ height: layout.heightPx }}>
       <div className="pointer-events-none absolute inset-0">
-        {hours.map(h => (
+        {layout.hours.map(h => (
           <div
             key={`hline-${h}`}
             className="absolute left-0 right-0 border-t border-dashed border-neutral-600/50"
-            style={{ top: (h - minStart) * pxPerMin }}
+            style={{ top: (h - layout.minStart) * pxPerMin }}
           />
         ))}
-        {now !== null && now >= minStart && now <= maxEnd && (
+        {layout.now !== null && layout.now >= layout.minStart && layout.now <= layout.maxEnd && (
           <div 
             className="absolute left-0 right-0 z-40 flex items-center"
-            style={{ top: (now - minStart) * pxPerMin }}
+            style={{ top: (layout.now - layout.minStart) * pxPerMin }}
           >
             <div className="h-px w-full bg-red-600 shadow-[0_0_8px_rgba(220,38,38,0.4)]" />
             <div className="absolute -left-1 h-2.5 w-2.5 rounded-full border border-white bg-red-600 shadow-sm" />
@@ -165,76 +129,22 @@ export function HeatmapRenderer({
         )}
       </div>
 
-      <div className="relative grid h-full gap-0" style={{ gridTemplateColumns: `repeat(${stages.length}, minmax(0, 1fr))` }}>
-        {stages.map((stage, idx) => {
-          const sets = rows
-            .filter(r => r.stage === stage)
-            .sort((a, b) => startMin(a) - startMin(b));
-          
-          type Ev = { r: Row; i: number; s: number; e: number };
-          const events: Ev[] = sets.map((r, i) => ({ r, i, s: startMin(r), e: endMin(r) }));
-
-          const clusters: Ev[][] = [];
-          let cur: Ev[] = [];
-          let curEnd = -Infinity;
-          for (const ev of events) {
-            if (!cur.length || ev.s < curEnd) {
-              cur.push(ev);
-              if (ev.e > curEnd) curEnd = ev.e;
-            } else {
-              clusters.push(cur);
-              cur = [ev];
-              curEnd = ev.e;
-            }
-          }
-          if (cur.length) clusters.push(cur);
-
-          const placement: Record<number, { col: number; cols: number }> = {};
-          for (const cluster of clusters) {
-            const colEnds: number[] = [];
-            type Placed = { idx: number; col: number };
-            const placed: Placed[] = [];
-            for (const ev of cluster) {
-              let col = colEnds.findIndex(end => end <= ev.s);
-              if (col === -1) { colEnds.push(ev.e); col = colEnds.length - 1; }
-              else { colEnds[col] = ev.e; }
-              placed.push({ idx: ev.i, col });
-            }
-            const cols = colEnds.length;
-            for (const p of placed) placement[p.idx] = { col: p.col, cols };
-          }
-
+      <div className="relative grid h-full gap-0" style={{ gridTemplateColumns: `repeat(${layout.stages.length}, minmax(0, 1fr))` }}>
+        {layout.stageLayouts.map((stageLayout, idx) => {
           return (
-            <div key={stage} className={`relative border-r border-neutral-100/30 ${idx === stages.length - 1 ? 'border-r-0' : ''}`}>
-              {sets.map((r, i) => {
-                const s = startMin(r);
-                const e = endMin(r);
-                const naturalTop = (s - minStart) * pxPerMin;
-                const naturalH   = Math.max(30, (e - s) * pxPerMin);
-                const innerH = naturalH * 0.94;
-                const top = naturalTop + (naturalH - innerH) / 2;
-
-                const bucket = bucketFromRating(r.rating);
-                const bg = bucket ? COLORS[bucket] : COLORS.unrated;
-                const isDark = bucket === 'blazing' || bucket === 'hot' || (bucket === 'nahh');
-                const txt = isDark ? '#FFFFFF' : '#111827';
-
-                const place = placement[i] || { col: 0, cols: 1 };
-                const n = Math.max(1, place.cols);
-                const c = Math.max(0, Math.min(place.col, n - 1));
-                
-                const width = `calc((100% - ${(n - 1) * SLOT_GAP_PX}px) / ${n})`;
-                const left  = `calc(${c} * (100% - ${(n - 1) * SLOT_GAP_PX}px) / ${n} + ${c * SLOT_GAP_PX}px)`;
-
+            <div key={stageLayout.stage} className={`relative border-r border-neutral-100/30 ${idx === layout.stages.length - 1 ? 'border-r-0' : ''}`}>
+              {stageLayout.placements.map((placement) => {
+                const width = `calc((100% - ${(placement.columnCount - 1) * SLOT_GAP_PX}px) / ${placement.columnCount})`;
+                const left  = `calc(${placement.columnIndex} * (100% - ${(placement.columnCount - 1) * SLOT_GAP_PX}px) / ${placement.columnCount} + ${placement.columnIndex * SLOT_GAP_PX}px)`;
                 return (
-                  <div key={stage + '-' + i} className="absolute left-1.5 right-1.5" style={{ top }}>
-                    <div className="relative" style={{ height: innerH }}>
+                  <div key={`${stageLayout.stage}-${placement.row.artist}-${placement.row.start}-${placement.row.end}`} className="absolute left-1.5 right-1.5" style={{ top: placement.top }}>
+                    <div className="relative" style={{ height: placement.innerHeight }}>
                       <div
                         className={`${CARD_BORDER} absolute inset-y-0 flex flex-col items-center justify-center text-center px-1 transition-all z-10 overflow-hidden shadow-sm`}
-                        style={{ left, width, height: '100%', backgroundColor: bg, color: txt }}
+                        style={{ left, width, height: '100%', backgroundColor: placement.backgroundColor, color: placement.textColor }}
                       >
                         <div className="text-[10px] sm:text-[12px] font-black leading-[1.1] truncate w-full tracking-tighter">
-                          {r.artist}
+                          {placement.row.artist}
                         </div>
                       </div>
                     </div>
@@ -251,8 +161,10 @@ export function HeatmapRenderer({
   const mobileRailW = 56;
   const mobileStageW = 136;
   const desktopStageW = 180;
-  const desktopMinWidth = Math.max(800, stages.length * desktopStageW);
-  const mobileMinWidth = Math.max(560, mobileRailW + stages.length * mobileStageW);
+  const desktopMinWidth = Math.max(800, layout.stages.length * desktopStageW);
+  const mobileMinWidth = Math.max(560, mobileRailW + layout.stages.length * mobileStageW);
+  const handlePngExport = onExportPng ?? onExport;
+  const isBusy = isExportingPng || isExportingPdf;
 
   return (
     <div 
@@ -265,17 +177,32 @@ export function HeatmapRenderer({
           {title}
         </h1>
         <div className="flex items-center gap-3 shrink-0">
-          {showExport && (
+          {showExport && handlePngExport && (
             <motion.button
-              className="flex items-center gap-2 rounded-full bg-neutral-900 px-6 py-3 text-sm font-semibold text-white shadow-[0_8px_16px_rgba(0,0,0,0.15)] hover:bg-neutral-800 transition-all"
-              onClick={onExport}
-              whileHover={{ y: -2, boxShadow: '0 12px 24px rgba(0,0,0,0.2)' }}
-              whileTap={{ scale: 0.98 }}
+              className="flex items-center gap-2 rounded-full bg-neutral-900 px-6 py-3 text-sm font-semibold text-white shadow-[0_8px_16px_rgba(0,0,0,0.15)] hover:bg-neutral-800 transition-all disabled:cursor-wait disabled:opacity-60"
+              onClick={handlePngExport}
+              whileHover={isBusy ? undefined : { y: -2, boxShadow: '0 12px 24px rgba(0,0,0,0.2)' }}
+              whileTap={isBusy ? undefined : { scale: 0.98 }}
+              disabled={isBusy}
             >
               <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
               </svg>
-              PNG
+              {isExportingPng ? 'Exporting PNG…' : 'PNG'}
+            </motion.button>
+          )}
+          {showExport && onExportPdf && (
+            <motion.button
+              className="flex items-center gap-2 rounded-full border border-neutral-300 bg-white px-6 py-3 text-sm font-semibold text-neutral-900 shadow-sm transition-all hover:border-neutral-400 hover:bg-neutral-50 disabled:cursor-wait disabled:opacity-60"
+              onClick={onExportPdf}
+              whileHover={isBusy ? undefined : { y: -2 }}
+              whileTap={isBusy ? undefined : { scale: 0.98 }}
+              disabled={isBusy}
+            >
+              <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M12 3v12m0 0l4-4m-4 4l-4-4M5 19h14" />
+              </svg>
+              {isExportingPdf ? 'Exporting PDF…' : 'PDF'}
             </motion.button>
           )}
         </div>
@@ -318,7 +245,7 @@ export function HeatmapRenderer({
               <div className="relative flex items-stretch pt-2 pb-5">
                 <div
                   className="sticky left-0 z-20 bg-white/95 backdrop-blur-sm border-r border-neutral-100 shrink-0"
-                  style={{ width: mobileRailW, height: heightPx }}
+                  style={{ width: mobileRailW, height: layout.heightPx }}
                 >
                   {renderTimeRailContent()}
                 </div>
@@ -363,7 +290,7 @@ export function HeatmapRenderer({
                   <div className="relative flex items-stretch pt-3 pb-6">
                     <div
                       className="sticky left-0 z-20 bg-white/95 backdrop-blur-sm border-r border-neutral-100 shrink-0"
-                      style={{ width: 80, height: heightPx }}
+                      style={{ width: 80, height: layout.heightPx }}
                     >
                       {renderTimeRailContent()}
                     </div>
