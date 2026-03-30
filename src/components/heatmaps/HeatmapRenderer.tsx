@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useMemo, useState, useEffect, useRef, useCallback } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion } from 'framer-motion';
 import { TransformWrapper, TransformComponent } from 'react-zoom-pan-pinch';
 import {
   Row,
@@ -248,6 +248,12 @@ export function HeatmapRenderer({
     </div>
   );
 
+  const mobileRailW = 56;
+  const mobileStageW = 136;
+  const desktopStageW = 180;
+  const desktopMinWidth = Math.max(800, stages.length * desktopStageW);
+  const mobileMinWidth = Math.max(560, mobileRailW + stages.length * mobileStageW);
+
   return (
     <div 
       ref={sectionRef}
@@ -294,53 +300,84 @@ export function HeatmapRenderer({
           className="relative rounded-2xl sm:rounded-[2rem] border border-neutral-200 bg-white shadow-2xl overflow-hidden"
           style={{ maxHeight: isMobile ? '80vh' : '92vh' }}
         >
-          <TransformWrapper
-            initialScale={1}
-            minScale={0.4}
-            maxScale={4}
-            centerOnInit={false}
-            disabled={!isMobile}
-            doubleClick={{ disabled: true }}
-            panning={{ velocityDisabled: false }}
-            wheel={{ step: 0.1 }}
-          >
-            <TransformComponent
-              wrapperClass="!w-full !h-full"
-              contentClass="!w-full !h-full"
-            >
-              <div 
-                className="relative overflow-auto scrollbar-hide touch-pan-x touch-pan-y" 
-                style={{ 
-                  minWidth: Math.max(800, stages.length * (isMobile ? 150 : 180)),
-                  height: '100%' 
-                }}
+          {isMobile ? (
+            <div className="h-full overflow-auto overscroll-contain">
+              <div
+                className="relative"
+                style={{ minWidth: mobileMinWidth }}
               >
-                {/* Top Header - Stages */}
-                <div className="sticky top-0 z-30 flex items-stretch bg-white/95 backdrop-blur-md border-b border-neutral-100 h-[50px] sm:h-[60px] rounded-t-2xl sm:rounded-t-[2rem]">
-                  <div 
-                    className="sticky left-0 z-40 bg-white border-r border-neutral-100 shrink-0" 
-                    style={{ width: isMobile ? 45 : 80 }} 
+                <div className="sticky top-0 z-30 flex items-stretch bg-white/95 backdrop-blur-md border-b border-neutral-100 h-[52px]">
+                  <div
+                    className="sticky left-0 z-40 bg-white border-r border-neutral-100 shrink-0"
+                    style={{ width: mobileRailW }}
                   />
-                  <div className="flex-1">
+                  <div className="flex-1 min-w-0">
                     {renderHeadersContent()}
                   </div>
                 </div>
 
-                <div className="relative flex items-stretch pt-3 pb-6">
-                  <div 
-                    className="sticky left-0 z-20 bg-white/95 backdrop-blur-sm border-r border-neutral-100 shrink-0" 
-                    style={{ width: isMobile ? 45 : 80, height: heightPx }}
+                <div className="relative flex items-stretch pt-2 pb-5">
+                  <div
+                    className="sticky left-0 z-20 bg-white/95 backdrop-blur-sm border-r border-neutral-100 shrink-0"
+                    style={{ width: mobileRailW, height: heightPx }}
                   >
                     {renderTimeRailContent()}
                   </div>
-                  
-                  <div className="flex-1">
+
+                  <div className="flex-1 min-w-0">
                     {renderSetsContent()}
                   </div>
                 </div>
               </div>
-            </TransformComponent>
-          </TransformWrapper>
+            </div>
+          ) : (
+            <TransformWrapper
+              initialScale={1}
+              minScale={1}
+              maxScale={1}
+              centerOnInit={false}
+              disabled={true}
+              doubleClick={{ disabled: true }}
+              panning={{ disabled: true, velocityDisabled: true }}
+              wheel={{ disabled: true }}
+            >
+              <TransformComponent
+                wrapperClass="!w-full !h-full"
+                contentClass="!w-full !h-full"
+              >
+                <div
+                  className="relative overflow-visible"
+                  style={{
+                    minWidth: desktopMinWidth,
+                    height: '100%',
+                  }}
+                >
+                  <div className="sticky top-0 z-30 flex items-stretch bg-white/95 backdrop-blur-md border-b border-neutral-100 h-[60px] rounded-t-[2rem]">
+                    <div
+                      className="sticky left-0 z-40 bg-white border-r border-neutral-100 shrink-0"
+                      style={{ width: 80 }}
+                    />
+                    <div className="flex-1">
+                      {renderHeadersContent()}
+                    </div>
+                  </div>
+
+                  <div className="relative flex items-stretch pt-3 pb-6">
+                    <div
+                      className="sticky left-0 z-20 bg-white/95 backdrop-blur-sm border-r border-neutral-100 shrink-0"
+                      style={{ width: 80, height: heightPx }}
+                    >
+                      {renderTimeRailContent()}
+                    </div>
+
+                    <div className="flex-1">
+                      {renderSetsContent()}
+                    </div>
+                  </div>
+                </div>
+              </TransformComponent>
+            </TransformWrapper>
+          )}
         </div>
       </div>
     </div>
