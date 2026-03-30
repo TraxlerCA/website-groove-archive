@@ -5,7 +5,7 @@ import type { SiteData } from '@/context/SiteDataContext';
 import { getSheets } from '@/lib/sheets.server';
 import type { Genre, Row } from '@/lib/types';
 
-export default async function ArchiveLayout({ children }: { children: ReactNode }) {
+export default async function SiteLayout({ children }: { children: ReactNode }) {
   const sheets = await getSheets();
   const data: SiteData = {
     rows: (sheets.data.list ?? []) as Row[],

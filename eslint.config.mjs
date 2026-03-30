@@ -6,15 +6,24 @@ export default defineConfig([
   ...nextCoreWebVitals,
   ...nextTypeScript,
   {
+    files: ["scripts/**/*.{js,mjs,cjs}"],
+    languageOptions: {
+      ecmaVersion: "latest",
+      sourceType: "module",
+    },
+  },
+  {
+    files: ["scripts/**/*.cjs"],
+    languageOptions: {
+      sourceType: "commonjs",
+    },
     rules: {
-      "react-hooks/refs": "warn",
-      "react-hooks/set-state-in-effect": "warn",
+      "@typescript-eslint/no-require-imports": "off",
     },
   },
   globalIgnores([
     ".next/**",
     "next-env.d.ts",
-    "scripts/**",
     "node_modules/**",
     "out/**",
     "build/**",

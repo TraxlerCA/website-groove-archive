@@ -1,23 +1,30 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
-vi.mock('server-only', () => ({}), { virtual: true });
+vi.mock('server-only', () => ({}));
 
 type QueryResult = {
   data: unknown;
   error: { message: string } | null;
 };
 
+const EMPTY_QUERY_RESULT: QueryResult = {
+  data: [],
+  error: null,
+};
+
 function createSupabaseMock(results: Record<string, QueryResult>) {
   const select = vi.fn((selection: string) => {
-    const selectedTable = from.mock.calls.at(-1)?.[0] as string;
+    const lastCall = from.mock.calls.at(-1);
+    const selectedTable = lastCall?.at(0);
+    const result = typeof selectedTable === 'string' ? (results[selectedTable] ?? EMPTY_QUERY_RESULT) : EMPTY_QUERY_RESULT;
 
     if (selection === '*') {
       return {
-        order: vi.fn(async () => results[selectedTable]),
+        order: vi.fn(async () => result),
       };
     }
 
-    return Promise.resolve(results[selectedTable]);
+    return Promise.resolve(result);
   });
 
   const from = vi.fn(() => ({

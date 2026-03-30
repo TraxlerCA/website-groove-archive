@@ -7,6 +7,8 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint .",
+    "typecheck": "next typegen && tsc --noEmit -p tsconfig.typecheck.json",
+    "check": "npm run lint && npm run typecheck",
     "test": "vitest run",
     "generate:ggw-zones": "node scripts/generate-ggw-zones.cjs",
     "test:e2e": "playwright test",
