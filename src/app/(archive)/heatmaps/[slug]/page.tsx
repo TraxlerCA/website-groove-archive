@@ -7,7 +7,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { useHeatmaps } from '@/hooks/useHeatmaps';
 import { HeatmapExportRenderer } from '@/components/heatmaps/HeatmapExportRenderer';
 import { HeatmapRenderer } from '@/components/heatmaps/HeatmapRenderer';
-import { exportHeatmapPdf, exportHeatmapPng } from '@/lib/heatmapExport';
+import { exportHeatmapPng } from '@/lib/heatmapExport';
 import { slugify } from '@/lib/heatmaps';
 
 export default function HeatmapDetailPage() {
@@ -18,7 +18,6 @@ export default function HeatmapDetailPage() {
   
   const [exportError, setExportError] = useState<string | null>(null);
   const [isExportingPng, setIsExportingPng] = useState(false);
-  const [isExportingPdf, setIsExportingPdf] = useState(false);
   const exportRef = useRef<HTMLDivElement | null>(null);
 
   async function handlePngExport() {
@@ -31,19 +30,6 @@ export default function HeatmapDetailPage() {
       setExportError(e instanceof Error ? e.message : 'Export failed');
     } finally {
       setIsExportingPng(false);
-    }
-  }
-
-  async function handlePdfExport() {
-    if (!heatmap || !exportRef.current) return;
-    setExportError(null);
-    setIsExportingPdf(true);
-    try {
-      await exportHeatmapPdf(exportRef.current, `${slugify(heatmap.title)}-heatmap.pdf`);
-    } catch (e: unknown) {
-      setExportError(e instanceof Error ? e.message : 'Export failed');
-    } finally {
-      setIsExportingPdf(false);
     }
   }
 
@@ -71,10 +57,7 @@ export default function HeatmapDetailPage() {
   }
 
   return (
-    <div
-      className="min-h-screen bg-neutral-50/50 pb-16 pt-4 sm:pb-20 sm:pt-10"
-      style={{ ['--heatmap-page-chrome' as string]: '11.5rem' }}
-    >
+    <div className="min-h-screen bg-neutral-50/50 pb-16 pt-4 sm:pb-20 sm:pt-10">
       <div className="mx-auto max-w-7xl px-4 sm:px-6">
         <div className="mb-4 flex items-center justify-between sm:mb-8">
           <Link 
@@ -107,9 +90,7 @@ export default function HeatmapDetailPage() {
               rows={heatmap.rows}
               pxPerMin={1.2}
               onExportPng={handlePngExport}
-              onExportPdf={handlePdfExport}
               isExportingPng={isExportingPng}
-              isExportingPdf={isExportingPdf}
             />
           </motion.div>
         </AnimatePresence>

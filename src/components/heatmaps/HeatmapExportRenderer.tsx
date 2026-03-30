@@ -13,6 +13,7 @@ import {
   formatHeatmapHour,
   getHeatmapExportSize,
 } from '@/lib/heatmapLayout';
+import { fitHeatmapLabel } from '@/lib/heatmapLabelFit';
 import { COLORS, Row } from '@/lib/heatmaps';
 
 type HeatmapExportRendererProps = {
@@ -80,7 +81,17 @@ function ExportGrid({ layout, pxPerMin }: { layout: ComputedHeatmapLayout; pxPer
               />
             ))}
 
-            {stageLayout.placements.map((placement) => (
+            {stageLayout.placements.map((placement) => {
+              const label = fitHeatmapLabel(placement.row.artist, {
+                maxWidth: Math.max(24, placement.widthPx - 16),
+                maxHeight: Math.max(18, placement.innerHeight - 8),
+                baseFontSize: 20,
+                minFontSize: 12,
+                lineHeight: 1.08,
+                maxLines: 2,
+              });
+
+              return (
               <div
                 key={`${stageLayout.stage}-${placement.row.artist}-${placement.row.start}-${placement.row.end}`}
                 className="absolute"
@@ -98,12 +109,20 @@ function ExportGrid({ layout, pxPerMin }: { layout: ComputedHeatmapLayout; pxPer
                     color: placement.textColor,
                   }}
                 >
-                  <div className="w-full truncate text-[20px] font-black leading-[1.1] tracking-tight">
-                    {placement.row.artist}
+                  <div
+                    className="w-full font-black tracking-tight"
+                    style={{ fontSize: label.fontSize, lineHeight: `${label.lineHeightPx}px` }}
+                  >
+                    {label.lines.map((line, index) => (
+                      <div key={`${placement.row.artist}-${index}`} className="w-full overflow-hidden text-ellipsis whitespace-nowrap">
+                        {line}
+                      </div>
+                    ))}
                   </div>
                 </div>
               </div>
-            ))}
+              );
+            })}
           </div>
         ))}
       </div>

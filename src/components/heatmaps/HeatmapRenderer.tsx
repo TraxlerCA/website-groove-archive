@@ -15,6 +15,7 @@ import {
   formatHeatmapHour,
   getHeatmapNow,
 } from '@/lib/heatmapLayout';
+import { fitHeatmapLabel } from '@/lib/heatmapLabelFit';
 
 interface HeatmapRendererProps {
   groupKey: string;
@@ -25,10 +26,8 @@ interface HeatmapRendererProps {
   registerRef?: (el: HTMLDivElement | null) => void;
   onExport?: () => void;
   onExportPng?: () => void;
-  onExportPdf?: () => void;
   showExport?: boolean;
   isExportingPng?: boolean;
-  isExportingPdf?: boolean;
 }
 
 export function HeatmapRenderer({
@@ -40,10 +39,8 @@ export function HeatmapRenderer({
   registerRef,
   onExport,
   onExportPng,
-  onExportPdf,
   showExport = true,
   isExportingPng = false,
-  isExportingPdf = false,
 }: HeatmapRendererProps) {
 
   const [now, setNow] = useState<number | null>(null);
@@ -136,6 +133,20 @@ export function HeatmapRenderer({
               {stageLayout.placements.map((placement) => {
                 const width = `calc((100% - ${(placement.columnCount - 1) * SLOT_GAP_PX}px) / ${placement.columnCount})`;
                 const left  = `calc(${placement.columnIndex} * (100% - ${(placement.columnCount - 1) * SLOT_GAP_PX}px) / ${placement.columnCount} + ${placement.columnIndex * SLOT_GAP_PX}px)`;
+                const stageWidthPx = isMobile
+                  ? mobileStageW
+                  : Math.max(desktopStageW, desktopMinWidth / Math.max(1, layout.stages.length));
+                const availableCardWidthPx =
+                  ((stageWidthPx - 12) - (placement.columnCount - 1) * SLOT_GAP_PX) / placement.columnCount;
+                const label = fitHeatmapLabel(placement.row.artist, {
+                  maxWidth: Math.max(18, availableCardWidthPx - 8),
+                  maxHeight: Math.max(12, placement.innerHeight - 6),
+                  baseFontSize: isMobile ? 10 : 12,
+                  minFontSize: isMobile ? 7 : 8,
+                  lineHeight: 1.08,
+                  maxLines: 2,
+                });
+
                 return (
                   <div key={`${stageLayout.stage}-${placement.row.artist}-${placement.row.start}-${placement.row.end}`} className="absolute left-1.5 right-1.5" style={{ top: placement.top }}>
                     <div className="relative" style={{ height: placement.innerHeight }}>
@@ -143,8 +154,15 @@ export function HeatmapRenderer({
                         className={`${CARD_BORDER} absolute inset-y-0 flex flex-col items-center justify-center text-center px-1 transition-all z-10 overflow-hidden shadow-sm`}
                         style={{ left, width, height: '100%', backgroundColor: placement.backgroundColor, color: placement.textColor }}
                       >
-                        <div className="text-[10px] sm:text-[12px] font-black leading-[1.1] truncate w-full tracking-tighter">
-                          {placement.row.artist}
+                        <div
+                          className="w-full font-black tracking-tighter"
+                          style={{ fontSize: label.fontSize, lineHeight: `${label.lineHeightPx}px` }}
+                        >
+                          {label.lines.map((line, lineIndex) => (
+                            <div key={`${placement.row.artist}-${lineIndex}`} className="w-full overflow-hidden text-ellipsis whitespace-nowrap">
+                              {line}
+                            </div>
+                          ))}
                         </div>
                       </div>
                     </div>
@@ -164,8 +182,8 @@ export function HeatmapRenderer({
   const desktopMinWidth = Math.max(800, layout.stages.length * desktopStageW);
   const mobileMinWidth = Math.max(560, mobileRailW + layout.stages.length * mobileStageW);
   const handlePngExport = onExportPng ?? onExport;
-  const isBusy = isExportingPng || isExportingPdf;
-  const mobileFrameMaxHeight = 'calc(100svh - var(--tga-header-height) - var(--heatmap-page-chrome, 11.5rem))';
+  const isBusy = isExportingPng;
+  const mobileFrameHeight = '80svh';
 
   return (
     <div 
@@ -173,14 +191,14 @@ export function HeatmapRenderer({
       aria-labelledby={`h-${groupKey}`} 
       className="w-full"
     >
-      <div className="mb-4 flex flex-wrap items-start justify-between gap-3 sm:mb-8 sm:flex-nowrap sm:items-start sm:gap-6">
-        <h1 id={`h-${groupKey}`} className="max-w-[14ch] text-[2rem] font-black leading-[0.92] tracking-tighter text-neutral-900 sm:max-w-none sm:text-5xl sm:leading-[0.9]">
+      <div className="mb-4 flex items-start justify-between gap-3 sm:mb-8 sm:gap-6">
+        <h1 id={`h-${groupKey}`} className="min-w-0 flex-1 text-[1.8rem] font-black leading-[0.92] tracking-tighter text-neutral-900 sm:flex-none sm:text-5xl sm:leading-[0.9]">
           {title}
         </h1>
         <div className="flex items-center gap-2 shrink-0">
           {showExport && handlePngExport && (
             <motion.button
-              className="flex items-center gap-1.5 rounded-full bg-neutral-900 px-4 py-2 text-[11px] font-semibold uppercase tracking-[0.18em] text-white shadow-[0_8px_16px_rgba(0,0,0,0.15)] transition-all hover:bg-neutral-800 disabled:cursor-wait disabled:opacity-60 sm:gap-2 sm:px-6 sm:py-3 sm:text-sm sm:tracking-normal"
+              className="flex items-center gap-1.5 whitespace-nowrap rounded-full bg-neutral-900 px-4 py-2 text-[11px] font-semibold uppercase tracking-[0.18em] text-white shadow-[0_8px_16px_rgba(0,0,0,0.15)] transition-all hover:bg-neutral-800 disabled:cursor-wait disabled:opacity-60 sm:gap-2 sm:px-6 sm:py-3 sm:text-sm sm:tracking-normal"
               onClick={handlePngExport}
               whileHover={isBusy ? undefined : { y: -2, boxShadow: '0 12px 24px rgba(0,0,0,0.2)' }}
               whileTap={isBusy ? undefined : { scale: 0.98 }}
@@ -190,20 +208,6 @@ export function HeatmapRenderer({
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
               </svg>
               {isExportingPng ? 'Exporting PNG…' : 'PNG'}
-            </motion.button>
-          )}
-          {showExport && onExportPdf && (
-            <motion.button
-              className="flex items-center gap-1.5 rounded-full border border-neutral-300 bg-white px-4 py-2 text-[11px] font-semibold uppercase tracking-[0.18em] text-neutral-900 shadow-sm transition-all hover:border-neutral-400 hover:bg-neutral-50 disabled:cursor-wait disabled:opacity-60 sm:gap-2 sm:px-6 sm:py-3 sm:text-sm sm:tracking-normal"
-              onClick={onExportPdf}
-              whileHover={isBusy ? undefined : { y: -2 }}
-              whileTap={isBusy ? undefined : { scale: 0.98 }}
-              disabled={isBusy}
-            >
-              <svg className="h-3.5 w-3.5 sm:h-4 sm:w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M12 3v12m0 0l4-4m-4 4l-4-4M5 19h14" />
-              </svg>
-              {isExportingPdf ? 'Exporting PDF…' : 'PDF'}
             </motion.button>
           )}
         </div>
@@ -226,7 +230,7 @@ export function HeatmapRenderer({
         {/* Unified Sticky + Scalable Heatmap Container */}
         <div 
           className={`relative rounded-2xl sm:rounded-[2rem] border border-neutral-200 bg-white shadow-2xl ${isMobile ? 'overflow-auto overscroll-contain' : 'overflow-hidden'}`}
-          style={{ maxHeight: isMobile ? mobileFrameMaxHeight : '92vh' }}
+          style={{ height: isMobile ? mobileFrameHeight : undefined, maxHeight: isMobile ? mobileFrameHeight : '92vh' }}
         >
           {isMobile ? (
             <div

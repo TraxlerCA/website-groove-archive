@@ -5,7 +5,7 @@ import Link from 'next/link';
 import { motion, AnimatePresence } from 'framer-motion';
 import { HeatmapExportRenderer } from '@/components/heatmaps/HeatmapExportRenderer';
 import { HeatmapRenderer } from '@/components/heatmaps/HeatmapRenderer';
-import { exportHeatmapPdf, exportHeatmapPng } from '@/lib/heatmapExport';
+import { exportHeatmapPng } from '@/lib/heatmapExport';
 import { Row, loadPapa, norm, slugify } from '@/lib/heatmaps';
 
 
@@ -14,7 +14,6 @@ export default function CustomHeatmapPage() {
   const [errors, setErrors] = useState<string[]>([]);
   const [exportError, setExportError] = useState<string | null>(null);
   const [isExportingPng, setIsExportingPng] = useState(false);
-  const [isExportingPdf, setIsExportingPdf] = useState(false);
   const exportRef = useRef<HTMLDivElement | null>(null);
 
   const normalizeTime = (t: string) => {
@@ -113,19 +112,6 @@ export default function CustomHeatmapPage() {
     }
   }
 
-  async function handlePdfExport() {
-    if (!rows.length || !exportRef.current) return;
-    setExportError(null);
-    setIsExportingPdf(true);
-    try {
-      await exportHeatmapPdf(exportRef.current, `${slugify(rows[0].festival)}-heatmap.pdf`);
-    } catch (e: unknown) {
-      setExportError(e instanceof Error ? e.message : 'Export failed');
-    } finally {
-      setIsExportingPdf(false);
-    }
-  }
-
   return (
     <div className="min-h-screen bg-neutral-50/50 pb-24 pt-10">
       <div className="mx-auto max-w-7xl px-6">
@@ -169,9 +155,7 @@ export default function CustomHeatmapPage() {
                     rows={rows}
                     pxPerMin={1.2}
                     onExportPng={handlePngExport}
-                    onExportPdf={handlePdfExport}
                     isExportingPng={isExportingPng}
-                    isExportingPdf={isExportingPdf}
                   />
                 </motion.div>
               ) : (
