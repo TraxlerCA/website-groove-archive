@@ -297,36 +297,34 @@ export function HeatmapRenderer({
 
         {/* Unified Sticky + Scalable Heatmap Container */}
         <div 
-          className="relative rounded-2xl sm:rounded-[2rem] border border-neutral-200 bg-white shadow-2xl overflow-hidden"
+          className={`relative rounded-2xl sm:rounded-[2rem] border border-neutral-200 bg-white shadow-2xl ${isMobile ? 'overflow-auto overscroll-contain' : 'overflow-hidden'}`}
           style={{ maxHeight: isMobile ? '80vh' : '92vh' }}
         >
           {isMobile ? (
-            <div className="h-full overflow-auto overscroll-contain">
-              <div
-                className="relative"
-                style={{ minWidth: mobileMinWidth }}
-              >
-                <div className="sticky top-0 z-30 flex items-stretch bg-white/95 backdrop-blur-md border-b border-neutral-100 h-[52px]">
-                  <div
-                    className="sticky left-0 z-40 bg-white border-r border-neutral-100 shrink-0"
-                    style={{ width: mobileRailW }}
-                  />
-                  <div className="flex-1 min-w-0">
-                    {renderHeadersContent()}
-                  </div>
+            <div
+              className="relative"
+              style={{ minWidth: mobileMinWidth }}
+            >
+              <div className="sticky top-0 z-30 flex items-stretch bg-white/95 backdrop-blur-md border-b border-neutral-100 h-[52px]">
+                <div
+                  className="sticky left-0 z-40 bg-white border-r border-neutral-100 shrink-0"
+                  style={{ width: mobileRailW }}
+                />
+                <div className="flex-1 min-w-0">
+                  {renderHeadersContent()}
+                </div>
+              </div>
+
+              <div className="relative flex items-stretch pt-2 pb-5">
+                <div
+                  className="sticky left-0 z-20 bg-white/95 backdrop-blur-sm border-r border-neutral-100 shrink-0"
+                  style={{ width: mobileRailW, height: heightPx }}
+                >
+                  {renderTimeRailContent()}
                 </div>
 
-                <div className="relative flex items-stretch pt-2 pb-5">
-                  <div
-                    className="sticky left-0 z-20 bg-white/95 backdrop-blur-sm border-r border-neutral-100 shrink-0"
-                    style={{ width: mobileRailW, height: heightPx }}
-                  >
-                    {renderTimeRailContent()}
-                  </div>
-
-                  <div className="flex-1 min-w-0">
-                    {renderSetsContent()}
-                  </div>
+                <div className="flex-1 min-w-0">
+                  {renderSetsContent()}
                 </div>
               </div>
             </div>
