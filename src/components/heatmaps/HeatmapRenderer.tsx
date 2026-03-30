@@ -165,6 +165,7 @@ export function HeatmapRenderer({
   const mobileMinWidth = Math.max(560, mobileRailW + layout.stages.length * mobileStageW);
   const handlePngExport = onExportPng ?? onExport;
   const isBusy = isExportingPng || isExportingPdf;
+  const mobileFrameMaxHeight = 'calc(100svh - var(--tga-header-height) - var(--heatmap-page-chrome, 11.5rem))';
 
   return (
     <div 
@@ -172,20 +173,20 @@ export function HeatmapRenderer({
       aria-labelledby={`h-${groupKey}`} 
       className="w-full"
     >
-      <div className="mb-8 flex flex-col gap-6 sm:flex-row sm:items-start justify-between">
-        <h1 id={`h-${groupKey}`} className="text-4xl sm:text-5xl font-black tracking-tighter text-neutral-900 leading-[0.9]">
+      <div className="mb-4 flex flex-wrap items-start justify-between gap-3 sm:mb-8 sm:flex-nowrap sm:items-start sm:gap-6">
+        <h1 id={`h-${groupKey}`} className="max-w-[14ch] text-[2rem] font-black leading-[0.92] tracking-tighter text-neutral-900 sm:max-w-none sm:text-5xl sm:leading-[0.9]">
           {title}
         </h1>
-        <div className="flex items-center gap-3 shrink-0">
+        <div className="flex items-center gap-2 shrink-0">
           {showExport && handlePngExport && (
             <motion.button
-              className="flex items-center gap-2 rounded-full bg-neutral-900 px-6 py-3 text-sm font-semibold text-white shadow-[0_8px_16px_rgba(0,0,0,0.15)] hover:bg-neutral-800 transition-all disabled:cursor-wait disabled:opacity-60"
+              className="flex items-center gap-1.5 rounded-full bg-neutral-900 px-4 py-2 text-[11px] font-semibold uppercase tracking-[0.18em] text-white shadow-[0_8px_16px_rgba(0,0,0,0.15)] transition-all hover:bg-neutral-800 disabled:cursor-wait disabled:opacity-60 sm:gap-2 sm:px-6 sm:py-3 sm:text-sm sm:tracking-normal"
               onClick={handlePngExport}
               whileHover={isBusy ? undefined : { y: -2, boxShadow: '0 12px 24px rgba(0,0,0,0.2)' }}
               whileTap={isBusy ? undefined : { scale: 0.98 }}
               disabled={isBusy}
             >
-              <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <svg className="h-3.5 w-3.5 sm:h-4 sm:w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
               </svg>
               {isExportingPng ? 'Exporting PNG…' : 'PNG'}
@@ -193,13 +194,13 @@ export function HeatmapRenderer({
           )}
           {showExport && onExportPdf && (
             <motion.button
-              className="flex items-center gap-2 rounded-full border border-neutral-300 bg-white px-6 py-3 text-sm font-semibold text-neutral-900 shadow-sm transition-all hover:border-neutral-400 hover:bg-neutral-50 disabled:cursor-wait disabled:opacity-60"
+              className="flex items-center gap-1.5 rounded-full border border-neutral-300 bg-white px-4 py-2 text-[11px] font-semibold uppercase tracking-[0.18em] text-neutral-900 shadow-sm transition-all hover:border-neutral-400 hover:bg-neutral-50 disabled:cursor-wait disabled:opacity-60 sm:gap-2 sm:px-6 sm:py-3 sm:text-sm sm:tracking-normal"
               onClick={onExportPdf}
               whileHover={isBusy ? undefined : { y: -2 }}
               whileTap={isBusy ? undefined : { scale: 0.98 }}
               disabled={isBusy}
             >
-              <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <svg className="h-3.5 w-3.5 sm:h-4 sm:w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M12 3v12m0 0l4-4m-4 4l-4-4M5 19h14" />
               </svg>
               {isExportingPdf ? 'Exporting PDF…' : 'PDF'}
@@ -210,11 +211,11 @@ export function HeatmapRenderer({
 
       <div ref={registerRef} className="">
         {/* Legend - Pill Style */}
-        <div className="mb-8 flex flex-wrap items-center gap-2 px-1">
+        <div className="mb-4 flex flex-wrap items-center gap-1.5 px-0.5 sm:mb-8 sm:gap-2 sm:px-1">
           {(['nahh', 'ok', 'hot', 'blazing'] as const).map((lvl) => (
             <div 
               key={lvl} 
-              className="inline-flex items-center rounded-full px-4 py-1.5 text-[11px] font-black uppercase tracking-widest text-white shadow-md transition-all hover:scale-105 active:scale-95"
+              className="inline-flex items-center rounded-full px-3 py-1 text-[10px] font-black uppercase tracking-[0.2em] text-white shadow-md transition-all hover:scale-105 active:scale-95 sm:px-4 sm:py-1.5 sm:text-[11px] sm:tracking-widest"
               style={{ backgroundColor: COLORS[lvl] }}
             >
               {lvl}
@@ -225,7 +226,7 @@ export function HeatmapRenderer({
         {/* Unified Sticky + Scalable Heatmap Container */}
         <div 
           className={`relative rounded-2xl sm:rounded-[2rem] border border-neutral-200 bg-white shadow-2xl ${isMobile ? 'overflow-auto overscroll-contain' : 'overflow-hidden'}`}
-          style={{ maxHeight: isMobile ? '80vh' : '92vh' }}
+          style={{ maxHeight: isMobile ? mobileFrameMaxHeight : '92vh' }}
         >
           {isMobile ? (
             <div

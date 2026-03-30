@@ -71,20 +71,21 @@ export default function HeatmapDetailPage() {
   }
 
   return (
-    <div className="min-h-screen bg-neutral-50/50 pb-20 pt-10">
-      <div className="mx-auto max-w-7xl px-6">
-        <div className="mb-8 flex items-center justify-between">
+    <div
+      className="min-h-screen bg-neutral-50/50 pb-16 pt-4 sm:pb-20 sm:pt-10"
+      style={{ ['--heatmap-page-chrome' as string]: '11.5rem' }}
+    >
+      <div className="mx-auto max-w-7xl px-4 sm:px-6">
+        <div className="mb-4 flex items-center justify-between sm:mb-8">
           <Link 
             href="/heatmaps"
-            className="group flex items-center gap-2 text-sm font-bold uppercase tracking-widest text-neutral-400 hover:text-neutral-900 transition-colors"
+            className="group flex items-center gap-1.5 text-[11px] font-bold uppercase tracking-[0.26em] text-neutral-400 transition-colors hover:text-neutral-900 sm:gap-2 sm:text-sm sm:tracking-widest"
           >
-            <svg className="h-4 w-4 transition-transform group-hover:-translate-x-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <svg className="h-3.5 w-3.5 transition-transform group-hover:-translate-x-1 sm:h-4 sm:w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M15 19l-7-7 7-7" />
             </svg>
             Gallery
           </Link>
-          
-
         </div>
 
         <AnimatePresence mode="wait">

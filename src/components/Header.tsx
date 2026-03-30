@@ -93,35 +93,41 @@ export function WordmarkHeader() {
             hideSecondary ? 'py-0' : 'py-3'
           } sm:flex-row sm:items-center sm:gap-5`}
         >
-          <nav className="flex flex-wrap items-center gap-3 text-sm font-medium text-neutral-600">
-            {navLinks.map(link => {
-              const isActive =
-                pathname === link.href || (link.href !== '/' && pathname?.startsWith(link.href));
-              return (
-                <Link
-                  key={link.href}
-                  href={link.href}
-                  aria-current={isActive ? 'page' : undefined}
-                  className={`group relative px-1.5 py-1 -mx-1.5 rounded-md transition text-[0.75rem] tracking-[0.16em] hover:text-neutral-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-black/15 sm:text-[0.85rem] ${
-                    isActive ? 'text-neutral-900' : 'text-neutral-600'
-                  }`}
-                >
-                  <span className="relative">
-                    {link.label}
-                    <i
-                      className={`absolute left-0 right-0 -bottom-1 h-[2px] rounded-full bg-neutral-900 transition-transform duration-200 ${
-                        isActive ? 'scale-x-100' : 'scale-x-0 group-hover:scale-x-100 origin-left'
-                      }`}
-                    />
-                  </span>
-                </Link>
-              );
-            })}
+          <nav className="flex items-center justify-between gap-3 text-sm font-medium text-neutral-600 sm:flex-wrap sm:justify-start">
+            <div className="flex min-w-0 flex-wrap items-center gap-3">
+              {navLinks.map(link => {
+                const isActive =
+                  pathname === link.href || (link.href !== '/' && pathname?.startsWith(link.href));
+                return (
+                  <Link
+                    key={link.href}
+                    href={link.href}
+                    aria-current={isActive ? 'page' : undefined}
+                    className={`group relative px-1.5 py-1 -mx-1.5 rounded-md transition text-[0.75rem] tracking-[0.16em] hover:text-neutral-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-black/15 sm:text-[0.85rem] ${
+                      isActive ? 'text-neutral-900' : 'text-neutral-600'
+                    }`}
+                  >
+                    <span className="relative">
+                      {link.label}
+                      <i
+                        className={`absolute left-0 right-0 -bottom-1 h-[2px] rounded-full bg-neutral-900 transition-transform duration-200 ${
+                          isActive ? 'scale-x-100' : 'scale-x-0 group-hover:scale-x-100 origin-left'
+                        }`}
+                      />
+                    </span>
+                  </Link>
+                );
+              })}
+            </div>
             <Link
               href="/suggest"
-              className="inline-flex items-center rounded-full border border-neutral-200 bg-white/70 px-3 py-1 text-[0.7rem] font-medium uppercase tracking-[0.24em] text-neutral-700 shadow-sm shadow-black/10 transition hover:-translate-y-0.5 hover:bg-white hover:text-neutral-900 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-black/15 sm:hidden"
+              aria-label="Suggest a set"
+              className="ml-auto inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-full border border-neutral-200 bg-white/80 text-neutral-700 shadow-sm shadow-black/10 transition hover:-translate-y-0.5 hover:bg-white hover:text-neutral-900 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-black/15 sm:hidden"
             >
-              Suggest
+              <svg className="h-3.5 w-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.2} d="M12 5v14m-7-7h14" />
+              </svg>
+              <span className="sr-only">Suggest a set</span>
             </Link>
           </nav>
 
