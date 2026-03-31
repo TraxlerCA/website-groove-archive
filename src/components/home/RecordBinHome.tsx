@@ -48,7 +48,7 @@ export default function RecordBinHome() {
       enableMediaActions
       minHeight="calc(100svh - var(--tga-header-height))"
       eyebrow={null}
-      title="Flip through the archive until one feels right."
+      title={null}
       description={null}
       selectorClassName="lg:-mt-16 xl:-mt-20"
     />

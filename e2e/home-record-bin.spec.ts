@@ -2,7 +2,7 @@ import { test, expect } from '@playwright/test';
 
 test('renders the record-bin homepage on desktop', async ({ page }) => {
   await page.goto('/');
-  await expect(page.getByRole('heading', { name: 'Flip through the archive until one feels right.' })).toBeVisible();
+  await expect(page.getByRole('region', { name: 'Record Bin' })).toBeVisible();
   await expect(page.getByLabel('Filter by genre')).toHaveValue('All');
   await expect(
     page.getByRole('button', {
