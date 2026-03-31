@@ -30,15 +30,7 @@ export default function HeatmapsPage() {
   return (
     <div className="min-h-screen bg-white pb-24 pt-12">
       <div className="mx-auto max-w-7xl px-6">
-        <header className="mb-16">
-          <motion.h1 
-            initial={{ opacity: 0, x: -20 }}
-            animate={{ opacity: 1, x: 0 }}
-            className="text-6xl font-black tracking-tighter text-neutral-900 sm:text-8xl"
-          >
-            Heatmaps.
-          </motion.h1>
-        </header>
+        <h1 className="sr-only">Heatmaps</h1>
 
         {loading ? (
           <div className="flex h-64 items-center justify-center">

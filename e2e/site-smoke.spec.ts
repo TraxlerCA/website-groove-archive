@@ -2,7 +2,7 @@ import { test, expect } from '@playwright/test';
 
 test('primary routes render their key UI', async ({ page }) => {
   await page.goto('/');
-  await expect(page.getByRole('heading', { name: 'Flip through the archive until one feels right.' })).toBeVisible();
+  await expect(page.getByRole('region', { name: 'Record Bin' })).toBeVisible();
 
   await page.goto('/cabra');
   await expect(page.getByTestId('cabra-primary-value')).toBeVisible();
@@ -17,7 +17,7 @@ test('primary routes render their key UI', async ({ page }) => {
   await expect(page.getByRole('link', { name: 'Demi Riquisimo' })).toBeVisible();
 
   await page.goto('/heatmaps');
-  await expect(page.getByRole('heading', { name: 'Heatmaps.' })).toBeVisible();
+  await expect(page.getByText('Make your own')).toBeVisible();
 
   await page.goto('/suggest');
   await expect(page.getByRole('heading', { name: 'Suggest a set' })).toBeVisible();

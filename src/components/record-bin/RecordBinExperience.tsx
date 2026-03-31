@@ -18,7 +18,7 @@ type RecordBinExperienceProps = {
   enableMediaActions?: boolean;
   minHeight?: string;
   eyebrow?: string | null;
-  title?: string;
+  title?: string | null;
   description?: string | null;
   selectorClassName?: string;
 };
@@ -294,7 +294,8 @@ export function RecordBinExperience({
 
   return (
     <section
-      aria-labelledby={titleId}
+      aria-label={title ? undefined : eyebrow ?? 'Record Bin'}
+      aria-labelledby={title ? titleId : undefined}
       aria-describedby={statusId}
       onKeyDown={handleKeyDown}
       className="relative flex items-center justify-center overflow-hidden px-4 py-8 sm:px-6 lg:px-10"
@@ -318,9 +319,11 @@ export function RecordBinExperience({
               {eyebrow}
             </p>
           ) : null}
-          <h1 id={titleId} className="mt-4 text-balance text-4xl font-semibold tracking-[-0.04em] text-[color:var(--brand-text)] sm:text-5xl lg:text-6xl">
-            {title}
-          </h1>
+          {title ? (
+            <h1 id={titleId} className="mt-4 text-balance text-4xl font-semibold tracking-[-0.04em] text-[color:var(--brand-text)] sm:text-5xl lg:text-6xl">
+              {title}
+            </h1>
+          ) : null}
           {description ? (
             <p className="mx-auto mt-4 max-w-2xl text-sm leading-7 text-[color:var(--brand-text-muted)] sm:text-base">
               {description}
