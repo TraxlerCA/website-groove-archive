@@ -142,7 +142,7 @@ function getTransition(reducedMotion: boolean) {
 const navButtonClass =
   'flex h-11 w-11 items-center justify-center rounded-full border border-[color:var(--brand-border)] bg-white/84 text-sm text-[color:var(--brand-text)] shadow-[0_16px_36px_rgba(15,23,42,0.14)] transition hover:-translate-y-0.5 hover:border-[color:var(--brand-border-strong)] hover:bg-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--brand-focus)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--brand-page-bg)] disabled:cursor-not-allowed disabled:opacity-40';
 const activePlatformButtonClass =
-  'group/button flex min-h-[4.4rem] items-center justify-center gap-2 rounded-[1rem] border border-black/8 bg-[linear-gradient(180deg,rgba(255,255,255,0.96)_0%,rgba(245,248,252,0.9)_100%)] px-3 py-2 text-[color:var(--brand-text)] shadow-[0_10px_22px_rgba(15,23,42,0.08)] transition hover:-translate-y-0.5 hover:border-[color:var(--brand-border-strong)] hover:shadow-[0_16px_28px_rgba(15,23,42,0.12)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--brand-focus)] focus-visible:ring-offset-2 focus-visible:ring-offset-white disabled:translate-y-0 disabled:cursor-not-allowed disabled:opacity-45 disabled:shadow-none';
+  'group/button flex h-12 w-12 items-center justify-center rounded-full bg-[color:var(--brand-text)] text-white shadow-[0_16px_28px_rgba(15,23,42,0.18)] transition hover:-translate-y-0.5 hover:bg-black hover:shadow-[0_20px_34px_rgba(15,23,42,0.24)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--brand-focus)] focus-visible:ring-offset-2 focus-visible:ring-offset-white disabled:translate-y-0 disabled:cursor-not-allowed disabled:bg-black/20 disabled:text-white/70 disabled:shadow-none';
 
 export function RecordBinExperience({
   items,
@@ -379,7 +379,7 @@ export function RecordBinExperience({
                         ref={activeCardRef}
                         type="button"
                         onClick={() => openExternalUrl(item.primaryOpenUrl)}
-                        className="group/art relative block w-full overflow-hidden rounded-[1.35rem] border border-black/6 bg-[var(--brand-page-bg-strong)] text-left shadow-[0_16px_38px_rgba(15,23,42,0.1)] outline-none transition hover:-translate-y-0.5 hover:shadow-[0_22px_44px_rgba(15,23,42,0.14)] focus-visible:ring-4 focus-visible:ring-[var(--brand-focus)]"
+                        className="group/art relative block w-full overflow-hidden rounded-[1.35rem] border border-black/6 bg-[var(--brand-page-bg-strong)] text-left shadow-[0_16px_38px_rgba(15,23,42,0.1)] outline-none transition hover:-translate-y-0.5 hover:shadow-[0_22px_44px_rgba(15,23,42,0.14)] focus-visible:ring-4 focus-visible:ring-[var(--brand-focus)] cursor-pointer"
                         aria-label={`Open ${item.title} on SoundCloud, or YouTube if SoundCloud is unavailable`}
                       >
                         <div className="relative aspect-square" style={fallbackArt}>
@@ -396,9 +396,6 @@ export function RecordBinExperience({
                           ) : null}
                           <div className="absolute inset-0 bg-[linear-gradient(180deg,rgba(255,255,255,0.14)_0%,rgba(255,255,255,0.02)_24%,rgba(9,16,28,0.1)_68%,rgba(9,16,28,0.24)_100%)]" />
                           <div className="absolute inset-0 opacity-[0.08] [background-image:repeating-linear-gradient(135deg,rgba(255,255,255,0.24)_0,rgba(255,255,255,0.24)_1px,transparent_1px,transparent_10px)]" />
-                          <div className="absolute left-4 top-4 rounded-full bg-black/72 px-3 py-1 text-[0.62rem] font-semibold uppercase tracking-[0.24em] text-white/90">
-                            Open Set
-                          </div>
                           <div className="absolute inset-x-0 bottom-0 h-24 bg-gradient-to-t from-black/16 to-transparent" />
                         </div>
                       </button>
@@ -407,13 +404,9 @@ export function RecordBinExperience({
                         <h2 className="text-pretty text-[1.18rem] font-medium leading-6 tracking-[-0.03em] text-[color:var(--brand-text)] sm:text-[1.24rem]">
                           {item.title}
                         </h2>
-                        <p className="mt-2 text-[0.68rem] font-semibold uppercase tracking-[0.22em] text-[color:var(--brand-text-muted)]">
-                          Cover opens SoundCloud first
-                        </p>
                       </div>
 
-                      <div className="mt-4 rounded-[1.2rem] border border-black/6 bg-white/88 p-2.5 shadow-[inset_0_1px_0_rgba(255,255,255,0.7)]">
-                        <div className="grid grid-cols-2 gap-2">
+                      <div className="mt-4 flex items-center justify-center gap-4 pb-1">
                           <button
                             type="button"
                             onClick={() => openExternalUrl(item.soundcloudUrl)}
@@ -422,12 +415,7 @@ export function RecordBinExperience({
                             aria-label={item.soundcloudUrl ? `Open ${item.title} on SoundCloud` : `SoundCloud unavailable for ${item.title}`}
                             title={item.soundcloudUrl ? 'Open on SoundCloud' : 'SoundCloud unavailable'}
                           >
-                            <span className="flex h-10 w-10 items-center justify-center rounded-full bg-[color:var(--brand-text)] text-white transition group-hover/button:bg-black">
-                              <SCIcon />
-                            </span>
-                            <span className="text-[0.74rem] font-semibold tracking-[-0.01em]">
-                              SoundCloud
-                            </span>
+                            <SCIcon />
                           </button>
 
                           <button
@@ -438,14 +426,8 @@ export function RecordBinExperience({
                             aria-label={item.youtubeUrl ? `Open ${item.title} on YouTube` : `YouTube unavailable for ${item.title}`}
                             title={item.youtubeUrl ? 'Open on YouTube' : 'YouTube unavailable'}
                           >
-                            <span className="flex h-10 w-10 items-center justify-center rounded-full bg-[color:var(--brand-text)] text-white transition group-hover/button:bg-black">
-                              <YouTubeIcon />
-                            </span>
-                            <span className="text-[0.74rem] font-semibold tracking-[-0.01em]">
-                              YouTube
-                            </span>
+                            <YouTubeIcon />
                           </button>
-                        </div>
                       </div>
                     </motion.div>
                   ) : (
