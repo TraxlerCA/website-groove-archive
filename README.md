@@ -45,13 +45,19 @@ NEXT_PUBLIC_SUPABASE_ANON_KEY=your_supabase_anon_key
 - `npm run lint`: run ESLint across app code and `scripts/**`
 - `npm run typecheck`: run TypeScript in no-emit mode
 - `npm run check`: fast local sanity pass (`lint` + `typecheck`)
+- `npm run ci:local`: local CI-style verification (`check`, coverage, CI-style build, Playwright browser install, full E2E)
 - `npm run test`: run Vitest
 - `npm run test:coverage`: run Vitest with coverage thresholds
 - `npm run test:e2e`: run Playwright
+- `npm run e2e:ci`: run Playwright with the CI-style placeholder Supabase envs
 - `npm run test:e2e:headed`: run Playwright in headed mode
+- `npm run visual:smoke`: run the targeted homepage + heatmaps browser checks with the CI-style placeholder Supabase envs
 - `npm run logs:supabase -- <path-to-log.json>`: summarize a Supabase edge log event
 - `npm run build`: create a production build
+- `npm run build:ci`: create a production build with the CI-style placeholder Supabase envs
 - `npm run start`: start the production server
+
+The `*:ci`, `ci:local`, and `visual:smoke` commands are verification-focused commands. They use placeholder Supabase env values on purpose, which disables live Supabase reads and relies on the fixture-backed Playwright path already built into the repo. Use the regular scripts for normal live-data development.
 
 ## Fonts
 
@@ -98,3 +104,8 @@ The report includes request metadata, a `riskLevel`/`riskScore`, bot heuristics,
   - `genres`
   - `artists`
   - `festival_sets`
+
+## Agent Workflow
+
+- Repo-specific agent instructions live in [AGENTS.md](/C:/Users/joost/Documents/Repos/website-tga/AGENTS.md).
+- The main goal of those instructions is to keep verification and browser checks on stable npm scripts so repeated approval prompts are minimized.

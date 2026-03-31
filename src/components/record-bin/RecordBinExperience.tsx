@@ -2,7 +2,7 @@
 
 import { motion, type PanInfo, useReducedMotion } from 'framer-motion';
 import Image from 'next/image';
-import { startTransition, useEffect, useId, useMemo, useRef, useState } from 'react';
+import { startTransition, useEffect, useMemo, useRef, useState } from 'react';
 import type { ChangeEvent, KeyboardEvent as ReactKeyboardEvent } from 'react';
 import { SCIcon, YouTubeIcon } from '@/components/icons';
 import {
@@ -154,8 +154,8 @@ export function RecordBinExperience({
   selectorClassName = '',
 }: RecordBinExperienceProps) {
   const prefersReducedMotion = useReducedMotion();
-  const titleId = useId();
-  const statusId = useId();
+  const titleId = title ? 'record-bin-title' : undefined;
+  const statusId = 'record-bin-status';
   const binRef = useRef<HTMLDivElement>(null);
   const activeCardRef = useRef<HTMLButtonElement | null>(null);
   const activeCardFrameRef = useRef<HTMLElement | null>(null);

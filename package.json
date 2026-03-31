@@ -5,14 +5,18 @@
   "scripts": {
     "dev": "next dev --turbopack",
     "build": "next build",
+    "build:ci": "cross-env NEXT_PUBLIC_SUPABASE_URL=https://example.supabase.co NEXT_PUBLIC_SUPABASE_ANON_KEY=ci-placeholder-anon-key next build",
     "start": "next start",
     "lint": "eslint .",
     "typecheck": "next typegen && tsc --noEmit -p tsconfig.typecheck.json",
     "check": "npm run lint && npm run typecheck",
+    "ci:local": "npm run check && npm run test:coverage && npm run build:ci && npx playwright install --with-deps chromium && npm run e2e:ci",
     "test": "vitest run",
+    "e2e:ci": "cross-env NEXT_PUBLIC_SUPABASE_URL=https://example.supabase.co NEXT_PUBLIC_SUPABASE_ANON_KEY=ci-placeholder-anon-key playwright test",
     "test:e2e": "playwright test",
     "test:e2e:headed": "playwright test --headed",
     "test:coverage": "vitest run --coverage",
+    "visual:smoke": "cross-env NEXT_PUBLIC_SUPABASE_URL=https://example.supabase.co NEXT_PUBLIC_SUPABASE_ANON_KEY=ci-placeholder-anon-key playwright test e2e/home-record-bin.spec.ts e2e/site-smoke.spec.ts",
     "logs:supabase": "node scripts/analyze-supabase-log.mjs"
   },
   "dependencies": {
@@ -36,6 +40,7 @@
     "@types/react": "^19.2.14",
     "@types/react-dom": "^19.2.3",
     "@vitest/coverage-v8": "^4.0.18",
+    "cross-env": "^10.1.0",
     "eslint": "^9.39.3",
     "eslint-config-next": "16.1.6",
     "tailwindcss": "^4.2.1",
