@@ -9,6 +9,18 @@ const nextConfig: NextConfig = {
         protocol: 'https',
         hostname: 'images.unsplash.com',
       },
+      {
+        protocol: 'https',
+        hostname: 'soundcloud.com',
+      },
+      {
+        protocol: 'https',
+        hostname: 'www.soundcloud.com',
+      },
+      {
+        protocol: 'https',
+        hostname: '**.sndcdn.com',
+      },
     ],
   },
 };
