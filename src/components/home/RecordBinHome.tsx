@@ -45,6 +45,7 @@ export default function RecordBinHome() {
   return (
     <RecordBinExperience
       items={deck}
+      enableMediaActions
       minHeight="calc(100svh - var(--tga-header-height))"
       eyebrow={null}
       title="Flip through the archive until one feels right."

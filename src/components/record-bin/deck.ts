@@ -1,4 +1,4 @@
-import { sanitizeMediaUrl, sanitizePrimaryMediaUrl } from '@/lib/sanitize';
+import { sanitizeMediaUrl } from '@/lib/sanitize';
 import type { Row } from '@/lib/types';
 
 export const ALL_GENRE_LABEL = 'All';
@@ -8,8 +8,15 @@ export type RecordBinDeckItem = {
   id: string;
   title: string;
   classification: string | null;
-  primaryMediaUrl: string;
+  primaryOpenUrl: string;
   soundcloudUrl: string | null;
+  youtubeUrl: string | null;
+};
+
+type RecordBinMediaTargets = {
+  primaryOpenUrl: string | null;
+  soundcloudUrl: string | null;
+  youtubeUrl: string | null;
 };
 
 type RandomFn = () => number;
@@ -38,21 +45,41 @@ function normalizeClassification(value: string | null | undefined) {
   return trimmed ? trimmed : null;
 }
 
+export function resolveRecordBinMediaTargets(
+  row: Pick<Row, 'soundcloud' | 'youtube'> | null | undefined,
+): RecordBinMediaTargets {
+  if (!row) {
+    return {
+      primaryOpenUrl: null,
+      soundcloudUrl: null,
+      youtubeUrl: null,
+    };
+  }
+
+  const soundcloudUrl = sanitizeMediaUrl(row.soundcloud);
+  const youtubeUrl = sanitizeMediaUrl(row.youtube);
+
+  return {
+    primaryOpenUrl: soundcloudUrl ?? youtubeUrl,
+    soundcloudUrl,
+    youtubeUrl,
+  };
+}
+
 function createRecordBinDeckItem(row: Row): RecordBinDeckItem | null {
   const title = row.set.trim();
   if (!title) return null;
 
-  const primaryMediaUrl = sanitizePrimaryMediaUrl(row);
-  if (!primaryMediaUrl) return null;
-
-  const soundcloudUrl = sanitizeMediaUrl(row.soundcloud);
+  const { primaryOpenUrl, soundcloudUrl, youtubeUrl } = resolveRecordBinMediaTargets(row);
+  if (!primaryOpenUrl) return null;
 
   return {
-    id: `${title.toLowerCase()}|${primaryMediaUrl}`,
+    id: `${title.toLowerCase()}|${primaryOpenUrl}`,
     title,
     classification: normalizeClassification(row.classification),
-    primaryMediaUrl,
+    primaryOpenUrl,
     soundcloudUrl,
+    youtubeUrl,
   };
 }
 

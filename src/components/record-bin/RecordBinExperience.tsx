@@ -4,6 +4,7 @@ import { motion, type PanInfo, useReducedMotion } from 'framer-motion';
 import Image from 'next/image';
 import { startTransition, useEffect, useId, useMemo, useRef, useState } from 'react';
 import type { ChangeEvent, KeyboardEvent as ReactKeyboardEvent } from 'react';
+import { SCIcon, YouTubeIcon } from '@/components/icons';
 import {
   ALL_GENRE_LABEL,
   buildGenreOptions,
@@ -14,6 +15,7 @@ import { useRecordBinArtwork } from './useRecordBinArtwork';
 
 type RecordBinExperienceProps = {
   items: RecordBinDeckItem[];
+  enableMediaActions?: boolean;
   minHeight?: string;
   eyebrow?: string | null;
   title?: string;
@@ -139,9 +141,12 @@ function getTransition(reducedMotion: boolean) {
 
 const navButtonClass =
   'flex h-11 w-11 items-center justify-center rounded-full border border-[color:var(--brand-border)] bg-white/84 text-sm text-[color:var(--brand-text)] shadow-[0_16px_36px_rgba(15,23,42,0.14)] transition hover:-translate-y-0.5 hover:border-[color:var(--brand-border-strong)] hover:bg-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--brand-focus)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--brand-page-bg)] disabled:cursor-not-allowed disabled:opacity-40';
+const activePlatformButtonClass =
+  'group/button flex min-h-[4.4rem] items-center justify-center gap-2 rounded-[1rem] border border-black/8 bg-[linear-gradient(180deg,rgba(255,255,255,0.96)_0%,rgba(245,248,252,0.9)_100%)] px-3 py-2 text-[color:var(--brand-text)] shadow-[0_10px_22px_rgba(15,23,42,0.08)] transition hover:-translate-y-0.5 hover:border-[color:var(--brand-border-strong)] hover:shadow-[0_16px_28px_rgba(15,23,42,0.12)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--brand-focus)] focus-visible:ring-offset-2 focus-visible:ring-offset-white disabled:translate-y-0 disabled:cursor-not-allowed disabled:opacity-45 disabled:shadow-none';
 
 export function RecordBinExperience({
   items,
+  enableMediaActions = false,
   minHeight = 'calc(100svh - 3.5rem)',
   eyebrow = 'Record Bin',
   title = 'Flip through the archive until one feels right.',
@@ -153,6 +158,7 @@ export function RecordBinExperience({
   const statusId = useId();
   const binRef = useRef<HTMLDivElement>(null);
   const activeCardRef = useRef<HTMLButtonElement | null>(null);
+  const activeCardFrameRef = useRef<HTMLElement | null>(null);
   const focusReasonRef = useRef<FocusReason>(null);
   const [responsiveSlotCount, setResponsiveSlotCount] = useState<3 | 5>(5);
   const [activeGenre, setActiveGenre] = useState(ALL_GENRE_LABEL);
@@ -250,7 +256,7 @@ export function RecordBinExperience({
   };
 
   const handleDragEnd = (_event: MouseEvent | TouchEvent | PointerEvent, info: PanInfo) => {
-    const activeWidth = activeCardRef.current?.offsetWidth ?? 0;
+    const activeWidth = activeCardFrameRef.current?.offsetWidth ?? 0;
     const offsetThreshold = activeWidth * 0.14;
     const velocityThreshold = 450;
 
@@ -281,6 +287,10 @@ export function RecordBinExperience({
 
   const statusLabel = `Item ${safeActiveIndex + 1} of ${deckItems.length}: ${activeItem.title}`;
   const transition = getTransition(Boolean(prefersReducedMotion));
+  const openExternalUrl = (url: string | null) => {
+    if (!url) return;
+    window.open(url, '_blank', 'noopener,noreferrer');
+  };
 
   return (
     <section
@@ -333,6 +343,7 @@ export function RecordBinExperience({
             {renderedCards.map(({ item, itemIndex, offset, slot, isVisible, isActive }) => {
               const artworkState = readArtwork(item.soundcloudUrl);
               const fallbackArt = getFallbackArt(item.title);
+              const showMediaActions = enableMediaActions && isActive;
 
               return (
                 <motion.li
@@ -344,58 +355,156 @@ export function RecordBinExperience({
                   className="absolute -translate-x-1/2 -translate-y-1/2"
                   aria-hidden={slot.ariaHidden ? true : undefined}
                 >
-                  <motion.button
-                    ref={isActive ? activeCardRef : null}
-                    type="button"
-                    drag={isActive ? 'x' : false}
-                    dragDirectionLock={isActive}
-                    dragElastic={prefersReducedMotion ? 0.08 : 0.12}
-                    dragConstraints={{ left: 0, right: 0 }}
-                    dragSnapToOrigin
-                    onDragEnd={isActive ? handleDragEnd : undefined}
-                    onClick={() => { if (!isActive) moveToIndex(itemIndex, 'pointer'); }}
-                    onKeyDown={(event) => {
-                      if ((event.key === 'Enter' || event.key === ' ') && !isActive) {
-                        event.preventDefault();
-                        moveToIndex(itemIndex, 'keyboard');
-                      }
-                    }}
-                    tabIndex={isVisible ? 0 : -1}
-                    aria-label={isActive ? `${item.title}, active sleeve` : item.title}
-                    className={[
-                      'group relative w-[clamp(12.4rem,56vw,18.4rem)] rounded-[1.28rem] p-3 text-left shadow-[0_28px_60px_rgba(15,23,42,0.16)] outline-none transition-[box-shadow,border-color,background-color] focus-visible:ring-4 focus-visible:ring-[var(--brand-focus)] sm:w-[clamp(13rem,33vw,17.25rem)] lg:w-[clamp(13.5rem,20vw,17.5rem)]',
-                      'border border-[color:var(--brand-border)] bg-[linear-gradient(180deg,rgba(255,255,255,0.98)_0%,rgba(246,249,253,0.96)_100%)]',
-                      isActive ? 'cursor-grab active:cursor-grabbing' : isVisible ? 'cursor-pointer hover:border-[color:var(--brand-border-strong)]' : 'pointer-events-none',
-                    ].join(' ')}
-                    style={{ touchAction: isActive ? 'pan-x pinch-zoom' : 'auto' }}
-                  >
-                    <span className="pointer-events-none absolute inset-0 rounded-[1.28rem] border border-black/4" />
+                  {showMediaActions ? (
+                    <motion.div
+                      ref={(node) => {
+                        activeCardFrameRef.current = node;
+                      }}
+                      drag="x"
+                      dragDirectionLock
+                      dragElastic={prefersReducedMotion ? 0.08 : 0.12}
+                      dragConstraints={{ left: 0, right: 0 }}
+                      dragSnapToOrigin
+                      onDragEnd={handleDragEnd}
+                      className={[
+                        'group relative w-[clamp(14rem,62vw,21.5rem)] rounded-[2rem] border border-white/80 bg-[linear-gradient(180deg,rgba(255,255,255,0.99)_0%,rgba(244,248,252,0.96)_100%)] p-4 text-left shadow-[0_36px_76px_rgba(15,23,42,0.2)] transition-[box-shadow,border-color,background-color] sm:w-[clamp(15rem,38vw,20rem)] lg:w-[clamp(16rem,23vw,21rem)]',
+                        'cursor-grab active:cursor-grabbing',
+                      ].join(' ')}
+                      style={{ touchAction: 'pan-x pinch-zoom' }}
+                    >
+                      <span className="pointer-events-none absolute inset-0 rounded-[2rem] border border-black/4" />
+                      <div className="pointer-events-none absolute inset-x-[13%] bottom-0 h-10 rounded-full bg-[rgba(15,23,42,0.12)] blur-[24px]" />
 
-                    <div className="relative aspect-square overflow-hidden rounded-[0.94rem] border border-black/6 bg-[var(--brand-page-bg-strong)]" style={fallbackArt}>
-                      {artworkState.status === 'ready' ? (
-                        <Image
-                          src={artworkState.artwork}
-                          alt=""
-                          fill
-                          sizes="(max-width: 640px) 56vw, (max-width: 1024px) 33vw, 20vw"
-                          className="object-cover"
-                          loading={isActive ? undefined : isVisible ? 'eager' : 'lazy'}
-                          preload={isActive}
-                        />
-                      ) : null}
-                      <div className="absolute inset-0 bg-[linear-gradient(180deg,rgba(255,255,255,0.22)_0%,rgba(255,255,255,0)_26%,rgba(7,14,24,0.08)_68%,rgba(7,14,24,0.18)_100%)]" />
-                      <div className="absolute inset-0 opacity-[0.08] [background-image:repeating-linear-gradient(135deg,rgba(255,255,255,0.26)_0,rgba(255,255,255,0.26)_1px,transparent_1px,transparent_10px)]" />
-                      <div className="absolute inset-x-0 bottom-0 h-[4.5rem] bg-gradient-to-t from-white/36 to-transparent" />
-                    </div>
+                      <button
+                        ref={activeCardRef}
+                        type="button"
+                        onClick={() => openExternalUrl(item.primaryOpenUrl)}
+                        className="group/art relative block w-full overflow-hidden rounded-[1.35rem] border border-black/6 bg-[var(--brand-page-bg-strong)] text-left shadow-[0_16px_38px_rgba(15,23,42,0.1)] outline-none transition hover:-translate-y-0.5 hover:shadow-[0_22px_44px_rgba(15,23,42,0.14)] focus-visible:ring-4 focus-visible:ring-[var(--brand-focus)]"
+                        aria-label={`Open ${item.title} on SoundCloud, or YouTube if SoundCloud is unavailable`}
+                      >
+                        <div className="relative aspect-square" style={fallbackArt}>
+                          {artworkState.status === 'ready' ? (
+                            <Image
+                              src={artworkState.artwork}
+                              alt=""
+                              fill
+                              sizes="(max-width: 640px) 62vw, (max-width: 1024px) 38vw, 23vw"
+                              className="object-cover"
+                              loading={isVisible ? 'eager' : 'lazy'}
+                              preload={isActive}
+                            />
+                          ) : null}
+                          <div className="absolute inset-0 bg-[linear-gradient(180deg,rgba(255,255,255,0.14)_0%,rgba(255,255,255,0.02)_24%,rgba(9,16,28,0.1)_68%,rgba(9,16,28,0.24)_100%)]" />
+                          <div className="absolute inset-0 opacity-[0.08] [background-image:repeating-linear-gradient(135deg,rgba(255,255,255,0.24)_0,rgba(255,255,255,0.24)_1px,transparent_1px,transparent_10px)]" />
+                          <div className="absolute left-4 top-4 rounded-full bg-black/72 px-3 py-1 text-[0.62rem] font-semibold uppercase tracking-[0.24em] text-white/90">
+                            Open Set
+                          </div>
+                          <div className="absolute inset-x-0 bottom-0 h-24 bg-gradient-to-t from-black/16 to-transparent" />
+                        </div>
+                      </button>
 
-                    {slot.showTitle ? (
-                      <div className="mt-3 min-h-[3.5rem] px-1">
-                        <h2 className="text-pretty text-[1rem] font-medium leading-5 tracking-[-0.025em] text-[color:var(--brand-text)]">
+                      <div className="mt-4 px-1">
+                        <h2 className="text-pretty text-[1.18rem] font-medium leading-6 tracking-[-0.03em] text-[color:var(--brand-text)] sm:text-[1.24rem]">
                           {item.title}
                         </h2>
+                        <p className="mt-2 text-[0.68rem] font-semibold uppercase tracking-[0.22em] text-[color:var(--brand-text-muted)]">
+                          Cover opens SoundCloud first
+                        </p>
                       </div>
-                    ) : null}
-                  </motion.button>
+
+                      <div className="mt-4 rounded-[1.2rem] border border-black/6 bg-white/88 p-2.5 shadow-[inset_0_1px_0_rgba(255,255,255,0.7)]">
+                        <div className="grid grid-cols-2 gap-2">
+                          <button
+                            type="button"
+                            onClick={() => openExternalUrl(item.soundcloudUrl)}
+                            disabled={!item.soundcloudUrl}
+                            className={activePlatformButtonClass}
+                            aria-label={item.soundcloudUrl ? `Open ${item.title} on SoundCloud` : `SoundCloud unavailable for ${item.title}`}
+                            title={item.soundcloudUrl ? 'Open on SoundCloud' : 'SoundCloud unavailable'}
+                          >
+                            <span className="flex h-10 w-10 items-center justify-center rounded-full bg-[color:var(--brand-text)] text-white transition group-hover/button:bg-black">
+                              <SCIcon />
+                            </span>
+                            <span className="text-[0.74rem] font-semibold tracking-[-0.01em]">
+                              SoundCloud
+                            </span>
+                          </button>
+
+                          <button
+                            type="button"
+                            onClick={() => openExternalUrl(item.youtubeUrl)}
+                            disabled={!item.youtubeUrl}
+                            className={activePlatformButtonClass}
+                            aria-label={item.youtubeUrl ? `Open ${item.title} on YouTube` : `YouTube unavailable for ${item.title}`}
+                            title={item.youtubeUrl ? 'Open on YouTube' : 'YouTube unavailable'}
+                          >
+                            <span className="flex h-10 w-10 items-center justify-center rounded-full bg-[color:var(--brand-text)] text-white transition group-hover/button:bg-black">
+                              <YouTubeIcon />
+                            </span>
+                            <span className="text-[0.74rem] font-semibold tracking-[-0.01em]">
+                              YouTube
+                            </span>
+                          </button>
+                        </div>
+                      </div>
+                    </motion.div>
+                  ) : (
+                    <motion.button
+                      ref={
+                        isActive
+                          ? (node) => {
+                              activeCardRef.current = node;
+                              activeCardFrameRef.current = node;
+                            }
+                          : null
+                      }
+                      type="button"
+                      drag={isActive ? 'x' : false}
+                      dragDirectionLock={isActive}
+                      dragElastic={prefersReducedMotion ? 0.08 : 0.12}
+                      dragConstraints={{ left: 0, right: 0 }}
+                      dragSnapToOrigin
+                      onDragEnd={isActive ? handleDragEnd : undefined}
+                      onClick={() => {
+                        if (!isActive) moveToIndex(itemIndex, 'pointer');
+                      }}
+                      tabIndex={isVisible ? 0 : -1}
+                      aria-label={isActive ? `${item.title}, active sleeve` : item.title}
+                      className={[
+                        'group relative w-[clamp(12.4rem,56vw,18.4rem)] rounded-[1.28rem] p-3 text-left shadow-[0_28px_60px_rgba(15,23,42,0.16)] outline-none transition-[box-shadow,border-color,background-color] focus-visible:ring-4 focus-visible:ring-[var(--brand-focus)] sm:w-[clamp(13rem,33vw,17.25rem)] lg:w-[clamp(13.5rem,20vw,17.5rem)]',
+                        'border border-[color:var(--brand-border)] bg-[linear-gradient(180deg,rgba(255,255,255,0.98)_0%,rgba(246,249,253,0.96)_100%)]',
+                        isActive ? 'cursor-grab active:cursor-grabbing' : isVisible ? 'cursor-pointer hover:border-[color:var(--brand-border-strong)]' : 'pointer-events-none',
+                      ].join(' ')}
+                      style={{ touchAction: isActive ? 'pan-x pinch-zoom' : 'auto' }}
+                    >
+                      <span className="pointer-events-none absolute inset-0 rounded-[1.28rem] border border-black/4" />
+
+                      <div className="relative aspect-square overflow-hidden rounded-[0.94rem] border border-black/6 bg-[var(--brand-page-bg-strong)]" style={fallbackArt}>
+                        {artworkState.status === 'ready' ? (
+                          <Image
+                            src={artworkState.artwork}
+                            alt=""
+                            fill
+                            sizes="(max-width: 640px) 56vw, (max-width: 1024px) 33vw, 20vw"
+                            className="object-cover"
+                            loading={isActive ? undefined : isVisible ? 'eager' : 'lazy'}
+                            preload={isActive}
+                          />
+                        ) : null}
+                        <div className="absolute inset-0 bg-[linear-gradient(180deg,rgba(255,255,255,0.22)_0%,rgba(255,255,255,0)_26%,rgba(7,14,24,0.08)_68%,rgba(7,14,24,0.18)_100%)]" />
+                        <div className="absolute inset-0 opacity-[0.08] [background-image:repeating-linear-gradient(135deg,rgba(255,255,255,0.26)_0,rgba(255,255,255,0.26)_1px,transparent_1px,transparent_10px)]" />
+                        <div className="absolute inset-x-0 bottom-0 h-[4.5rem] bg-gradient-to-t from-white/36 to-transparent" />
+                      </div>
+
+                      {slot.showTitle ? (
+                        <div className="mt-3 min-h-[3.5rem] px-1">
+                          <h2 className="text-pretty text-[1rem] font-medium leading-5 tracking-[-0.025em] text-[color:var(--brand-text)]">
+                            {item.title}
+                          </h2>
+                        </div>
+                      ) : null}
+                    </motion.button>
+                  )}
                 </motion.li>
               );
             })}
