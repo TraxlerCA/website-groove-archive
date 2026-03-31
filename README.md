@@ -49,7 +49,6 @@ NEXT_PUBLIC_SUPABASE_ANON_KEY=your_supabase_anon_key
 - `npm run test:coverage`: run Vitest with coverage thresholds
 - `npm run test:e2e`: run Playwright
 - `npm run test:e2e:headed`: run Playwright in headed mode
-- `npm run generate:ggw-zones`: regenerate map GeoJSON + active-area lists from the GGW CSV mapping
 - `npm run logs:supabase -- <path-to-log.json>`: summarize a Supabase edge log event
 - `npm run build`: create a production build
 - `npm run start`: start the production server
@@ -94,10 +93,6 @@ The report includes request metadata, a `riskLevel`/`riskScore`, bot heuristics,
 
 ## Data Notes
 
-- Map GGW source-of-truth mapping: `src/data/amsterdam-ggw-mapping.csv`
-- Generated map artifacts:
-  - `src/data/amsterdam-ggw-zones.json`
-  - `src/data/amsterdam-ggw-zone-areas.json`
 - Current Supabase tables used by the app:
   - `sets`
   - `genres`
