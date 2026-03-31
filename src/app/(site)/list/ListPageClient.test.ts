@@ -1,4 +1,5 @@
 import { createElement } from 'react';
+import type { ReactNode } from 'react';
 import { renderToStaticMarkup } from 'react-dom/server';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import type { Genre, Row } from '@/lib/types';
@@ -25,7 +26,7 @@ vi.mock('@tanstack/react-virtual', () => ({
 }));
 
 vi.mock('@/components/ui', () => ({
-  IconButton: ({ children }: { children: unknown }) => createElement('button', null, children),
+  IconButton: ({ children }: { children: ReactNode }) => createElement('button', null, children),
 }));
 
 vi.mock('@/components/icons', () => ({
