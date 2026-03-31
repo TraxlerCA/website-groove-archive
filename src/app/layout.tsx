@@ -55,8 +55,7 @@ const urbanist = localFont({
 export default function RootLayout({ children }: { children: ReactNode }) {
   return (
     <html lang="en" className={urbanist.variable}>
-      <body className={`${urbanist.className} min-h-screen bg-neutral-50 text-neutral-800 relative overflow-x-hidden`}>
-        <style>{`:root{--accent:#000000;--label:#737373;--radius:0.75rem;--sodium:#000000}`}</style>
+      <body className={`${urbanist.className} relative min-h-screen overflow-x-hidden`}>
         {children}
       </body>
     </html>
