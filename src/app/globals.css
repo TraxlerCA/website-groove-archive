@@ -5,6 +5,30 @@
   :root {
     font-family: var(--font-urbanist), ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
     --tga-header-height: 168px;
+    --radius: 0.75rem;
+
+    /* shared live-site light brand tokens */
+    --brand-page-bg: #f6f8fc;
+    --brand-page-bg-strong: #edf3fb;
+    --brand-surface: #ffffff;
+    --brand-surface-soft: rgba(255, 255, 255, 0.78);
+    --brand-surface-subtle: rgba(246, 249, 253, 0.92);
+    --brand-text: #171c24;
+    --brand-text-muted: #5f6877;
+    --brand-border: rgba(23, 28, 36, 0.12);
+    --brand-border-strong: rgba(23, 28, 36, 0.2);
+    --brand-accent-cool: #4cc6ff;
+    --brand-accent-warm: #ff9756;
+    --brand-focus: rgba(23, 28, 36, 0.24);
+    --brand-hero-wash:
+      radial-gradient(780px 320px at 16% 18%, rgba(76, 198, 255, 0.2), rgba(76, 198, 255, 0) 58%),
+      radial-gradient(680px 280px at 84% 16%, rgba(255, 151, 86, 0.18), rgba(255, 151, 86, 0) 52%),
+      linear-gradient(180deg, #fbfdff 0%, #f3f7fc 52%, #f7f9fd 100%);
+
+    /* compatibility vars used by existing shared UI */
+    --accent: #171c24;
+    --label: #5f6877;
+    --sodium: #171c24;
   }
 
   .font-sans {
@@ -28,6 +52,8 @@ body {
   text-rendering: optimizeLegibility;
   font-size: 16px;
   line-height: 1.65;
+  background: var(--brand-page-bg);
+  color: var(--brand-text);
   /* Restrict touch to vertical pan to avoid sideways swipes */
   touch-action: pan-y;
 }
@@ -73,6 +99,39 @@ video {
 }
 
 @layer utilities {
+  .bg-brand-page {
+    background: var(--brand-page-bg);
+    color: var(--brand-text);
+  }
+
+  .bg-brand-hero {
+    background: var(--brand-hero-wash);
+  }
+
+  .bg-brand-surface {
+    background: var(--brand-surface-soft);
+    color: var(--brand-text);
+  }
+
+  .brand-card {
+    background: linear-gradient(180deg, rgba(255, 255, 255, 0.98) 0%, rgba(246, 249, 253, 0.96) 100%);
+    border: 1px solid var(--brand-border);
+    color: var(--brand-text);
+    box-shadow: 0 24px 60px rgba(15, 23, 42, 0.14);
+  }
+
+  .text-brand-muted {
+    color: var(--brand-text-muted);
+  }
+
+  .border-brand {
+    border-color: var(--brand-border);
+  }
+
+  .ring-brand {
+    --tw-ring-color: var(--brand-focus);
+  }
+
   /* Premium dark background with subtle radial vignette */
   .bg-dark-cinema {
     background:

@@ -35,8 +35,6 @@ Copy `.env.example` to `.env` and set:
 ```bash
 NEXT_PUBLIC_SUPABASE_URL=your_supabase_project_url
 NEXT_PUBLIC_SUPABASE_ANON_KEY=your_supabase_anon_key
-# Optional: map (default) or crate
-NEXT_PUBLIC_HOME_EXPERIENCE=map
 ```
 
 `NEXT_PUBLIC_SUPABASE_URL` and `NEXT_PUBLIC_SUPABASE_ANON_KEY` are read by `src/lib/supabase.ts`. Placeholder values intentionally disable live Supabase reads and fall back to empty data.
@@ -66,13 +64,12 @@ Urbanist is vendored locally via `next/font/local` so builds do not depend on fe
 - `src/app/(site)/layout.tsx` is the live-site bootstrap: it loads shared sheet data once and wraps the site in `AppShell` + `PlayerProvider`.
 - `src/lib/sheets.server.ts` is the server data entry point for list, genre, artist, and festival-set data.
 - `src/context/SiteDataContext.tsx` exposes shared rows, genres, and timestamps to client components.
-- `src/app/(site)/page.tsx` switches the home experience between map and crate modes via `NEXT_PUBLIC_HOME_EXPERIENCE`.
+- `src/app/(site)/page.tsx` renders the record-bin homepage experience.
 
 ## Routes
 
 - Main site routes live in the `(site)` route group and keep clean public URLs:
   - `/`
-  - `/crate`
   - `/list`
   - `/artists`
   - `/heatmaps`
