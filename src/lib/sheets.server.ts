@@ -5,6 +5,7 @@ import {
   supabase,
   supabaseDisabledReason,
 } from '@/lib/supabase';
+import { fixtureArtists, fixtureGenres, fixtureRows } from '@/lib/fixtureSiteData';
 import type { Artist, Genre, Row } from '@/lib/types';
 
 // Re-export types for compatibility
@@ -47,6 +48,10 @@ type RawSetRow = {
 };
 
 let hasLoggedDisabledSupabase = false;
+
+function shouldUseFixtureSiteData() {
+  return process.env.TGA_USE_FIXTURE_DATA === '1';
+}
 
 function logSupabaseDisabledOnce() {
   if (hasLoggedDisabledSupabase) return;
@@ -107,6 +112,10 @@ function getSheetsClientOrFailure(
 }
 
 async function loadGenresForSheets(): Promise<LoadResult<Genre[]>> {
+  if (shouldUseFixtureSiteData()) {
+    return { ok: true, data: fixtureGenres.map((genre) => ({ ...genre })) };
+  }
+
   const clientResult = getSheetsClientOrFailure('genres');
   if (!clientResult.ok) {
     return clientResult;
@@ -125,6 +134,10 @@ async function loadGenresForSheets(): Promise<LoadResult<Genre[]>> {
 }
 
 async function loadArtistsForSheets(): Promise<LoadResult<Artist[]>> {
+  if (shouldUseFixtureSiteData()) {
+    return { ok: true, data: fixtureArtists.map((artist) => ({ ...artist })) };
+  }
+
   const clientResult = getSheetsClientOrFailure('artists');
   if (!clientResult.ok) {
     return clientResult;
@@ -149,6 +162,10 @@ async function loadArtistsForSheets(): Promise<LoadResult<Artist[]>> {
 }
 
 async function loadListRowsForSheets(): Promise<LoadResult<Row[]>> {
+  if (shouldUseFixtureSiteData()) {
+    return { ok: true, data: fixtureRows.map((row) => ({ ...row })) };
+  }
+
   const clientResult = getSheetsClientOrFailure('list');
   if (!clientResult.ok) {
     return clientResult;

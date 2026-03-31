@@ -42,6 +42,7 @@ async function importSheetsServerWithSupabaseMock(
     reason?: string | null;
     results?: Record<string, QueryResult>;
     supabaseOverride?: object | null;
+    useFixtureData?: boolean;
   } = {},
 ) {
   const {
@@ -49,12 +50,18 @@ async function importSheetsServerWithSupabaseMock(
     reason = null,
     results = {},
     supabaseOverride,
+    useFixtureData = false,
   } = options;
 
   const supabase =
     supabaseOverride === undefined ? createSupabaseMock(results) : supabaseOverride;
 
   vi.resetModules();
+  if (useFixtureData) {
+    process.env.TGA_USE_FIXTURE_DATA = '1';
+  } else {
+    delete process.env.TGA_USE_FIXTURE_DATA;
+  }
   vi.doMock('@/lib/supabase', () => ({
     isSupabaseEnabled: isEnabled,
     supabase,
@@ -68,6 +75,7 @@ afterEach(() => {
   vi.resetModules();
   vi.restoreAllMocks();
   vi.doUnmock('@/lib/supabase');
+  delete process.env.TGA_USE_FIXTURE_DATA;
 });
 
 describe('sheets.server', () => {
@@ -335,6 +343,31 @@ describe('sheets.server', () => {
       updatedAt: expect.any(String),
       data: {
         genres: [{ label: 'Ambient', explanation: 'Drifting' }],
+      },
+    });
+  });
+
+  it('returns fixture site data when the fixture env flag is enabled', async () => {
+    const mod = await importSheetsServerWithSupabaseMock({
+      isEnabled: false,
+      reason: 'placeholder config',
+      supabaseOverride: null,
+      useFixtureData: true,
+    });
+
+    await expect(mod.getSheets()).resolves.toEqual({
+      ok: true,
+      updatedAt: expect.any(String),
+      data: {
+        artists: expect.arrayContaining([
+          expect.objectContaining({ name: 'Demi Riquisimo', rating: 'blazing' }),
+        ]),
+        genres: expect.arrayContaining([
+          expect.objectContaining({ label: 'House' }),
+        ]),
+        list: expect.arrayContaining([
+          expect.objectContaining({ set: 'Live from Lost Village - Demi Riquisimo b2b Nyra' }),
+        ]),
       },
     });
   });

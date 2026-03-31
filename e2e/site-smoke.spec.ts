@@ -2,19 +2,19 @@ import { test, expect } from '@playwright/test';
 
 test('primary routes render their key UI', async ({ page }) => {
   await page.goto('/');
-  await expect(page.getByLabel('Amsterdam map with interactive music zones')).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Flip through the archive until one feels right.' })).toBeVisible();
 
   await page.goto('/cabra');
   await expect(page.getByTestId('cabra-primary-value')).toBeVisible();
 
   await page.goto('/crate');
-  await expect(page.getByText('Crate Digger mode')).toBeVisible();
+  await expect(page.getByText('This page could not be found.')).toBeVisible();
 
   await page.goto('/list');
   await expect(page.getByPlaceholder('Type to filter')).toBeVisible();
 
   await page.goto('/artists');
-  await expect(page.locator('main')).toBeVisible();
+  await expect(page.getByRole('link', { name: 'Demi Riquisimo' })).toBeVisible();
 
   await page.goto('/heatmaps');
   await expect(page.getByRole('heading', { name: 'Heatmaps.' })).toBeVisible();

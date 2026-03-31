@@ -28,7 +28,7 @@ export default defineConfig({
     reuseExistingServer: true,
     env: {
       ...process.env,
-      NEXT_PUBLIC_HOME_EXPERIENCE: 'map',
+      TGA_USE_FIXTURE_DATA: '1',
     },
   },
 });

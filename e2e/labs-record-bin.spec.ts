@@ -14,7 +14,7 @@ test('labs record bin loads and responds to desktop controls', async ({ page }) 
   await expect(page.getByText('Unlinked experiments')).toBeVisible();
 
   await page.goto('/labs/record-bin');
-  await expect(page.getByRole('region', { name: 'Record Bin' })).toBeVisible();
+  await expect(page.getByRole('region', { name: 'Flip through the archive until one feels right.' })).toBeVisible();
   await expect(page.locator('[data-nextjs-dialog]')).toHaveCount(0);
   const filter = page.getByLabel('Filter by genre');
   await expect(filter).toBeVisible();
@@ -22,7 +22,9 @@ test('labs record bin loads and responds to desktop controls', async ({ page }) 
   await expect(page.getByRole('button', { name: 'Show previous record' })).toBeVisible();
   await expect(page.locator('ol button[tabindex="0"]')).toHaveCount(5);
 
-  const status = page.locator('#record-bin-status');
+  const status = page
+    .getByRole('region', { name: 'Flip through the archive until one feels right.' })
+    .getByText(/^Item \d+ of \d+:/);
   const initialStatus = await status.textContent();
 
   const activeSleeve = page.locator('button[aria-label$=", active sleeve"]').first();
@@ -46,8 +48,10 @@ test('labs record bin loads and responds to desktop controls', async ({ page }) 
     const totalMatch = firstGenreStatus?.match(/Item \d+ of (\d+):/);
     const total = Number(totalMatch?.[1] ?? '1');
 
-    for (let index = 0; index < total; index += 1) {
-      await page.getByRole('button', { name: 'Show next record' }).click();
+    if (total > 1) {
+      for (let index = 0; index < total; index += 1) {
+        await page.getByRole('button', { name: 'Show next record' }).click();
+      }
     }
 
     await expect(status).toHaveText(firstGenreStatus ?? '', { timeout: 5_000 });
