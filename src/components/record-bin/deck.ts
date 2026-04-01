@@ -20,6 +20,10 @@ type RecordBinMediaTargets = {
 };
 
 type RandomFn = () => number;
+type BuildRecordBinDeckOptions = {
+  rng?: RandomFn;
+  seed?: string;
+};
 
 function hashString(value: string) {
   let hash = 0;
@@ -94,13 +98,14 @@ export function shuffleRecordBinDeck<T>(items: T[], rng: RandomFn = Math.random)
   return shuffled;
 }
 
-export function buildRecordBinDeck(rows: Row[], rng?: RandomFn) {
+export function buildRecordBinDeck(rows: Row[], options: BuildRecordBinDeckOptions = {}) {
   const deck = rows
     .map(createRecordBinDeckItem)
     .filter((item): item is RecordBinDeckItem => Boolean(item));
 
   const seededRng =
-    rng ??
+    options.rng ??
+    (options.seed ? createSeededRandom(options.seed) : undefined) ??
     createSeededRandom(
       deck
         .map((item) => item.id)

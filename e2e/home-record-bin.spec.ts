@@ -1,13 +1,22 @@
 import { test, expect } from '@playwright/test';
 
+function escapeRegExp(value: string) {
+  return value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+}
+
 test('renders the record-bin homepage on desktop', async ({ page }) => {
   await page.goto('/');
   await expect(page.getByRole('region', { name: 'Record Bin' })).toBeVisible();
   await expect(page.getByLabel('Filter by genre')).toHaveValue('All');
+
+  const activeCardTitle = page.getByRole('heading', { level: 2 }).first();
+  await expect(activeCardTitle).toHaveText(/\S+/);
+  const activeTitle = (await activeCardTitle.textContent())?.trim() ?? '';
+
   await expect(
     page.getByRole('button', {
-      name: 'Open Live from Lost Village - Demi Riquisimo b2b Nyra on SoundCloud, or YouTube if SoundCloud is unavailable',
-    }),
+      name: new RegExp(`^Open ${escapeRegExp(activeTitle)} on `),
+    }).first(),
   ).toBeVisible();
   await expect(page.getByRole('button', { name: 'Show next record' })).toBeVisible();
 });

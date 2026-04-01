@@ -47,7 +47,7 @@ describe('shuffleRecordBinDeck', () => {
 
 describe('buildRecordBinDeck', () => {
   it('includes every eligible archive row and keeps provider-specific outbound urls', () => {
-    const deck = buildRecordBinDeck(rows, () => 0.999999);
+    const deck = buildRecordBinDeck(rows, { rng: () => 0.999999 });
 
     expect(deck).toHaveLength(3);
     expect(deck.map((item) => item.title)).toEqual([
@@ -62,6 +62,7 @@ describe('buildRecordBinDeck', () => {
     expect(deck[1].soundcloudUrl).toBeNull();
     expect(deck[1].youtubeUrl).toContain('youtube.com');
   });
+
 });
 
 describe('resolveRecordBinMediaTargets', () => {
@@ -106,7 +107,7 @@ describe('resolveRecordBinMediaTargets', () => {
 });
 
 describe('genre helpers', () => {
-  const deck = buildRecordBinDeck(rows, () => 0.999999);
+  const deck = buildRecordBinDeck(rows, { rng: () => 0.999999 });
 
   it('builds one sorted option list with unclassified at the end', () => {
     expect(buildGenreOptions(deck)).toEqual([

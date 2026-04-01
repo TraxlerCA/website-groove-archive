@@ -1,8 +1,8 @@
-'use client';
+import { randomUUID } from 'node:crypto';
 
 import RecordBinHome from '@/components/home/RecordBinHome';
 
 export default function HomePage() {
-  return <RecordBinHome />;
+  return <RecordBinHome shuffleSeed={randomUUID()} />;
 }
 

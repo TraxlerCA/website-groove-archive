@@ -6,9 +6,12 @@ import { buildRecordBinDeck } from '@/components/record-bin/deck';
 import { RecordBinExperience } from '@/components/record-bin/RecordBinExperience';
 import { useSiteData } from '@/context/SiteDataContext';
 
-export default function RecordBinHome() {
+export default function RecordBinHome({ shuffleSeed }: { shuffleSeed: string }) {
   const siteData = useSiteData();
-  const deck = useMemo(() => buildRecordBinDeck(siteData.rows), [siteData.rows]);
+  const deck = useMemo(
+    () => buildRecordBinDeck(siteData.rows, { seed: shuffleSeed }),
+    [shuffleSeed, siteData.rows],
+  );
 
   if (deck.length < 3) {
     return (
