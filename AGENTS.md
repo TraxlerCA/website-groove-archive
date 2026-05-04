@@ -18,6 +18,9 @@
 - Reading from databases, including Supabase, does not require prior approval.
 - Ask for explicit user approval before any destructive or mutating database action, including inserts, updates, deletes, migrations, schema changes, truncates, RPC calls with side effects, or write-capable MCP/tool calls.
 - Before requesting approval for a database mutation, summarize the target project/database, intended change, and expected impact.
+- For database writes, show the exact rows or SQL before requesting approval, then verify the mutation afterward with a read-only query.
+- Local Supabase admin writes use `SUPABASE_SECRET_KEY` only in server/local tooling; never use a `NEXT_PUBLIC_` name for secret or service-role keys.
+- When using a Supabase `sb_secret_...` key through REST, send a non-browser user agent so Supabase accepts it as protected-environment tooling.
 
 ## Visual Checks
 
