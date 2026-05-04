@@ -13,6 +13,12 @@
 - Do not merge without explicit user approval.
 - Do not stage or commit screenshots, temporary browser captures, or other local debug artifacts unless explicitly asked.
 
+## Database Safety
+
+- Reading from databases, including Supabase, does not require prior approval.
+- Ask for explicit user approval before any destructive or mutating database action, including inserts, updates, deletes, migrations, schema changes, truncates, RPC calls with side effects, or write-capable MCP/tool calls.
+- Before requesting approval for a database mutation, summarize the target project/database, intended change, and expected impact.
+
 ## Visual Checks
 
 - Prefer the stable npm scripts over ad hoc browser shell commands.
