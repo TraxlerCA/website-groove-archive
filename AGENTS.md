@@ -22,6 +22,11 @@
 - Local Supabase admin writes use `SUPABASE_SECRET_KEY` only in server/local tooling; never use a `NEXT_PUBLIC_` name for secret or service-role keys.
 - When using a Supabase `sb_secret_...` key through REST, send a non-browser user agent so Supabase accepts it as protected-environment tooling.
 
+## Repo Agent Assets
+
+- The repo copy of the TGA set-intake skill lives at `.agents/skills/tga-set-intake`.
+- Keep the repo copy and any installed global copy in sync when changing the set-intake workflow.
+
 ## Visual Checks
 
 - Prefer the stable npm scripts over ad hoc browser shell commands.

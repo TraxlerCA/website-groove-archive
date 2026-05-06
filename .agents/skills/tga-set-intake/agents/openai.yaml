@@ -1,0 +1,4 @@
+interface:
+  display_name: "TGA Set Intake"
+  short_description: "Prepare Groove Archive set SQL suggestions"
+  default_prompt: "Use $tga-set-intake to analyze these YouTube or SoundCloud links and propose the SQL update."
