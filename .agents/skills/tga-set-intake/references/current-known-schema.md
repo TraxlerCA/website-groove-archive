@@ -63,7 +63,7 @@ Read-only probes confirmed `sets.rating` values are stored as literal flame stri
 '🔥🔥'
 ```
 
-Use another rating only when the user supplies it explicitly.
+Use another rating only when the user supplies it explicitly, asks for calibration, or asks to leave it blank.
 
 ## Current Genre Rows
 
@@ -96,4 +96,4 @@ where soundcloud_url = '<canonical_soundcloud_url>'
    or lower(title) = lower('<normalized_title>');
 ```
 
-Use broader title matching when exact matching fails.
+Use broader title and artist matching when exact matching fails.
