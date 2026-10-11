@@ -4,6 +4,7 @@ import React from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useHeatmaps } from '@/hooks/useHeatmaps';
 import { HeatmapTile } from '@/components/heatmaps/HeatmapTile';
+import { isLineup } from '@/lib/heatmaps';
 
 export default function HeatmapsPage() {
   const csvUrl = typeof window !== 'undefined'
@@ -53,7 +54,8 @@ export default function HeatmapsPage() {
                 <motion.div key={g.key} variants={item}>
                   <HeatmapTile 
                     title={g.title} 
-                    date={g.date} 
+                    date={g.date}
+                    lineup={isLineup(g.rows)}
                   />
                 </motion.div>
               ))}

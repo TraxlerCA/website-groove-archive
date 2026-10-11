@@ -22,7 +22,7 @@ export function useHeatmaps(csvUrl?: string | null) {
         end: norm(r.end || (r as Row & Record<string, string>).end_time),
         rating: norm(r.rating || ''),
       }))
-      .filter(r => r.festival && r.date && r.stage && r.artist && r.start && r.end);
+      .filter(r => r.festival && r.date && r.artist);
 
     (async () => {
       try {

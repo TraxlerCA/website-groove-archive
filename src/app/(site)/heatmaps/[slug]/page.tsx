@@ -8,7 +8,7 @@ import { useHeatmaps } from '@/hooks/useHeatmaps';
 import { HeatmapExportRenderer } from '@/components/heatmaps/HeatmapExportRenderer';
 import { HeatmapRenderer } from '@/components/heatmaps/HeatmapRenderer';
 import { exportHeatmapPng } from '@/lib/heatmapExport';
-import { slugify } from '@/lib/heatmaps';
+import { slugify, isLineup } from '@/lib/heatmaps';
 
 export default function HeatmapDetailPage() {
   const params = useParams();
@@ -25,7 +25,7 @@ export default function HeatmapDetailPage() {
     setExportError(null);
     setIsExportingPng(true);
     try {
-      await exportHeatmapPng(exportRef.current, `${slugify(heatmap.title)}-heatmap.png`);
+      await exportHeatmapPng(exportRef.current, `${slugify(heatmap.title)}-${isLineup(heatmap.rows) ? 'lineup' : 'heatmap'}.png`);
     } catch (e: unknown) {
       setExportError(e instanceof Error ? e.message : 'Export failed');
     } finally {
@@ -88,6 +88,7 @@ export default function HeatmapDetailPage() {
               title={heatmap.title}
               date={heatmap.date}
               rows={heatmap.rows}
+              registerRef={isLineup(heatmap.rows) ? el => { exportRef.current = el; } : undefined}
               pxPerMin={1.2}
               onExportPng={handlePngExport}
               isExportingPng={isExportingPng}
@@ -96,7 +97,7 @@ export default function HeatmapDetailPage() {
         </AnimatePresence>
       </div>
 
-      {heatmap && (
+      {heatmap && !isLineup(heatmap.rows) && (
         <div
           aria-hidden="true"
           className="pointer-events-none fixed top-0"

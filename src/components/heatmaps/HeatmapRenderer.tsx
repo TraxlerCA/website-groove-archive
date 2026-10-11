@@ -16,6 +16,8 @@ import {
   getHeatmapNow,
 } from '@/lib/heatmapLayout';
 import { fitHeatmapLabel } from '@/lib/heatmapLabelFit';
+import { isLineup } from '@/lib/heatmaps';
+import { LineupRenderer } from './LineupRenderer';
 
 interface HeatmapRendererProps {
   groupKey: string;
@@ -30,7 +32,11 @@ interface HeatmapRendererProps {
   isExportingPng?: boolean;
 }
 
-export function HeatmapRenderer({
+export function HeatmapRenderer(props: HeatmapRendererProps) {
+  return isLineup(props.rows) ? <LineupRenderer {...props} /> : <ScheduledHeatmapRenderer {...props} />;
+}
+
+function ScheduledHeatmapRenderer({
   groupKey,
   title,
   date,

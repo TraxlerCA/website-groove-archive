@@ -14,6 +14,9 @@ export type Row = {
 
 export type Group = { title: string; date: string; rows: Row[]; key: string };
 
+// A partial timetable stays a lineup until every act has a complete slot.
+export const isLineup = (rows: Row[]) => rows.some(row => !row.stage || !row.start || !row.end);
+
 export const COLORS = {
   unrated: '#E7E5E4',
   nahh:    '#8AA3FF',

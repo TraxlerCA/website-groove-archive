@@ -1,5 +1,10 @@
 import { expect, test } from '@playwright/test';
 
+// Exercise the countdown before its fixed event date, regardless of the CI date.
+test.beforeEach(async ({ page }) => {
+  await page.clock.install({ time: new Date('2026-05-10T08:45:00Z') });
+});
+
 test('cabra renders as a standalone countdown board', async ({ page }) => {
   await page.goto('/cabra');
 
