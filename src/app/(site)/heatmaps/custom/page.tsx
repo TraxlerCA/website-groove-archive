@@ -6,7 +6,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { HeatmapExportRenderer } from '@/components/heatmaps/HeatmapExportRenderer';
 import { HeatmapRenderer } from '@/components/heatmaps/HeatmapRenderer';
 import { exportHeatmapPng } from '@/lib/heatmapExport';
-import { Row, loadPapa, norm, slugify } from '@/lib/heatmaps';
+import { Row, loadPapa, norm, slugify, isLineup } from '@/lib/heatmaps';
 
 
 export default function CustomHeatmapPage() {
@@ -33,7 +33,7 @@ export default function CustomHeatmapPage() {
     });
 
     const fields = (res.meta.fields || []).map((f: string) => (f || '').trim().toLowerCase());
-    const required = ['festival','date','stage','artist','start','end','rating'];
+    const required = ['festival','date','artist'];
     const missing = required.filter(r => !fields.includes(r));
     if (missing.length) errs.push(`Missing columns: ${missing.join(', ')}`);
 
@@ -58,12 +58,13 @@ export default function CustomHeatmapPage() {
 
       if (!festival) errs.push(`Row ${rowNum}: missing festival`);
       if (!date || !dateRe.test(date)) errs.push(`Row ${rowNum}: invalid date (YYYY-MM-DD)`);
-      if (!stage) errs.push(`Row ${rowNum}: missing stage`);
       if (!artist) errs.push(`Row ${rowNum}: missing artist`);
 
-      const ns = normalizeTime(start);
-      const ne = normalizeTime(end);
-      if (!ns || !ne) errs.push(`Row ${rowNum}: invalid time (HH:MM)`);
+      const scheduled = Boolean(stage || start || end);
+      const ns = scheduled ? normalizeTime(start) : '';
+      const ne = scheduled ? normalizeTime(end) : '';
+      if (scheduled && !stage) errs.push(`Row ${rowNum}: missing stage`);
+      if (scheduled && (!ns || !ne)) errs.push(`Row ${rowNum}: invalid time (HH:MM)`);
 
       if (rating === 'empty') rating = '';
       const allowedRating = ['','nahh','ok','hot','blazing'];
@@ -76,8 +77,8 @@ export default function CustomHeatmapPage() {
         if (Number.isFinite(n)) stage_order = n;
       }
 
-      if (festival && date && stage && artist && ns && ne && allowedRating.includes(rating)) {
-        cleanRows.push({ festival, date, stage, stage_order, artist, start: ns, end: ne, rating });
+      if (festival && date && artist && (!scheduled || (stage && ns && ne)) && allowedRating.includes(rating)) {
+        cleanRows.push({ festival, date, stage, stage_order, artist, start: ns ?? '', end: ne ?? '', rating });
       }
     });
 
@@ -104,7 +105,7 @@ export default function CustomHeatmapPage() {
     setExportError(null);
     setIsExportingPng(true);
     try {
-      await exportHeatmapPng(exportRef.current, `${slugify(rows[0].festival)}-heatmap.png`);
+      await exportHeatmapPng(exportRef.current, `${slugify(rows[0].festival)}-${isLineup(rows) ? 'lineup' : 'heatmap'}.png`);
     } catch (e: unknown) {
       setExportError(e instanceof Error ? e.message : 'Export failed');
     } finally {
@@ -129,7 +130,7 @@ export default function CustomHeatmapPage() {
             Generator.
           </h1>
           <p className="mt-2 text-lg font-medium text-neutral-500">
-            Upload your festival schedule CSV and get a stunning heatmap instantly.
+            Upload a festival schedule or artist lineup CSV to make your heatmap.
           </p>
         </div>
 
@@ -153,6 +154,7 @@ export default function CustomHeatmapPage() {
                     title={rows[0].festival}
                     date={rows[0].date}
                     rows={rows}
+                    registerRef={isLineup(rows) ? el => { exportRef.current = el; } : undefined}
                     pxPerMin={1.2}
                     onExportPng={handlePngExport}
                     isExportingPng={isExportingPng}
@@ -190,12 +192,13 @@ export default function CustomHeatmapPage() {
                 Your CSV must include these headers:
               </p>
               <div className="mt-4 flex flex-wrap gap-2">
-                {['festival', 'date', 'stage', 'artist', 'start', 'end', 'rating'].map(h => (
+                {['festival', 'date', 'artist'].map(h => (
                   <span key={h} className="rounded-md bg-neutral-100 px-2 py-1 text-[10px] font-black uppercase tracking-tighter text-neutral-600">
                     {h}
                   </span>
                 ))}
               </div>
+              <p className="mt-4 text-sm text-neutral-600">Use one row per artist, including separate rows for b2b partners, so each can have their own rating. For a timetable, also include stage, start and end (HH:MM). Leave all three blank for a lineup preview.</p>
               <p className="mt-6 text-xs text-neutral-400 font-medium">
                 Tip: Ratings can be <span className="text-blue-500">nahh</span>, <span className="text-yellow-500">ok</span>, <span className="text-orange-500">hot</span>, or <span className="text-red-500">blazing</span>.
               </p>
@@ -222,7 +225,7 @@ export default function CustomHeatmapPage() {
         </div>
       </div>
 
-      {rows.length > 0 && (
+      {rows.length > 0 && !isLineup(rows) && (
         <div
           aria-hidden="true"
           className="pointer-events-none fixed top-0"

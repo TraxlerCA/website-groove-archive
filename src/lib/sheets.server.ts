@@ -6,6 +6,7 @@ import {
   supabaseDisabledReason,
 } from '@/lib/supabase';
 import { fixtureArtists, fixtureGenres, fixtureRows } from '@/lib/fixtureSiteData';
+import { lineupRows } from '@/lib/lineupEvents';
 import type { Artist, Genre, Row } from '@/lib/types';
 
 // Re-export types for compatibility
@@ -220,6 +221,9 @@ export const getListRows = cache(async (): Promise<Row[]> => {
 // New function for heatmaps
 // No functional changes needed here as it returns raw data, but keeping it consistent with hook's intent
 export const getFestivalSets = cache(async () => {
+  if (shouldUseFixtureSiteData()) {
+    return lineupRows.map(row => ({ ...row }));
+  }
   if (shouldSkipSupabaseFetches()) {
     return [];
   }

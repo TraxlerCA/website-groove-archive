@@ -9,9 +9,10 @@ interface HeatmapTileProps {
   title: string;
   date: string;
   isCustom?: boolean;
+  lineup?: boolean;
 }
 
-export function HeatmapTile({ title, date, isCustom = false }: HeatmapTileProps) {
+export function HeatmapTile({ title, date, isCustom = false, lineup = false }: HeatmapTileProps) {
   const slug = isCustom ? 'custom' : slugify(`${title}-${date}`);
   const href = `/heatmaps/${slug}`;
 
@@ -44,6 +45,7 @@ export function HeatmapTile({ title, date, isCustom = false }: HeatmapTileProps)
               </span>
             )}
           </div>
+          {lineup && <span className="absolute bottom-4 left-6 rounded-full border border-neutral-200 bg-white px-3 py-1 text-xs font-bold text-neutral-600">Lineup preview</span>}
           
           {/* Overlay on hover */}
           <div className="absolute inset-0 bg-black/5 opacity-0 group-hover:opacity-100 transition-opacity" />
