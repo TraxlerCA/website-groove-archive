@@ -21,23 +21,26 @@ test('lineup CSV supports individual b2b ratings, sorting, and export without ti
   expect((await download).suggestedFilename()).toBe('lineup-fest-lineup.png');
 });
 
-test('Overbruggen splits every b2b into individually rated artist cards', async ({ page }) => {
+test('Overbruggen shows the confirmed two-stage timetable with separate B2B artists', async ({ page }) => {
   await page.goto('/heatmaps');
   await page.getByRole('link', { name: /Overbruggen Kyle Starkey Invites/ }).click();
-  await expect(page.getByText('Timetable pending', { exact: false }).first()).toBeVisible();
-  const grid = page.getByTestId('lineup-grid').first();
-  await expect(grid.locator('[data-lineup-act]')).toHaveCount(11);
-  await expect(grid.getByText('unrated', { exact: true })).toHaveCount(0);
-  for (const artist of ['Kyle Starkey', 'Olive Anguz']) {
-    const card = grid.locator('[data-lineup-act]').filter({ hasText: artist });
-    await expect(card).toHaveAttribute('aria-label', `${artist}: blazing`);
-    await expect(card).toHaveCSS('background-color', 'rgb(231, 24, 11)');
+
+  await expect(page.getByText('Timetable pending', { exact: false })).toHaveCount(0);
+  await expect(page.getByText('Arena', { exact: true }).first()).toBeVisible();
+  await expect(page.getByText('Club', { exact: true }).first()).toBeVisible();
+
+  for (const artist of [
+    'Inafekt', 'Sensu', 'NewTone', 'WOLTERS', 'Kyle Starkey', 'CVNTS',
+    'Entasia', 'Ned Bennett', 'Club Angel', 'Olive Anguz', 'STÜM',
+  ]) {
+    await expect(page.getByText(artist, { exact: true }).first()).toBeVisible();
   }
-  for (const artist of ['Entasia', 'Ned Bennett', 'Inafekt', 'Sensu', 'Olive Anguz', 'STÜM']) {
-    await expect(grid.getByText(artist, { exact: true })).toBeVisible();
-  }
-  await expect(grid.getByText(/b2b/)).toHaveCount(0);
+  await expect(page.getByText(/b2b/i)).toHaveCount(0);
+  await expect(page.getByText('15:00', { exact: true }).first()).toBeVisible();
+  await expect(page.getByText('23:00', { exact: true }).first()).toBeVisible();
+
   await page.setViewportSize({ width: 375, height: 812 });
-  await expect(grid.getByText('Olive Anguz', { exact: true })).toBeVisible();
+  await expect(page.getByText('Arena', { exact: true }).first()).toBeVisible();
+  await expect(page.getByText('Olive Anguz', { exact: true }).first()).toBeVisible();
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true);
 });
