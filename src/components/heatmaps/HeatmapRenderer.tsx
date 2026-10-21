@@ -17,8 +17,9 @@ import {
 import { fitHeatmapLabel } from '@/lib/heatmapLabelFit';
 import { isLineup } from '@/lib/heatmaps';
 import { LineupRenderer } from './LineupRenderer';
+import { MobileHeatmap } from './MobileHeatmap';
 
-interface HeatmapRendererProps {
+export interface HeatmapRendererProps {
   groupKey: string;
   title: string;
   date: string;
@@ -50,7 +51,6 @@ function ScheduledHeatmapRenderer({
 
   const [now, setNow] = useState<number | null>(null);
   const [isMobile, setIsMobile] = useState(false);
-  const [activeStageIndex, setActiveStageIndex] = useState(0);
 
   useEffect(() => {
     const updateNow = () => {
@@ -62,11 +62,9 @@ function ScheduledHeatmapRenderer({
   }, [date]);
 
   const sectionRef = useRef<HTMLDivElement | null>(null);
-  const swipeStartRef = useRef<{ x: number; y: number } | null>(null);
 
   useEffect(() => {
     const updateScale = () => {
-      if (!sectionRef.current) return;
       const sw = window.innerWidth;
       setIsMobile(sw < 640);
     };
@@ -79,10 +77,6 @@ function ScheduledHeatmapRenderer({
     () => computeHeatmapLayout(rows, pxPerMin, { now }),
     [rows, pxPerMin, now],
   );
-
-  useEffect(() => {
-    setActiveStageIndex((index) => Math.min(index, Math.max(0, layout.stages.length - 1)));
-  }, [layout.stages.length]);
 
   const renderHeadersContent = () => (
     <div
@@ -192,36 +186,16 @@ function ScheduledHeatmapRenderer({
     </div>
   );
 
-  const mobileRailW = 52;
-  const mobileLabelStageWidth = 240;
   const desktopRailW = 72;
   const desktopIdealStageWidth = 424;
   const desktopMinimumStageWidth = 260;
   const desktopIdealWidth = desktopRailW + layout.stages.length * desktopIdealStageWidth;
   const desktopMinimumWidth = desktopRailW + layout.stages.length * desktopMinimumStageWidth;
   const desktopLabelStageWidth = desktopMinimumStageWidth;
-  const activeStage = layout.stageLayouts[activeStageIndex] ?? layout.stageLayouts[0];
   const handlePngExport = onExportPng ?? onExport;
   const isBusy = isExportingPng;
 
-  const moveStage = (direction: -1 | 1) => {
-    setActiveStageIndex((index) => Math.max(0, Math.min(layout.stages.length - 1, index + direction)));
-  };
-
-  const handleStagePointerDown = (event: React.PointerEvent<HTMLDivElement>) => {
-    swipeStartRef.current = { x: event.clientX, y: event.clientY };
-  };
-
-  const handleStagePointerUp = (event: React.PointerEvent<HTMLDivElement>) => {
-    const start = swipeStartRef.current;
-    swipeStartRef.current = null;
-    if (!start) return;
-
-    const deltaX = event.clientX - start.x;
-    const deltaY = event.clientY - start.y;
-    if (Math.abs(deltaX) < 48 || Math.abs(deltaX) <= Math.abs(deltaY)) return;
-    moveStage(deltaX < 0 ? 1 : -1);
-  };
+  if (isMobile) return <MobileHeatmap now={now} groupKey={groupKey} title={title} date={date} rows={rows} pxPerMin={pxPerMin} registerRef={registerRef} onExport={onExport} onExportPng={onExportPng} showExport={showExport} isExportingPng={isExportingPng} />;
 
   return (
     <div 
@@ -268,72 +242,7 @@ function ScheduledHeatmapRenderer({
           ))}
         </div>
 
-        {isMobile ? (
-          <div
-            role="region"
-            aria-label={`${title} timetable`}
-            className="mx-auto w-full"
-          >
-            <nav aria-label="Choose stage" className="mb-3 flex min-h-[62px] items-center justify-between">
-              <button
-                type="button"
-                aria-label="Previous stage"
-                disabled={activeStageIndex === 0}
-                onClick={() => moveStage(-1)}
-                className="grid h-14 w-14 shrink-0 place-items-center rounded-full bg-neutral-950 text-white shadow-[0_7px_16px_rgba(0,0,0,0.18)] transition-transform active:scale-95 disabled:bg-neutral-200 disabled:text-neutral-400 disabled:shadow-none disabled:active:scale-100"
-              >
-                <svg aria-hidden="true" className="h-10 w-10" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3.2} d="M19 12H5m6-6-6 6 6 6" />
-                </svg>
-              </button>
-
-              <div aria-live="polite" className="min-w-0 flex-1 text-center">
-                <h2 className="truncate text-base font-black uppercase tracking-[0.12em] text-neutral-900">
-                  {activeStage?.stage}
-                </h2>
-                <div className="mt-1 text-[11px] font-medium tracking-[0.12em] text-neutral-400">
-                  {activeStageIndex + 1}/{layout.stages.length}
-                </div>
-              </div>
-
-              <button
-                type="button"
-                aria-label="Next stage"
-                disabled={activeStageIndex === layout.stages.length - 1}
-                onClick={() => moveStage(1)}
-                className="grid h-14 w-14 shrink-0 place-items-center rounded-full bg-neutral-950 text-white shadow-[0_7px_16px_rgba(0,0,0,0.18)] transition-transform active:scale-95 disabled:bg-neutral-200 disabled:text-neutral-400 disabled:shadow-none disabled:active:scale-100"
-              >
-                <svg aria-hidden="true" className="h-10 w-10" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3.2} d="M5 12h14m-6-6 6 6-6 6" />
-                </svg>
-              </button>
-            </nav>
-
-            <div
-              data-testid="heatmap-stage-viewport"
-              className="relative overflow-hidden rounded-[1.5rem] border border-neutral-200 bg-white shadow-[0_14px_34px_rgba(0,0,0,0.12)]"
-              style={{ touchAction: 'pan-y' }}
-              onPointerDown={handleStagePointerDown}
-              onPointerUp={handleStagePointerUp}
-              onPointerCancel={() => { swipeStartRef.current = null; }}
-            >
-              <div className="relative flex items-stretch pb-4 pt-2">
-                <div
-                  data-testid="heatmap-time-rail"
-                  className="z-20 shrink-0 border-r border-neutral-100 bg-white"
-                  style={{ width: mobileRailW, height: layout.heightPx }}
-                >
-                  {renderTimeRailContent()}
-                </div>
-
-                <div className="min-w-0 flex-1">
-                  {activeStage ? renderSetsContent([activeStage], mobileLabelStageWidth) : null}
-                </div>
-              </div>
-            </div>
-          </div>
-        ) : (
-          <div
+        <div
             role="region"
             aria-label={`${title} timetable`}
             className="relative mx-auto w-full overflow-x-auto overflow-y-hidden rounded-[2rem] border border-neutral-200 bg-white shadow-[0_20px_44px_rgba(0,0,0,0.14)]"
@@ -365,7 +274,6 @@ function ScheduledHeatmapRenderer({
               </div>
             </div>
           </div>
-        )}
       </div>
     </div>
   );

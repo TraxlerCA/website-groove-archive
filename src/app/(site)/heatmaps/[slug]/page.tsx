@@ -57,9 +57,9 @@ export default function HeatmapDetailPage() {
   }
 
   return (
-    <div className="min-h-screen bg-neutral-50/50 pb-16 pt-4 sm:pb-20 sm:pt-10">
+    <div className="min-h-screen bg-[#f6f5ef] pb-4 pt-3 sm:bg-neutral-50/50 sm:pb-20 sm:pt-10">
       <div className="mx-auto max-w-7xl px-4 sm:px-6">
-        <div className="mb-4 flex items-center justify-between sm:mb-8">
+        <div className="mb-0 flex items-center justify-between sm:mb-8">
           <Link 
             href="/heatmaps"
             className="group flex items-center gap-1.5 text-[11px] font-bold uppercase tracking-[0.26em] text-neutral-400 transition-colors hover:text-neutral-900 sm:gap-2 sm:text-sm sm:tracking-widest"

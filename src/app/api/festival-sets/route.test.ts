@@ -5,7 +5,8 @@ vi.mock('@/lib/sheets.server', () => ({
 }));
 
 import { getFestivalSets } from '@/lib/sheets.server';
-import { GET, mapFestivalSetRow } from './route';
+import { GET } from './route';
+import { mapFestivalSetRow } from '@/lib/festivalSetRows';
 
 describe('mapFestivalSetRow', () => {
   it('maps start_time/end_time to start/end', () => {
@@ -50,4 +51,20 @@ describe('GET /api/festival-sets', () => {
     expect(json.ok).toBe(true);
     expect(json.data[0]).toMatchObject({ start: '13:00:00', end: '14:00:00' });
   });
+
+  it.each([new Error('Festival data unavailable'), 'Festival data unavailable'])(
+    'returns a safe error response when the data source rejects: %s',
+    async (failure) => {
+      vi.mocked(getFestivalSets).mockRejectedValue(failure);
+
+      const response = await GET();
+      expect(response.status).toBe(500);
+      expect(await response.json()).toEqual({
+        ok: false,
+        error: 'Festival data unavailable',
+        data: [],
+      });
+    },
+  );
+
 });
