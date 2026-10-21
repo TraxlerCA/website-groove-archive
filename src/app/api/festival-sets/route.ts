@@ -1,33 +1,8 @@
 import { NextResponse } from 'next/server';
 import { getFestivalSets } from '@/lib/sheets.server';
+import { mapFestivalSetRow, type FestivalSetRow } from '@/lib/festivalSetRows';
 
 export const dynamic = 'force-dynamic';
-
-type FestivalSetRow = {
-  festival?: string | null;
-  date?: string | null;
-  stage?: string | null;
-  stage_order?: number | string | null;
-  artist?: string | null;
-  start?: string | null;
-  end?: string | null;
-  start_time?: string | null;
-  end_time?: string | null;
-  rating?: string | null;
-};
-
-export function mapFestivalSetRow(row: FestivalSetRow) {
-  return {
-    festival: row.festival ?? '',
-    date: row.date ?? '',
-    stage: row.stage ?? '',
-    stage_order: row.stage_order ?? 9999,
-    artist: row.artist ?? '',
-    start: row.start ?? row.start_time ?? '',
-    end: row.end ?? row.end_time ?? '',
-    rating: row.rating ?? '',
-  };
-}
 
 export async function GET() {
   try {

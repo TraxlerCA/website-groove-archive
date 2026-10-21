@@ -1,0 +1,42 @@
+.sheet { --ink: #252720; --muted: #696c62; background: #f6f5ef; color: var(--ink); padding: 18px 14px 12px; margin: 0 -16px; font-family: Arial, Helvetica, sans-serif; }
+.header { display: flex; justify-content: space-between; gap: 12px; padding-bottom: 4px; }
+.header > div { min-width: 0; }
+.header h1 { font-size: clamp(24px, 7vw, 30px); line-height: 1.03; font-weight: 700; letter-spacing: -.055em; margin: 0; overflow-wrap: anywhere; }
+.export { flex-shrink: 0; width: 44px; height: 44px; border: 1px solid var(--ink); display: grid; place-items: center; background: var(--ink); color: #f6f5ef; cursor: pointer; border-radius: 12px; margin-top: 0; }
+.export:disabled { opacity: .4; cursor: wait; }
+.stageNav { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 12px 0; }
+.stageName { min-width: 0; flex: 1; }
+.count { margin-left: auto; font: 10px/1.5 ui-monospace, monospace; color: var(--muted); }
+.selectWrap { position: relative; display: flex; align-items: center; gap: 12px; min-height: 30px; }
+.selectWrap h2 { font-size: 20px; font-weight: 700; line-height: 1.2; letter-spacing: -.035em; overflow-wrap: anywhere; margin: 0; }
+.selectWrap svg { flex-shrink: 0; }
+.selectWrap select { position: absolute; inset: 0; opacity: 0; width: 100%; cursor: pointer; font-size: 16px; }
+.selectWrap:focus-within { outline: 2px solid var(--ink); outline-offset: 3px; }
+.arrows { display: flex; flex-shrink: 0; gap: 4px; }
+.arrows button { height: 44px; width: 44px; display: grid; place-items: center; border: 1px solid var(--ink); background: var(--ink); color: #f6f5ef; border-radius: 12px; cursor: pointer; }
+.arrows button:disabled { border-color: #d7d9cf; background: #e8e9e1; color: #a0a297; cursor: default; }
+.arrows button:active:not(:disabled) { background: #45483d; }
+.export:active:not(:disabled) { background: #45483d; }
+.export:focus-visible, .arrows button:focus-visible { outline: 2px solid var(--ink); outline-offset: 3px; }
+@media (hover: hover) { .export:hover:not(:disabled) { background: #45483d; } .arrows button:hover:not(:disabled) { background: #45483d; } }
+.schedule { touch-action: pan-y; }
+.columnLabels { display: grid; grid-template-columns: 46px 1fr; gap: 8px; padding: 0 10px 6px; font: 9px/1.5 ui-monospace, monospace; text-transform: uppercase; letter-spacing: .08em; color: var(--muted); }
+.sets { display: grid; gap: 5px; --minute: calc((clamp(340px, calc(100svh - 310px), 470px) - var(--gaps)) / var(--minutes)); list-style: none; padding: 0; margin: 0; }
+.set { display: grid; grid-template-columns: 46px minmax(0, 1fr); align-items: center; gap: 8px; padding: 7px 10px; background: var(--wash); border-left: 3px solid var(--tone); border-radius: 2px; min-width: 0; min-height: max(44px, calc(var(--duration) * var(--minute))); }
+.time { display: flex; flex-direction: column; gap: 3px; font: 11px/1.2 ui-monospace, monospace; font-variant-numeric: tabular-nums; }
+.time span:last-child { font-weight: normal; }
+.artist { font-size: 15px; line-height: 1.15; font-weight: 600; letter-spacing: -.025em; overflow-wrap: anywhere; }
+.nahh { --tone: #5a67ba; --wash: #e4e7f5; }
+.ok { --tone: #9a7e17; --wash: #eee8c9; }
+.hot { --tone: #b84b1d; --wash: #f4d7be; }
+.blazing { --tone: #c33c2c; --wash: #be3d2b; }
+.set.blazing { color: #fffaf0; }
+.unrated { --tone: #a0a297; --wash: #e8e8e0; }
+.footer { padding-top: 13px; }
+.legend { display: flex; justify-content: space-between; flex-wrap: wrap; gap: 5px; }
+.legend > span { display: inline-flex; align-items: center; gap: 4px; font: 9px/1.5 ui-monospace, monospace; color: var(--muted); text-transform: uppercase; }
+.legend i { display: inline-block; height: 5px; width: 5px; border-radius: 50%; background: var(--tone); }
+@media (prefers-reduced-motion: no-preference) { .arrows button, .export { transition: background .15s; } }
+
+.set[aria-current="time"] { outline: 2px solid var(--ink); outline-offset: -2px; }
+.now { display: block; margin-top: 3px; font: bold 9px/1.2 ui-monospace, monospace; text-transform: uppercase; letter-spacing: .05em; }

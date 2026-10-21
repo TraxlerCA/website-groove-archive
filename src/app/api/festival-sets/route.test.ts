@@ -5,7 +5,8 @@ vi.mock('@/lib/sheets.server', () => ({
 }));
 
 import { getFestivalSets } from '@/lib/sheets.server';
-import { GET, mapFestivalSetRow } from './route';
+import { GET } from './route';
+import { mapFestivalSetRow } from '@/lib/festivalSetRows';
 
 describe('mapFestivalSetRow', () => {
   it('maps start_time/end_time to start/end', () => {
