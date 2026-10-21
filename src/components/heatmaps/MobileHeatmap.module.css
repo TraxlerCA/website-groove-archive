@@ -17,11 +17,21 @@
 @media (hover: hover) { .arrows button:hover:not(:disabled) { background: #354154; } }
 .schedule { touch-action: pan-y; }
 .columnLabels { display: grid; grid-template-columns: 46px 1fr; gap: 8px; padding: 0 10px 6px; font: 9px/1.5 ui-monospace, monospace; text-transform: uppercase; letter-spacing: .08em; color: var(--muted); }
-.sets { display: grid; gap: 5px; --minute: calc((clamp(340px, calc(100svh - 310px), 470px) - var(--gaps)) / var(--minutes)); list-style: none; padding: 0; margin: 0; }
-.set { display: grid; grid-template-columns: 46px minmax(0, 1fr) 24px; align-items: center; gap: 8px; padding: 7px 10px; background: var(--row); border-radius: 5px; min-width: 0; min-height: max(44px, calc(var(--duration) * var(--minute))); }
-.time { display: flex; flex-direction: column; gap: 3px; font: 11px/1.2 ui-monospace, monospace; font-variant-numeric: tabular-nums; }
+.sets { position: relative; height: max(clamp(340px, calc(100svh - 310px), 470px), var(--minimum-height)); list-style: none; padding: 0; margin: 0; }
+.set, .empty { position: absolute; box-sizing: border-box; background: var(--row); border-radius: 5px; min-width: 0; }
+.empty { left: 0; width: 100%; opacity: .45; }
+.set { display: grid; grid-template-columns: 46px minmax(0, 1fr) 24px; align-items: center; gap: 8px; padding: 4px 10px; overflow: hidden; container-type: size; }
+.time { display: flex; flex-direction: column; gap: 2px; font: 11px/1.1 ui-monospace, monospace; font-variant-numeric: tabular-nums; }
 .time span:last-child { font-weight: normal; }
-.artist { font-size: 15px; line-height: 1.15; font-weight: 600; letter-spacing: -.025em; overflow-wrap: anywhere; }
+.artist { font-size: 15px; line-height: 1.15; font-weight: 600; letter-spacing: -.025em; min-width: 0; overflow-wrap: anywhere; overflow: hidden; }
+.set[data-shared] { grid-template-columns: minmax(0, 1fr) 24px; grid-template-rows: auto auto; align-content: center; gap: 5px 4px; padding: 5px 6px; }
+.set[data-shared] .time { grid-column: 1 / -1; flex-direction: row; justify-content: space-between; font-size: 9px; gap: 2px; }
+.set[data-shared] .artist { font-size: 14px; white-space: nowrap; text-overflow: ellipsis; }
+@container (max-height: 32px) {
+  .time { font-size: 9px; gap: 1px; }
+  .artist { white-space: nowrap; text-overflow: ellipsis; }
+  .artist .now { display: none; }
+}
 .footer { padding-top: 13px; }
 @media (prefers-reduced-motion: no-preference) { .arrows button, .export { transition: background .15s; } }
 
