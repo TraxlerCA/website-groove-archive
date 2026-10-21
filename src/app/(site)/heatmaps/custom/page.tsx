@@ -134,8 +134,8 @@ export default function CustomHeatmapPage() {
           </p>
         </div>
 
-        <div className="grid gap-8 lg:grid-cols-[1fr_350px]">
-          <div className="space-y-8">
+        <div className="grid gap-8 lg:grid-cols-[minmax(0,1fr)_350px]">
+          <div className="min-w-0 space-y-8">
             <AnimatePresence mode="wait">
               {rows.length > 0 ? (
                 <motion.div
