@@ -57,7 +57,7 @@ export default function HeatmapDetailPage() {
   }
 
   return (
-    <div className="min-h-screen bg-[#f6f5ef] pb-4 pt-3 sm:bg-neutral-50/50 sm:pb-20 sm:pt-10">
+    <div className="min-h-screen bg-brand-page pb-4 pt-3 sm:pb-20 sm:pt-10">
       <div className="mx-auto max-w-7xl px-4 sm:px-6">
         <div className="mb-0 flex items-center justify-between sm:mb-8">
           <Link 

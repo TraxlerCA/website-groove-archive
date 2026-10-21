@@ -23,6 +23,13 @@ for (const width of [320, 390]) {
     const timetable = page.getByRole('region', { name: 'DGTL Amsterdam 2026 - Saturday timetable' });
     const cards = timetable.getByTestId('mobile-set');
     await expect(cards).toHaveCount(7);
+    await expect(cards.filter({ hasText: 'Kyra Khaldi' }).getByTestId('heat-level')).toHaveCount(0);
+    await expect(cards.filter({ hasText: 'M-High' }).getByTestId('heat-level')).toHaveCount(0);
+    await expect(cards.filter({ hasText: 'BELLA (NL)' }).getByTestId('heat-level').locator('[data-active="true"]')).toHaveCount(4);
+    await expect(cards.filter({ hasText: 'Gotu Jim' }).getByTestId('heat-level').locator('[data-active="true"]')).toHaveCount(3);
+    await expect(cards.filter({ hasText: 'horsegirL' }).getByTestId('heat-level').locator('[data-active="true"]')).toHaveCount(2);
+    const sheet = page.locator('section').filter({ has: page.getByRole('heading', { name: 'DGTL Amsterdam 2026 - Saturday', exact: true }) });
+    expect(await sheet.evaluate(el => getComputedStyle(el).backgroundColor)).toBe(await page.locator('body').evaluate(el => getComputedStyle(el).backgroundColor));
     await timetable.scrollIntoViewIfNeeded();
     const boxes = await cards.evaluateAll(elements => elements.map(el => {
       const r = el.getBoundingClientRect();

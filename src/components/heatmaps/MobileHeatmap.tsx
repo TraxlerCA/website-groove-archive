@@ -5,8 +5,8 @@ import { bucketFromRating } from '@/lib/heatmaps';
 import { computeHeatmapLayout, normalizeHeatmapStart, normalizeHeatmapEnd } from '@/lib/heatmapLayout';
 import type { HeatmapRendererProps } from './HeatmapRenderer';
 import styles from './MobileHeatmap.module.css';
-
-const ratings = ['nahh', 'ok', 'hot', 'blazing', 'unrated'] as const;
+import theme from './HeatmapTheme.module.css';
+import { HeatLevel, RatingLegend, DownloadHeatmapButton } from './HeatmapPrimitives';
 
 function clock(time: string) {
   const [hour, minute] = time.split(':');
@@ -29,14 +29,12 @@ export function MobileHeatmap({ groupKey, title, rows, registerRef, onExportPng,
   } as CSSProperties;
 
   return (
-    <section className={styles.sheet} aria-labelledby={`h-${groupKey}`}>
+    <section className={`${styles.sheet} ${theme.surface}`} aria-labelledby={`h-${groupKey}`}>
       <header className={styles.header}>
         <div>
           <h1 id={`h-${groupKey}`}>{title}</h1>
         </div>
-        {showExport && exportPng && <button className={styles.export} type="button" onClick={exportPng} disabled={isExportingPng} aria-label={isExportingPng ? 'Exporting heatmap as PNG' : 'Download heatmap as PNG'}>
-          <svg aria-hidden="true" width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.65" strokeLinecap="round" strokeLinejoin="round"><path d="M12 4v10.5m-3.5-3.5 3.5 3.5 3.5-3.5" /><path d="M5.5 16v2.5A1.5 1.5 0 0 0 7 20h10a1.5 1.5 0 0 0 1.5-1.5V16" /></svg>
-        </button>}
+        {showExport && exportPng && <DownloadHeatmapButton onClick={exportPng} busy={isExportingPng} />}
       </header>
 
       <div ref={registerRef} role="region" aria-label={`${title} timetable`}>
@@ -72,16 +70,17 @@ export function MobileHeatmap({ groupKey, title, rows, registerRef, onExportPng,
             {sets.map((set, index) => {
               const rating = bucketFromRating(set.row.rating) || 'unrated';
               const live = now !== null && now >= normalizeHeatmapStart(set.row) && now < normalizeHeatmapEnd(set.row);
-              return <li key={`${stage}-${set.row.artist}-${set.row.start}-${index}`} data-testid="mobile-set" style={{ '--duration': durations[index] } as CSSProperties} aria-label={`${set.row.artist}, ${clock(set.row.start)} to ${clock(set.row.end)}, ${rating}`} aria-current={live ? 'time' : undefined} className={`${styles.set} ${styles[rating]}`}>
+              return <li key={`${stage}-${set.row.artist}-${set.row.start}-${index}`} data-testid="mobile-set" style={{ '--duration': durations[index] } as CSSProperties} aria-label={`${set.row.artist}, ${clock(set.row.start)} to ${clock(set.row.end)}, ${rating}`} aria-current={live ? 'time' : undefined} className={styles.set}>
                 <div className={styles.time}><span>{clock(set.row.start)}</span><span>{clock(set.row.end)}</span></div>
                 <div className={styles.artist} data-artist>{set.row.artist}{live && <small className={styles.now}>Now</small>}</div>
+                <HeatLevel rating={set.row.rating} />
               </li>;
             })}
           </ol>
         </div>
 
         <footer className={styles.footer}>
-          <div className={styles.legend} aria-label="Rating legend">{ratings.map(rating => <span key={rating} className={styles[rating]}><i aria-hidden="true" />{rating}</span>)}</div>
+          <RatingLegend />
         </footer>
       </div>
     </section>
