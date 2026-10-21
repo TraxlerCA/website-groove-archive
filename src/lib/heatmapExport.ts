@@ -21,7 +21,7 @@ async function renderNodeToPng(node: HTMLElement) {
 
   return toPng(node, {
     pixelRatio: EXPORT_PIXEL_RATIO,
-    backgroundColor: '#ffffff',
+    backgroundColor: getComputedStyle(node).backgroundColor,
     cacheBust: true,
     skipFonts: false,
   });

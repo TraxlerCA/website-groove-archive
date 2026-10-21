@@ -6,12 +6,7 @@ import { computeHeatmapLayout, normalizeHeatmapStart, normalizeHeatmapEnd } from
 import type { HeatmapRendererProps } from './HeatmapRenderer';
 import styles from './MobileHeatmap.module.css';
 import theme from './HeatmapTheme.module.css';
-import { HeatLevel, RatingLegend, DownloadHeatmapButton } from './HeatmapPrimitives';
-
-function clock(time: string) {
-  const [hour, minute] = time.split(':');
-  return `${String(Number(hour) % 24).padStart(2, '0')}:${minute}`;
-}
+import { HeatLevel, RatingLegend, DownloadHeatmapButton, formatSetTime } from './HeatmapPrimitives';
 
 export function MobileHeatmap({ groupKey, title, rows, registerRef, onExportPng, onExport, showExport = true, isExportingPng, now }: HeatmapRendererProps & { now: number | null }) {
   const layout = useMemo(() => computeHeatmapLayout(rows, 1), [rows]);
@@ -70,8 +65,8 @@ export function MobileHeatmap({ groupKey, title, rows, registerRef, onExportPng,
             {sets.map((set, index) => {
               const rating = bucketFromRating(set.row.rating) || 'unrated';
               const live = now !== null && now >= normalizeHeatmapStart(set.row) && now < normalizeHeatmapEnd(set.row);
-              return <li key={`${stage}-${set.row.artist}-${set.row.start}-${index}`} data-testid="mobile-set" style={{ '--duration': durations[index] } as CSSProperties} aria-label={`${set.row.artist}, ${clock(set.row.start)} to ${clock(set.row.end)}, ${rating}`} aria-current={live ? 'time' : undefined} className={styles.set}>
-                <div className={styles.time}><span>{clock(set.row.start)}</span><span>{clock(set.row.end)}</span></div>
+              return <li key={`${stage}-${set.row.artist}-${set.row.start}-${index}`} data-testid="mobile-set" style={{ '--duration': durations[index] } as CSSProperties} aria-label={`${set.row.artist}, ${formatSetTime(set.row.start)} to ${formatSetTime(set.row.end)}, ${rating}`} aria-current={live ? 'time' : undefined} className={styles.set}>
+                <div className={styles.time}><span>{formatSetTime(set.row.start)}</span><span>{formatSetTime(set.row.end)}</span></div>
                 <div className={styles.artist} data-artist>{set.row.artist}{live && <small className={styles.now}>Now</small>}</div>
                 <HeatLevel rating={set.row.rating} />
               </li>;

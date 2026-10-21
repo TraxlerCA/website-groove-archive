@@ -1,4 +1,5 @@
 import { expect, test } from '@playwright/test';
+import { readFile } from 'node:fs/promises';
 
 const csv = `festival,date,stage,artist,start,end,rating,stage_order
 Quality Check Fest,2026-03-30,Main,Artist A,13:00,14:00,blazing,1
@@ -25,6 +26,10 @@ test('custom heatmap exports PNG', async ({ page, browserName }) => {
   await expect(page.getByRole('button', { name: 'PDF' })).toHaveCount(0);
 
   const exportSurface = page.getByTestId('heatmap-export-surface');
+  await expect(exportSurface.getByTestId('export-set')).toHaveCount(6);
+  await expect(exportSurface.getByTestId('heat-level')).toHaveCount(10);
+  const liveColour = await page.getByTestId('desktop-set').first().evaluate(el => getComputedStyle(el).backgroundColor);
+  await expect(exportSurface.getByTestId('export-set').first()).toHaveCSS('background-color', liveColour);
   const bounds = await exportSurface.boundingBox();
   expect(bounds?.width ?? 0).toBeGreaterThan(700);
   expect(bounds?.height ?? 0).toBeGreaterThan(500);
@@ -33,4 +38,16 @@ test('custom heatmap exports PNG', async ({ page, browserName }) => {
   await page.getByRole('button', { name: 'PNG' }).click();
   const png = await pngDownload;
   expect(png.suggestedFilename()).toBe('quality-check-fest-heatmap.png');
+  const imageData = (await readFile((await png.path())!)).toString('base64');
+  const background = await page.evaluate(async encoded => {
+    const image = new Image();
+    image.src = `data:image/png;base64,${encoded}`;
+    await image.decode();
+    const canvas = document.createElement('canvas');
+    canvas.width = canvas.height = 1;
+    const context = canvas.getContext('2d')!;
+    context.drawImage(image, 0, 0);
+    return Array.from(context.getImageData(0, 0, 1, 1).data).slice(0, 3);
+  }, imageData);
+  expect(background).toEqual([246, 248, 252]);
 });

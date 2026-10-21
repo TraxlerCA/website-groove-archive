@@ -3,6 +3,11 @@
 import { bucketFromRating } from '@/lib/heatmaps';
 import theme from './HeatmapTheme.module.css';
 
+export function formatSetTime(time: string) {
+  const [hour, minute] = time.split(':');
+  return `${String(Number(hour) % 24).padStart(2, '0')}:${minute}`;
+}
+
 export function HeatLevel({ rating }: { rating?: string | null }) {
   const bucket = bucketFromRating(rating);
   if (!bucket) return null;
