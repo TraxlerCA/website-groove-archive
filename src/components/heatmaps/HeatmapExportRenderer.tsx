@@ -1,180 +1,64 @@
 'use client';
 
-import React, { forwardRef, useMemo } from 'react';
+import { forwardRef, useMemo } from 'react';
 import {
-  ComputedHeatmapLayout,
-  computeHeatmapLayout,
-  EXPORT_HEADER_HEIGHT,
-  EXPORT_LEGEND_HEIGHT,
-  EXPORT_OUTER_PADDING,
-  EXPORT_STAGE_GUTTER,
-  EXPORT_STAGE_WIDTH,
-  EXPORT_TIME_RAIL_WIDTH,
-  formatHeatmapHour,
-  getHeatmapExportSize,
+  computeHeatmapLayout, EXPORT_OUTER_PADDING,
+  EXPORT_STAGE_GUTTER, EXPORT_TIME_RAIL_WIDTH,
+  normalizeHeatmapStart, normalizeHeatmapEnd,
 } from '@/lib/heatmapLayout';
 import { fitHeatmapLabel } from '@/lib/heatmapLabelFit';
-import { COLORS, Row } from '@/lib/heatmaps';
+import { bucketFromRating, SLOT_GAP_PX, type Row } from '@/lib/heatmaps';
+import { RatingLegend, formatSetTime } from './HeatmapPrimitives';
+import theme from './HeatmapTheme.module.css';
+import styles from './DesktopHeatmap.module.css';
 
-type HeatmapExportRendererProps = {
-  title: string;
-  date: string;
-  rows: Row[];
-  pxPerMin: number;
-};
+type Props = { title: string; date: string; rows: Row[]; pxPerMin: number };
 
-function ExportGrid({ layout, pxPerMin }: { layout: ComputedHeatmapLayout; pxPerMin: number }) {
-  return (
-    <div className="rounded-[28px] border border-neutral-200 bg-white overflow-hidden">
-      <div
-        className="grid border-b border-neutral-200"
-        style={{
-          gridTemplateColumns: `${EXPORT_TIME_RAIL_WIDTH}px repeat(${layout.stages.length}, ${EXPORT_STAGE_WIDTH}px)`,
-          columnGap: EXPORT_STAGE_GUTTER,
-          height: EXPORT_HEADER_HEIGHT,
-          paddingRight: EXPORT_OUTER_PADDING / 2,
-        }}
-      >
-        <div />
-        {layout.stages.map((stage) => (
-          <div
-            key={stage}
-            className="flex items-center justify-center text-center text-lg font-black uppercase tracking-tight text-neutral-900"
-          >
-            {stage}
-          </div>
-        ))}
-      </div>
-
-      <div
-        className="grid relative"
-        style={{
-          gridTemplateColumns: `${EXPORT_TIME_RAIL_WIDTH}px repeat(${layout.stages.length}, ${EXPORT_STAGE_WIDTH}px)`,
-          columnGap: EXPORT_STAGE_GUTTER,
-          padding: `12px ${EXPORT_OUTER_PADDING / 2}px 20px 0`,
-        }}
-      >
-        <div className="relative" style={{ height: layout.heightPx }}>
-          {layout.hours.map((hour) => (
-            <React.Fragment key={`export-hour-${hour}`}>
-              <div
-                className="absolute right-0 h-px bg-neutral-300"
-                style={{ top: (hour - layout.minStart) * pxPerMin, width: 16 }}
-              />
-              <div
-                className="absolute -translate-y-3 text-[22px] font-black tabular-nums text-neutral-900"
-                style={{ top: (hour - layout.minStart) * pxPerMin, left: 10 }}
-              >
-                {formatHeatmapHour(hour)}
-              </div>
-            </React.Fragment>
-          ))}
-        </div>
-
-        {layout.stageLayouts.map((stageLayout) => (
-          <div key={stageLayout.stage} className="relative" style={{ height: layout.heightPx }}>
-            {layout.hours.map((hour) => (
-              <div
-                key={`${stageLayout.stage}-line-${hour}`}
-                className="absolute inset-x-0 border-t border-dashed border-neutral-400/80"
-                style={{ top: (hour - layout.minStart) * pxPerMin }}
-              />
-            ))}
-
-            {stageLayout.placements.map((placement) => {
-              const label = fitHeatmapLabel(placement.row.artist, {
-                maxWidth: Math.max(24, placement.widthPx - 16),
-                maxHeight: Math.max(18, placement.innerHeight - 8),
-                baseFontSize: 20,
-                minFontSize: 12,
-                lineHeight: 1.08,
-                maxLines: 2,
-              });
-
-              return (
-              <div
-                key={`${stageLayout.stage}-${placement.row.artist}-${placement.row.start}-${placement.row.end}`}
-                className="absolute"
-                style={{
-                  top: placement.top,
-                  left: placement.leftPx,
-                  width: placement.widthPx,
-                  height: placement.innerHeight,
-                }}
-              >
-                <div
-                  className="flex h-full items-center justify-center overflow-hidden rounded-[12px] border border-white px-2 text-center shadow-[0_1px_2px_rgba(0,0,0,0.08)]"
-                  style={{
-                    backgroundColor: placement.backgroundColor,
-                    color: placement.textColor,
-                  }}
-                >
-                  <div
-                    className="w-full font-black tracking-tight"
-                    style={{ fontSize: label.fontSize, lineHeight: `${label.lineHeightPx}px` }}
-                  >
-                    {label.lines.map((line, index) => (
-                      <div key={`${placement.row.artist}-${index}`} className="w-full overflow-hidden text-ellipsis whitespace-nowrap">
-                        {line}
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              </div>
-              );
-            })}
-          </div>
-        ))}
-      </div>
+export const HeatmapExportRenderer = forwardRef<HTMLDivElement, Props>(function HeatmapExportRenderer({ title, rows, pxPerMin }, ref) {
+  const shortestSet = Math.min(...rows.map(row => normalizeHeatmapEnd(row) - normalizeHeatmapStart(row)));
+  // Downloads have generous dimensions so names remain legible when zoomed.
+  const scale = Math.max(pxPerMin, 88 / shortestSet);
+  const layout = useMemo(() => computeHeatmapLayout(rows, scale), [rows, scale]);
+  const widths = layout.stageLayouts.map(stage => Math.max(320, ...stage.placements.map(set => set.columnCount * 156)));
+  const width = 2 + EXPORT_OUTER_PADDING * 2 + EXPORT_TIME_RAIL_WIDTH + widths.reduce((sum, value) => sum + value, 0) + layout.stages.length * EXPORT_STAGE_GUTTER;
+  const columns = `${EXPORT_TIME_RAIL_WIDTH}px ${widths.map(value => `${value}px`).join(' ')}`;
+  const hours = layout.hours.filter(hour => hour >= layout.minStart && hour <= layout.maxEnd);
+  const ticks = [layout.minStart, ...hours.filter(hour => (hour - layout.minStart) * scale > 26 && (layout.maxEnd - hour) * scale > 26), layout.maxEnd];
+  return <div ref={ref} data-testid="heatmap-export-surface" className={theme.surface} style={{ width, padding: EXPORT_OUTER_PADDING, boxSizing: 'border-box' }}>
+    <h1 style={{ margin: '0 0 28px', fontSize: 40, fontWeight: 700, lineHeight: 1.05, letterSpacing: '-.05em' }}>{title}</h1>
+    <div style={{ border: '1px solid #cbd5e3', borderRadius: 8, overflow: 'hidden' }}>
+    <div style={{ display: 'grid', gridTemplateColumns: columns, columnGap: EXPORT_STAGE_GUTTER, minHeight: 64, borderBottom: '1px solid #bfcbdc' }}>
+      <div className={styles.railHeading}>Time</div>
+      {layout.stages.map(stage => <div key={stage} className={styles.stageHeader}>{stage}</div>)}
     </div>
-  );
-}
-
-export const HeatmapExportRenderer = forwardRef<HTMLDivElement, HeatmapExportRendererProps>(
-  function HeatmapExportRenderer({ title, date, rows, pxPerMin }, ref) {
-    const layout = useMemo(
-      () => computeHeatmapLayout(rows, pxPerMin),
-      [rows, pxPerMin],
-    );
-    const size = useMemo(() => getHeatmapExportSize(layout), [layout]);
-
-    return (
-      <div
-        ref={ref}
-        data-testid="heatmap-export-surface"
-        className="bg-white text-neutral-900"
-        style={{
-          width: size.width,
-          minHeight: size.height,
-          padding: EXPORT_OUTER_PADDING,
-        }}
-      >
-        <div className="mb-8">
-          <h1 className="text-[56px] font-black tracking-tight leading-[0.92] text-neutral-900">
-            {title}
-          </h1>
-          <p className="mt-3 text-[20px] font-semibold uppercase tracking-[0.2em] text-neutral-500">
-            {date}
-          </p>
-        </div>
-
-        <div
-          className="mb-6 flex flex-wrap items-center gap-3"
-          style={{ minHeight: EXPORT_LEGEND_HEIGHT }}
-        >
-          {(['nahh', 'ok', 'hot', 'blazing'] as const).map((level) => (
-            <div
-              key={level}
-              className="inline-flex items-center rounded-full px-6 py-2 text-[16px] font-black uppercase tracking-[0.2em] text-white"
-              style={{ backgroundColor: COLORS[level] }}
-            >
-              {level}
-            </div>
-          ))}
-        </div>
-
-        <ExportGrid layout={layout} pxPerMin={pxPerMin} />
+    <div style={{ display: 'grid', gridTemplateColumns: columns, columnGap: EXPORT_STAGE_GUTTER, padding: '16px 0 24px' }}>
+      <div style={{ position: 'relative', height: layout.heightPx }}>
+        {ticks.map(tick => <div key={tick} style={{ position: 'absolute', top: (tick - layout.minStart) * scale, left: 8, transform: 'translateY(-50%)', font: '600 14px/1.3 ui-monospace, monospace', color: 'var(--muted)' }}>{formatSetTime(tick)}</div>)}
       </div>
-    );
-  },
-);
+      {layout.stageLayouts.map((stage, stageIndex) => <div key={stage.stage} style={{ position: 'relative', height: layout.heightPx }}>
+        {hours.map(hour => <div key={hour} className={styles.hourLine} style={{ top: (hour - layout.minStart) * scale }} />)}
+        {stage.placements.map((placement, index) => {
+          const row = placement.row;
+          const rating = bucketFromRating(row.rating) || 'unrated';
+          const cardWidth = (widths[stageIndex] - (placement.columnCount - 1) * SLOT_GAP_PX) / placement.columnCount;
+          const top = (normalizeHeatmapStart(row) - layout.minStart) * scale + 3;
+          const height = (normalizeHeatmapEnd(row) - normalizeHeatmapStart(row)) * scale - 6;
+          const labelHeight = height - 16;
+          const label = fitHeatmapLabel(row.artist, {
+            maxWidth: cardWidth - 24, maxHeight: labelHeight,
+            baseFontSize: 24, minFontSize: 16, lineHeight: 1.15,
+            maxLines: Math.max(1, Math.min(4, Math.floor(labelHeight / (16 * 1.15)))),
+            fontFamily: 'Arial, Helvetica, sans-serif', fontWeight: 600,
+          });
+          return <div key={`${row.artist}-${row.start}-${index}`} data-testid="export-set" className={`${styles.card} ${theme.blockColour} ${theme[rating]}`} style={{ position: 'absolute', top, left: placement.columnIndex * (cardWidth + SLOT_GAP_PX), width: cardWidth, height, padding: '8px 12px' }}>
+            <div className={styles.cardBody}>
+              <div className={styles.artist} data-artist style={{ fontSize: label.fontSize, lineHeight: `${label.lineHeightPx}px` }}>{label.lines.map((line, lineIndex) => <div key={lineIndex}>{line}</div>)}</div>
+            </div>
+          </div>;
+        })}
+      </div>)}
+    </div>
+    </div>
+    <footer className={styles.footer}><RatingLegend variant="blocks" /></footer>
+  </div>;
+});

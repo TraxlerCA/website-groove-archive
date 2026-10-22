@@ -6,12 +6,7 @@ import { computeHeatmapLayout, normalizeHeatmapStart, normalizeHeatmapEnd } from
 import type { HeatmapRendererProps } from './HeatmapRenderer';
 import styles from './MobileHeatmap.module.css';
 import theme from './HeatmapTheme.module.css';
-import { HeatLevel, RatingLegend, DownloadHeatmapButton } from './HeatmapPrimitives';
-
-function clock(time: string) {
-  const [hour, minute] = time.split(':');
-  return `${String(Number(hour) % 24).padStart(2, '0')}:${minute}`;
-}
+import { HeatLevel, RatingLegend, DownloadHeatmapButton, formatSetTime } from './HeatmapPrimitives';
 
 export function MobileHeatmap({ groupKey, title, rows, registerRef, onExportPng, onExport, showExport = true, isExportingPng, now }: HeatmapRendererProps & { now: number | null }) {
   const layout = useMemo(() => computeHeatmapLayout(rows, 1), [rows]);
@@ -89,8 +84,8 @@ export function MobileHeatmap({ groupKey, title, rows, registerRef, onExportPng,
                 ...position(normalizeHeatmapStart(set.row), normalizeHeatmapEnd(set.row)),
                 left: `calc(${set.columnIndex / set.columnCount * 100}% + ${set.columnIndex ? 1.5 : 0}px)`,
                 width: `calc(${100 / set.columnCount}% - ${set.columnCount > 1 ? (set.columnIndex === 0 || set.columnIndex === set.columnCount - 1 ? 1.5 : 3) : 0}px)`,
-              }} aria-label={`${set.row.artist}, ${clock(set.row.start)} to ${clock(set.row.end)}, ${rating}`} aria-current={live ? 'time' : undefined} className={styles.set}>
-                <div className={styles.time}><span>{clock(set.row.start)}</span><span>{clock(set.row.end)}</span></div>
+              }} aria-label={`${set.row.artist}, ${formatSetTime(set.row.start)} to ${formatSetTime(set.row.end)}, ${rating}`} aria-current={live ? 'time' : undefined} className={styles.set}>
+                <div className={styles.time}><span>{formatSetTime(set.row.start)}</span><span>{formatSetTime(set.row.end)}</span></div>
                 <div className={styles.artist} title={set.row.artist} data-artist>{set.row.artist}{live && <small className={styles.now}>Now</small>}</div>
                 <HeatLevel rating={set.row.rating} />
               </li>;

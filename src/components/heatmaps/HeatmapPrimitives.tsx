@@ -3,6 +3,12 @@
 import { bucketFromRating } from '@/lib/heatmaps';
 import theme from './HeatmapTheme.module.css';
 
+export function formatSetTime(time: string | number) {
+  if (typeof time === 'number') return `${String(Math.floor(time / 60) % 24).padStart(2, '0')}:${String(time % 60).padStart(2, '0')}`;
+  const [hour, minute] = time.split(':');
+  return `${String(Number(hour) % 24).padStart(2, '0')}:${minute}`;
+}
+
 export function HeatLevel({ rating }: { rating?: string | null }) {
   const bucket = bucketFromRating(rating);
   if (!bucket) return null;
@@ -12,10 +18,13 @@ export function HeatLevel({ rating }: { rating?: string | null }) {
   </span>;
 }
 
-export function RatingLegend() {
+export function RatingLegend({ variant = 'levels' }: { variant?: 'levels' | 'blocks' }) {
   return <div className={theme.legend} aria-label="Rating legend">
-    {(['nahh', 'ok', 'hot', 'blazing'] as const).map(rating => <span key={rating}><HeatLevel rating={rating} />{rating === 'ok' ? 'OK' : rating[0].toUpperCase() + rating.slice(1)}</span>)}
-    <span>Unrated</span>
+    {(['nahh', 'ok', 'hot', 'blazing'] as const).map(rating => <span key={rating}>
+      {variant === 'blocks' ? <i aria-hidden="true" className={`${theme.colourSwatch} ${theme.blockColour} ${theme[rating]}`} /> : <HeatLevel rating={rating} />}
+      {rating === 'ok' ? 'OK' : rating[0].toUpperCase() + rating.slice(1)}
+    </span>)}
+    <span>{variant === 'blocks' && <i aria-hidden="true" className={`${theme.colourSwatch} ${theme.blockColour} ${theme.unrated}`} />}Unrated</span>
   </div>;
 }
 

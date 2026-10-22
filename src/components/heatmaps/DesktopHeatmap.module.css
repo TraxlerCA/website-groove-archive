@@ -1,0 +1,25 @@
+.sheet { width: 100%; margin: 0 auto; padding: 24px; box-sizing: border-box; }
+.header { display: flex; align-items: flex-start; justify-content: space-between; gap: 24px; margin-bottom: 24px; }
+.header h1 { min-width: 0; margin: 0; font-size: clamp(28px, 3vw, 40px); font-weight: 700; line-height: 1.05; letter-spacing: -.05em; overflow-wrap: anywhere; }
+.frame { position: relative; width: 100%; overflow-x: auto; overflow-y: hidden; scrollbar-color: #aab8cc var(--paper); border: 1px solid #cbd5e3; border-radius: 8px; }
+.stageRow { display: flex; border-bottom: 1px solid #bfcbdc; }
+.railHeading { display: flex; align-items: center; flex-shrink: 0; padding-left: 8px; background: var(--paper); color: var(--muted); font: 10px/1.4 ui-monospace, monospace; text-transform: uppercase; letter-spacing: .08em; position: sticky; left: 0; z-index: 6; }
+.stageGrid { flex: 1; min-width: 0; display: grid; }
+.stageHeader { display: flex; align-items: center; min-height: 56px; padding: 12px; border-left: 1px solid #dce3ed; font-size: 17px; font-weight: 600; letter-spacing: -.025em; line-height: 1.25; overflow-wrap: anywhere; }
+.chart { display: flex; align-items: stretch; padding: 12px 0 16px; }
+.timeRail { position: sticky; left: 0; z-index: 5; flex-shrink: 0; background: var(--paper); }
+.timeRail > span { position: absolute; left: 8px; transform: translateY(-50%); font: 600 12px/1.3 ui-monospace, monospace; font-variant-numeric: tabular-nums; color: var(--muted); }
+.plot { position: relative; flex: 1; min-width: 0; }
+.hourLine { position: absolute; left: 0; right: 0; height: 1px; background: #e0e6ef; pointer-events: none; }
+.nowLine { position: absolute; left: 0; right: 0; z-index: 4; height: 2px; background: #e13c31; pointer-events: none; }
+.columns { display: grid; height: 100%; }
+.stageColumn { position: relative; border-left: 1px solid #e0e6ef; }
+.placement { position: absolute; left: 6px; right: 6px; }
+.card { display: flex; align-items: center; gap: 10px; padding: 6px 10px; box-sizing: border-box; background: var(--row); color: var(--ink); border-radius: 5px; overflow: hidden; }
+.desktopCard { position: absolute; top: 0; height: 100%; }
+.card[aria-current="time"] { outline: 2px solid var(--ink); outline-offset: -2px; }
+.cardBody { flex: 1; min-width: 0; }
+.artist { font-weight: 600; letter-spacing: -.025em; }
+.artist > div { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.footer { padding-top: 18px; }
+@media (max-width: 900px) { .sheet { padding: 16px; } }
