@@ -3,7 +3,8 @@
 import { bucketFromRating } from '@/lib/heatmaps';
 import theme from './HeatmapTheme.module.css';
 
-export function formatSetTime(time: string) {
+export function formatSetTime(time: string | number) {
+  if (typeof time === 'number') return `${String(Math.floor(time / 60) % 24).padStart(2, '0')}:${String(time % 60).padStart(2, '0')}`;
   const [hour, minute] = time.split(':');
   return `${String(Number(hour) % 24).padStart(2, '0')}:${minute}`;
 }

@@ -22,8 +22,12 @@ test('six stages fit desktop with full rating colours and readable names', async
   await expect(long).toBeVisible();
   const longBox = await long.boundingBox();
   const shortBox = await short.boundingBox();
-  expect(longBox!.height / shortBox!.height).toBeCloseTo(2, 1);
-  expect(await long.locator('[data-artist]').evaluate(el => parseFloat(getComputedStyle(el).fontSize))).toBeGreaterThanOrEqual(14);
+  expect(longBox!.height / shortBox!.height).toBeGreaterThan(1.9);
+  expect(longBox!.height / shortBox!.height).toBeLessThan(2.2);
+  expect(shortBox!.y - longBox!.y - longBox!.height).toBeCloseTo(6, 0);
+  await expect(long).not.toContainText('12:00');
+  await expect(long).toHaveAttribute('title', /12:00–14:00/);
+  expect(await long.locator('[data-artist]').evaluate(el => parseFloat(getComputedStyle(el).fontSize))).toBeGreaterThanOrEqual(18);
   const colour = await long.evaluate(el => getComputedStyle(el).backgroundColor);
   const hotColour = await short.evaluate(el => getComputedStyle(el).backgroundColor);
   expect(colour).not.toBe(hotColour);

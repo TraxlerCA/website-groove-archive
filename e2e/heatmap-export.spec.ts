@@ -54,7 +54,7 @@ test('custom heatmap exports PNG', async ({ page, browserName }) => {
   expect(downloaded.height).toBeGreaterThanOrEqual(Math.floor(bounds!.height * 2.9));
 });
 
-test('PNG layout gives three simultaneous artists room for full names and exact times', async ({ page }) => {
+test('PNG layout gives three simultaneous artists room for full names without repeated times', async ({ page }) => {
   const names = ['A very long back to back artist name', 'Another long back to back artist name', 'The final long back to back artist name'];
   await page.goto('/heatmaps/custom');
   await page.locator('input[type="file"]').setInputFiles({
@@ -68,14 +68,17 @@ test('PNG layout gives three simultaneous artists room for full names and exact 
     const card = cards.nth(index);
     const text = await card.locator('[data-artist]').evaluate(el => (el as HTMLElement).innerText.replace(/\s+/g, ' ').trim());
     expect(text).toBe(names[index]);
-    await expect(card).toContainText('23:45—00:00');
+    await expect(card).not.toContainText('23:45');
+    await expect(card).not.toContainText('00:00');
+    expect(await card.locator('[data-artist]').evaluate(el => parseFloat(getComputedStyle(el).fontSize))).toBeGreaterThanOrEqual(16);
     const bounds = await card.evaluate(el => {
       const artist = el.querySelector('[data-artist]')!.getBoundingClientRect();
-      return { artistHeight: artist.height, available: el.clientHeight - 34, textWidth: el.scrollWidth, width: el.clientWidth };
+      return { artistHeight: artist.height, available: el.clientHeight - 16, textWidth: el.scrollWidth, width: el.clientWidth };
     });
     expect(bounds.artistHeight).toBeLessThanOrEqual(bounds.available + 1);
     expect(bounds.textWidth).toBeLessThanOrEqual(bounds.width);
   }
+  await expect(surface.getByText('23:45', { exact: true })).toBeVisible();
   const boxes = await cards.evaluateAll(els => els.map(el => { const b = el.getBoundingClientRect(); return { x:b.x, y:b.y, right:b.right }; }));
   expect(boxes[0].right).toBeLessThanOrEqual(boxes[1].x);
   expect(boxes[1].right).toBeLessThanOrEqual(boxes[2].x);
