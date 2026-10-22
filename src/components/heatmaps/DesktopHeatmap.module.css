@@ -21,7 +21,7 @@
 .cardBody { flex: 1; min-width: 0; }
 .artist { font-weight: 600; letter-spacing: -.025em; }
 .artist > div { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.setTime { margin-top: 5px; font: 10px/1.2 ui-monospace, monospace; font-variant-numeric: tabular-nums; color: #46566b; white-space: nowrap; overflow: hidden; }
+.setTime { margin-top: 5px; font: 10px/1.2 ui-monospace, monospace; font-variant-numeric: tabular-nums; color: inherit; opacity: .78; white-space: nowrap; overflow: hidden; }
 .stackedTime { display: flex; flex-direction: column; gap: 3px; }
 .live { margin-left: 7px; font-weight: 700; text-transform: uppercase; }
 .footer { padding-top: 18px; border-top: 1px solid #d3dce8; }

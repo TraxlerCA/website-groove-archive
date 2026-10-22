@@ -5,7 +5,7 @@ import { bucketFromRating, SLOT_GAP_PX } from '@/lib/heatmaps';
 import { computeHeatmapLayout, formatHeatmapHour, normalizeHeatmapEnd, normalizeHeatmapStart } from '@/lib/heatmapLayout';
 import { fitHeatmapLabel } from '@/lib/heatmapLabelFit';
 import type { HeatmapRendererProps } from './HeatmapRenderer';
-import { DownloadHeatmapButton, HeatLevel, RatingLegend, formatSetTime } from './HeatmapPrimitives';
+import { DownloadHeatmapButton, RatingLegend, formatSetTime } from './HeatmapPrimitives';
 import theme from './HeatmapTheme.module.css';
 import styles from './DesktopHeatmap.module.css';
 
@@ -60,9 +60,9 @@ export function DesktopHeatmap({ groupKey, title, rows, pxPerMin, registerRef, o
                 {layout.stageLayouts.map(stage => <div key={stage.stage} className={styles.stageColumn}>
                   {stage.placements.map((placement, index) => {
                     const row = placement.row;
-                    const rated = Boolean(bucketFromRating(row.rating));
+                    const rating = bucketFromRating(row.rating) || 'unrated';
                     const availableWidth = (stageWidth - 12 - (placement.columnCount - 1) * SLOT_GAP_PX) / placement.columnCount;
-                    const bodyWidth = Math.max(20, availableWidth - 20 - (rated ? 34 : 0));
+                    const bodyWidth = Math.max(20, availableWidth - 20);
                     const stackedTime = bodyWidth < 80;
                     const showTime = placement.innerHeight >= (stackedTime ? 70 : 52);
                     const labelHeight = Math.max(14, placement.innerHeight - 12 - (showTime ? (stackedTime ? 30 : 17) : 0));
@@ -74,7 +74,7 @@ export function DesktopHeatmap({ groupKey, title, rows, pxPerMin, registerRef, o
                     });
                     const live = now !== null && now >= normalizeHeatmapStart(row) && now < normalizeHeatmapEnd(row);
                     return <div className={styles.placement} key={`${row.artist}-${row.start}-${index}`} style={{ top: placement.top, height: placement.innerHeight }}>
-                      <div className={`${styles.card} ${styles.desktopCard}`} data-testid="desktop-set" aria-current={live ? 'time' : undefined} aria-label={`${row.artist}, ${formatSetTime(row.start)} to ${formatSetTime(row.end)}, ${bucketFromRating(row.rating) || 'unrated'}`} title={`${row.artist} · ${formatSetTime(row.start)}–${formatSetTime(row.end)}`} style={{
+                      <div className={`${styles.card} ${styles.desktopCard} ${theme.blockColour} ${theme[rating]}`} data-testid="desktop-set" aria-current={live ? 'time' : undefined} aria-label={`${row.artist}, ${formatSetTime(row.start)} to ${formatSetTime(row.end)}, ${bucketFromRating(row.rating) || 'unrated'}`} title={`${row.artist} · ${formatSetTime(row.start)}–${formatSetTime(row.end)}`} style={{
                         left: `calc(${placement.columnIndex} * (100% - ${(placement.columnCount - 1) * SLOT_GAP_PX}px) / ${placement.columnCount} + ${placement.columnIndex * SLOT_GAP_PX}px)`,
                         width: `calc((100% - ${(placement.columnCount - 1) * SLOT_GAP_PX}px) / ${placement.columnCount})`,
                       }}>
@@ -82,7 +82,6 @@ export function DesktopHeatmap({ groupKey, title, rows, pxPerMin, registerRef, o
                           <div className={styles.artist} data-artist style={{ fontSize: label.fontSize, lineHeight: `${label.lineHeightPx}px` }}>{label.lines.map((line, lineIndex) => <div key={lineIndex}>{line}</div>)}</div>
                           {showTime && <div className={`${styles.setTime} ${stackedTime ? styles.stackedTime : ''}`}>{stackedTime ? <><span>{formatSetTime(row.start)}</span><span>{formatSetTime(row.end)}</span></> : <>{formatSetTime(row.start)}—{formatSetTime(row.end)}</>}{live && bodyWidth >= 120 && <span className={styles.live}>Now</span>}</div>}
                         </div>
-                        <HeatLevel rating={row.rating} />
                       </div>
                     </div>;
                   })}
@@ -92,7 +91,7 @@ export function DesktopHeatmap({ groupKey, title, rows, pxPerMin, registerRef, o
           </div>
         </div>
       </div>
-      <footer className={styles.footer}><RatingLegend /></footer>
+      <footer className={styles.footer}><RatingLegend variant="blocks" /></footer>
     </div>
   </section>;
 }

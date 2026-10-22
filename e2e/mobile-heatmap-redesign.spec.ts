@@ -71,3 +71,55 @@ test('mobile keeps the current set visible and tolerates an invalid imported dat
   await expect(page.getByTestId('mobile-set')).toContainText('Imported artist');
 
 });
+
+for (const width of [320, 390]) {
+  test(`mobile aligns B2Bs and fills stage gaps on a shared timeline at ${width}px`, async ({ page }) => {
+    await page.setViewportSize({ width, height: 844 });
+    await page.goto('/heatmaps/custom');
+    await page.locator('input[type="file"]').setInputFiles({
+      name: 'b2b.csv', mimeType: 'text/csv',
+      buffer: Buffer.from([
+        'festival,date,stage,stage_order,artist,start,end,rating',
+        'Shared timeline,2026-04-04,Arena,1,First very long artist name,22:00,23:00,hot',
+        'Shared timeline,2026-04-04,Arena,1,Second very long artist name,22:00,23:00,',
+        'Shared timeline,2026-04-04,Arena,1,Third very long artist name,22:00,23:00,blazing',
+        'Shared timeline,2026-04-04,Arena,1,Closing artist,00:00,02:00,ok',
+        'Shared timeline,2026-04-04,Club,2,Club first,23:00,00:00,nahh',
+        'Shared timeline,2026-04-04,Club,2,Club second,23:00,00:00,hot',
+        'Shared timeline,2026-04-04,Club,2,Club closing,00:01,01:00,',
+      ].join('\n')),
+    });
+    const cards = page.getByTestId('mobile-set');
+    // The CSV result enters with a scale animation; measure the settled layout.
+    await expect.poll(() => cards.first().evaluate(el => {
+      for (let parent = el.parentElement; parent; parent = parent.parentElement) {
+        if (getComputedStyle(parent).transform !== 'none') return false;
+      }
+      return true;
+    })).toBe(true);
+    const box = async (index: number) => (await cards.nth(index).boundingBox())!;
+    const first = await box(0), second = await box(1), third = await box(2), closing = await box(3);
+    expect(Math.abs(first.y - second.y)).toBeLessThan(1);
+    expect(Math.abs(first.y - third.y)).toBeLessThan(1);
+    expect(second.x).toBeGreaterThanOrEqual(first.x + first.width);
+    expect(third.x).toBeGreaterThanOrEqual(second.x + second.width);
+    expect(closing.height / first.height).toBeGreaterThan(1.9);
+    await expect(cards.nth(1).getByTestId('heat-level')).toHaveCount(0);
+    const gap = page.getByTestId('mobile-empty-slot');
+    await expect(gap).toHaveCount(1);
+    const gapBox = (await gap.boundingBox())!;
+    expect(gapBox.y).toBeGreaterThanOrEqual(first.y + first.height);
+    expect(gapBox.y + gapBox.height).toBeLessThanOrEqual(closing.y);
+    const arenaHeight = await page.getByTestId('mobile-timeline').evaluate(el => el.getBoundingClientRect().height);
+    await page.getByLabel('Stage', { exact: true }).selectOption('Club');
+    expect(await page.getByTestId('mobile-timeline').evaluate(el => el.getBoundingClientRect().height)).toBeCloseTo(arenaHeight, 1);
+    await expect(gap).toHaveCount(3); // Before opening, a one-minute break, and after closing.
+    expect((await gap.nth(1).boundingBox())!.height).toBeGreaterThan(0);
+    const clubFirst = await box(0), clubSecond = await box(1);
+    expect(Math.abs(clubFirst.y - clubSecond.y)).toBeLessThan(1);
+    expect(clubSecond.x).toBeGreaterThanOrEqual(clubFirst.x + clubFirst.width);
+    const timelineTop = await page.getByTestId('mobile-timeline').evaluate(el => el.getBoundingClientRect().top);
+    expect(clubFirst.y - timelineTop).toBeCloseTo(arenaHeight / 4, 0);
+    expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(width);
+  });
+}

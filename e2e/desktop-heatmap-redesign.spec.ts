@@ -1,6 +1,6 @@
 import { expect, test } from '@playwright/test';
 
-test('six stages fit desktop with readable names and matching mobile colours', async ({ page }) => {
+test('six stages fit desktop with full rating colours and readable names', async ({ page }) => {
   await page.setViewportSize({ width: 1440, height: 1000 });
   await page.goto('/heatmaps/custom');
   await page.locator('input[type="file"]').setInputFiles({
@@ -25,12 +25,19 @@ test('six stages fit desktop with readable names and matching mobile colours', a
   expect(longBox!.height / shortBox!.height).toBeCloseTo(2, 1);
   expect(await long.locator('[data-artist]').evaluate(el => parseFloat(getComputedStyle(el).fontSize))).toBeGreaterThanOrEqual(14);
   const colour = await long.evaluate(el => getComputedStyle(el).backgroundColor);
+  const hotColour = await short.evaluate(el => getComputedStyle(el).backgroundColor);
+  expect(colour).not.toBe(hotColour);
+  const cards = timetable.getByTestId('desktop-set');
+  const colours = await cards.evaluateAll(els => els.map(el => getComputedStyle(el).backgroundColor));
+  expect(new Set(colours).size).toBe(5); // Four ratings plus neutral unrated.
+  await expect(cards.getByTestId('heat-level')).toHaveCount(0);
   await expect(timetable.getByText('blazing', { exact: true })).toHaveCount(0);
   const sheet = page.locator('section').filter({ has: page.getByRole('heading', { name: 'Desktop Check', exact: true }) });
   await expect(sheet.getByLabel('Rating legend')).toHaveCount(1);
   await page.setViewportSize({ width: 390, height: 844 });
   const mobileSet = page.getByTestId('mobile-set').filter({ hasText: 'Long set' });
-  await expect(mobileSet).toHaveCSS('background-color', colour);
+  expect(await mobileSet.evaluate(el => getComputedStyle(el).backgroundColor)).not.toBe(colour);
+  await expect(mobileSet.getByTestId('heat-level')).toHaveCount(1);
 });
 
 test('six stages fit the full-width desktop detail view without horizontal scrolling', async ({ page }) => {

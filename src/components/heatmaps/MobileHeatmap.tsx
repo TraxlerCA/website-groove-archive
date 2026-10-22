@@ -17,11 +17,25 @@ export function MobileHeatmap({ groupKey, title, rows, registerRef, onExportPng,
   const start = useRef<{ x: number; y: number } | null>(null);
   const exportPng = onExportPng ?? onExport;
   const moveStage = (direction: number) => setSelectedStage(layout.stages[Math.max(0, Math.min(layout.stages.length - 1, activeIndex + direction))]);
-  const durations = sets.map(set => normalizeHeatmapEnd(set.row) - normalizeHeatmapStart(set.row));
-  const scheduleStyle = {
-    '--minutes': Math.max(1, layout.totalMin, ...layout.stageLayouts.map(stageLayout => stageLayout.placements.reduce((sum, set) => sum + normalizeHeatmapEnd(set.row) - normalizeHeatmapStart(set.row), 0))),
-    '--gaps': `${Math.max(0, sets.length - 1) * 5}px`,
-  } as CSSProperties;
+  const minutes = Math.max(60, layout.maxEnd - layout.minStart);
+  // Use one scale across every stage, including B2B lanes and empty periods.
+  const minimumHeight = Math.max(0, ...layout.stageLayouts.flatMap(stageLayout => stageLayout.placements.map(set =>
+    minutes / (normalizeHeatmapEnd(set.row) - normalizeHeatmapStart(set.row)) * (set.columnCount > 1 ? 44 : 32)
+  )));
+  const scheduleStyle = { '--minimum-height': `${minimumHeight}px` } as CSSProperties;
+  const position = (from: number, to: number, gutter = 3) => ({
+    top: `${(from - layout.minStart) / minutes * 100}%`,
+    height: `calc(${(to - from) / minutes * 100}% - ${gutter}px)`,
+  });
+  const gaps: { from: number; to: number }[] = [];
+  let cursor = layout.minStart;
+  for (const set of sets) {
+    const from = normalizeHeatmapStart(set.row);
+    const to = normalizeHeatmapEnd(set.row);
+    if (from > cursor) gaps.push({ from: cursor, to: from });
+    cursor = Math.max(cursor, to);
+  }
+  if (cursor < layout.minStart + minutes) gaps.push({ from: cursor, to: layout.minStart + minutes });
 
   return (
     <section className={`${styles.sheet} ${theme.surface}`} aria-labelledby={`h-${groupKey}`}>
@@ -61,13 +75,18 @@ export function MobileHeatmap({ groupKey, title, rows, registerRef, onExportPng,
             if (Math.abs(dx) >= 48 && Math.abs(dx) > Math.abs(event.clientY - origin.y)) moveStage(dx < 0 ? 1 : -1);
           }}>
           <div className={styles.columnLabels} aria-hidden="true"><span>Time</span><span>Artist</span></div>
-          <ol className={styles.sets} style={scheduleStyle}>
+          <ol className={styles.sets} style={scheduleStyle} data-testid="mobile-timeline">
+            {gaps.map(gap => <li key={`gap-${gap.from}`} aria-hidden="true" data-testid="mobile-empty-slot" className={styles.empty} style={position(gap.from, gap.to, 0)} />)}
             {sets.map((set, index) => {
               const rating = bucketFromRating(set.row.rating) || 'unrated';
               const live = now !== null && now >= normalizeHeatmapStart(set.row) && now < normalizeHeatmapEnd(set.row);
-              return <li key={`${stage}-${set.row.artist}-${set.row.start}-${index}`} data-testid="mobile-set" style={{ '--duration': durations[index] } as CSSProperties} aria-label={`${set.row.artist}, ${formatSetTime(set.row.start)} to ${formatSetTime(set.row.end)}, ${rating}`} aria-current={live ? 'time' : undefined} className={styles.set}>
+              return <li key={`${stage}-${set.row.artist}-${set.row.start}-${index}`} data-testid="mobile-set" data-shared={set.columnCount > 1 ? 'true' : undefined} style={{
+                ...position(normalizeHeatmapStart(set.row), normalizeHeatmapEnd(set.row)),
+                left: `calc(${set.columnIndex / set.columnCount * 100}% + ${set.columnIndex ? 1.5 : 0}px)`,
+                width: `calc(${100 / set.columnCount}% - ${set.columnCount > 1 ? (set.columnIndex === 0 || set.columnIndex === set.columnCount - 1 ? 1.5 : 3) : 0}px)`,
+              }} aria-label={`${set.row.artist}, ${formatSetTime(set.row.start)} to ${formatSetTime(set.row.end)}, ${rating}`} aria-current={live ? 'time' : undefined} className={styles.set}>
                 <div className={styles.time}><span>{formatSetTime(set.row.start)}</span><span>{formatSetTime(set.row.end)}</span></div>
-                <div className={styles.artist} data-artist>{set.row.artist}{live && <small className={styles.now}>Now</small>}</div>
+                <div className={styles.artist} title={set.row.artist} data-artist>{set.row.artist}{live && <small className={styles.now}>Now</small>}</div>
                 <HeatLevel rating={set.row.rating} />
               </li>;
             })}
