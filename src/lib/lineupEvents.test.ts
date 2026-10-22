@@ -31,7 +31,7 @@ describe('Overbruggen ADE timetable fixture', () => {
     const ratings = Object.fromEntries(lineupRows.map(({ artist, rating }) => [artist, rating]));
     expect(ratings).toMatchObject({
       'Kyle Starkey': 'blazing', 'NewTone': 'blazing', 'Olive Anguz': 'blazing',
-      CVNTS: 'ok', WOLTERS: 'ok', Entasia: 'hot', 'Club Angel': 'hot',
+      CVNTS: 'ok', WOLTERS: 'ok', Entasia: 'hot', 'Club Angel': 'hot', 'STÜM': 'hot',
     });
   });
 });
