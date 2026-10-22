@@ -22,5 +22,5 @@ export const lineupRows: Row[] = [
   { artist: 'Ned Bennett', stage: 'Club',  stage_order: 2, start: '16:30', end: '18:30', rating: '' },
   { artist: 'Club Angel',  stage: 'Club',  stage_order: 2, start: '18:30', end: '20:30', rating: 'hot' },
   { artist: 'Olive Anguz', stage: 'Club',  stage_order: 2, start: '20:30', end: '23:00', rating: 'blazing' },
-  { artist: 'STÜM',        stage: 'Club',  stage_order: 2, start: '20:30', end: '23:00', rating: '' },
+  { artist: 'STÜM',        stage: 'Club',  stage_order: 2, start: '20:30', end: '23:00', rating: 'hot' },
 ].map(row => ({ festival: overbruggen.festival, date: overbruggen.date, ...row }));
