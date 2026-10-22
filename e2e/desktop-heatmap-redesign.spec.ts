@@ -20,6 +20,13 @@ test('six stages fit desktop with full rating colours and readable names', async
   const long = timetable.getByTestId('desktop-set').filter({ hasText: 'Long set' });
   const short = timetable.getByTestId('desktop-set').filter({ hasText: 'Short set' });
   await expect(long).toBeVisible();
+  // The custom preview scales in; measure spacing only after it settles.
+  await expect.poll(() => long.evaluate(el => {
+    for (let parent = el.parentElement; parent; parent = parent.parentElement) {
+      if (getComputedStyle(parent).transform !== 'none') return false;
+    }
+    return true;
+  })).toBe(true);
   const longBox = await long.boundingBox();
   const shortBox = await short.boundingBox();
   expect(longBox!.height / shortBox!.height).toBeGreaterThan(1.9);
